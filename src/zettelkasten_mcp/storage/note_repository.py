@@ -252,7 +252,9 @@ class NoteRepository(Repository[Note]):
                     db_tag = DBTag(name=tag.name)
                     session.add(db_tag)
                     session.flush()  # Flush to get the tag ID
-                db_note.tags.append(db_tag)
+                # Prevent duplicate tag associations
+                if db_tag not in db_note.tags:
+                    db_note.tags.append(db_tag)
             
             # Add links
             for link in note.links:
