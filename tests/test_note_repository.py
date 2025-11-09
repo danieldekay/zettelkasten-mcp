@@ -188,7 +188,7 @@ def test_note_linking(note_repository):
 def test_create_note_with_duplicate_tags(note_repository):
     """Test creating a note with duplicate tags in the input list.
 
-    This tests the fix for the SQLite IntegrityError that occurs when
+    This tests the fix for the database IntegrityError that occurs when
     the same tag appears multiple times in the tags list.
     """
     # Create a note with duplicate tags
@@ -225,7 +225,7 @@ def test_create_note_with_duplicate_tags(note_repository):
 def test_update_note_with_duplicate_tags(note_repository):
     """Test updating a note with duplicate tags in the input list.
 
-    This tests the fix for the SQLite IntegrityError that occurs when
+    This tests the fix for the database IntegrityError that occurs when
     updating a note and the same tag appears multiple times in the tags list.
     """
     # Create a note with normal tags
@@ -250,7 +250,7 @@ def test_update_note_with_duplicate_tags(note_repository):
     ]
 
     # Update should not raise IntegrityError
-    updated_note = note_repository.update(saved_note)
+    note_repository.update(saved_note)
 
     # Retrieve the note to verify database state
     retrieved_note = note_repository.get(saved_note.id)
@@ -287,7 +287,7 @@ def test_update_note_preserves_existing_tags_without_duplicates(note_repository)
     retrieved_note.tags = [Tag(name="python"), Tag(name="test")]
 
     # Update should not raise IntegrityError
-    updated_note = note_repository.update(retrieved_note)
+    note_repository.update(retrieved_note)
 
     # Retrieve again to verify
     final_note = note_repository.get(original_id)
