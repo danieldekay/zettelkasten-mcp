@@ -1,0 +1,133 @@
+{
+    "Python MCP Tool": {
+        "prefix": "mcp-tool",
+        "body": [
+            "@self.mcp.tool()",
+            "def zk_${1:tool_name}(",
+            "    ${2:param}: ${3:str},",
+            "    ${4:optional_param}: Optional[${5:str}] = None",
+            ") -> str:",
+            "    \"\"\"${6:Brief description of what the tool does}.",
+            "    ",
+            "    Args:",
+            "        ${2:param}: ${7:Description of parameter}",
+            "        ${4:optional_param}: ${8:Description of optional parameter}",
+            "        ",
+            "    Returns:",
+            "        ${9:Description of return value}",
+            "    \"\"\"",
+            "    try:",
+            "        # Implementation",
+            "        ${10:result = self.service.operation(${2:param}, ${4:optional_param})}",
+            "        return self.format_success_response(${10:result})",
+            "    except ValueError as e:",
+            "        logger.error(f\"Validation error in zk_${1:tool_name}: {e}\")",
+            "        return self.format_error_response(e)",
+            "    except Exception as e:",
+            "        logger.error(f\"Unexpected error in zk_${1:tool_name}: {e}\")",
+            "        return self.format_error_response(e)"
+        ],
+        "description": "Create a new MCP tool method"
+    },
+    "Python Test Function": {
+        "prefix": "test-func",
+        "body": [
+            "def test_${1:function_name}(${2:fixture_name}):",
+            "    \"\"\"Test ${3:description of what is being tested}.",
+            "    ",
+            "    This test verifies that:",
+            "    - ${4:Expected behavior 1}",
+            "    - ${5:Expected behavior 2}",
+            "    \"\"\"",
+            "    # Arrange",
+            "    ${6:setup_data = create_test_data()}",
+            "    ",
+            "    # Act",
+            "    ${7:result = function_under_test(setup_data)}",
+            "    ",
+            "    # Assert",
+            "    assert ${7:result}.${8:expected_property} == ${9:expected_value}",
+            "    assert len(${7:result}.${10:collection}) == ${11:expected_count}"
+        ],
+        "description": "Create a new test function with AAA pattern"
+    },
+    "Python Repository Method": {
+        "prefix": "repo-method",
+        "body": [
+            "def ${1:method_name}(self, ${2:param}: ${3:str}) -> ${4:Optional[Note]}:",
+            "    \"\"\"${5:Description of what the method does}.",
+            "    ",
+            "    Args:",
+            "        ${2:param}: ${6:Description of parameter}",
+            "        ",
+            "    Returns:",
+            "        ${7:Description of return value}",
+            "        ",
+            "    Raises:",
+            "        ValueError: ${8:When this error occurs}",
+            "    \"\"\"",
+            "    try:",
+            "        with self.session() as session:",
+            "            ${9:# Implementation}",
+            "            ${10:query = select(DBNote).where(DBNote.id == ${2:param})}",
+            "            ${11:result = session.execute(query).scalar_one_or_none()}",
+            "            return ${12:self._to_note(result) if result else None}",
+            "    except SQLAlchemyError as e:",
+            "        logger.error(f\"Database error in ${1:method_name}: {e}\")",
+            "        raise",
+            "    except Exception as e:",
+            "        logger.error(f\"Unexpected error in ${1:method_name}: {e}\")",
+            "        raise"
+        ],
+        "description": "Create a new repository method"
+    },
+    "Python Error Handler": {
+        "prefix": "error-handler",
+        "body": [
+            "try:",
+            "    ${1:# risky operation}",
+            "except ${2:SpecificError} as e:",
+            "    logger.error(f\"${3:Context description}: {e}\")",
+            "    ${4:# specific handling}",
+            "except Exception as e:",
+            "    logger.error(f\"Unexpected error: {e}\")",
+            "    ${5:# general handling}"
+        ],
+        "description": "Create error handling block"
+    },
+    "Python Logger": {
+        "prefix": "logger",
+        "body": [
+            "import logging",
+            "",
+            "logger = logging.getLogger(__name__)"
+        ],
+        "description": "Add logger import and setup"
+    },
+    "Python Pydantic Model": {
+        "prefix": "pydantic-model",
+        "body": [
+            "class ${1:ModelName}(BaseModel):",
+            "    \"\"\"${2:Description of the model}.",
+            "    ",
+            "    ${3:Additional details about usage or constraints}",
+            "    \"\"\"",
+            "    ",
+            "    ${4:field_name}: ${5:str} = Field(",
+            "        ...,",
+            "        description=\"${6:Description of the field}\"",
+            "    )",
+            "    ${7:optional_field}: Optional[${8:str}] = Field(",
+            "        None,",
+            "        description=\"${9:Description of optional field}\"",
+            "    )",
+            "    ",
+            "    model_config = ConfigDict(",
+            "        ${10:frozen=True,}",
+            "        ${11:extra=\"forbid\",}",
+            "        ${12:validate_assignment=True}",
+            "    )"
+        ],
+        "description": "Create a new Pydantic model"
+    }
+}

@@ -1,0 +1,106 @@
+{
+    // Python Environment Configuration
+    "python.defaultInterpreterPath": "./.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    // Testing Configuration
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": [
+        "tests",
+        "-v"
+    ],
+    // Editor Configuration
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit",
+        "source.fixAll": "explicit"
+    },
+    // Ruff Configuration (Modern Python linting/formatting)
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.python",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit",
+            "source.fixAll": "explicit"
+        }
+    },
+    "ruff.enable": true,
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true,
+    "ruff.showSyntaxErrors": true,
+    // Pylance Configuration
+    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    "python.analysis.include": [
+        "src/**"
+    ],
+    "python.analysis.diagnosticMode": "workspace",
+    // File Associations
+    "files.associations": {
+        "*.toml": "toml",
+        ".env*": "dotenv",
+        "*.md": "markdown"
+    },
+    // Search Configuration
+    "search.exclude": {
+        "**/.venv": true,
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.*": true,
+        "build": true,
+        "dist": true,
+        "*.egg-info": true,
+        "htmlcov": true,
+        ".coverage": true,
+        ".pytest_cache": true
+    },
+    // Files to exclude from explorer
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "*.egg-info": true,
+        ".coverage": true,
+        "htmlcov": true
+    },
+    // Terminal Configuration
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+    },
+    // Language-specific settings
+    "[toml]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[markdown]": {
+        "editor.wordWrap": "bounded",
+        "editor.wordWrapColumn": 80,
+        "editor.quickSuggestions": {
+            "comments": "off",
+            "strings": "off",
+            "other": "off"
+        },
+        "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+    },
+    "[yaml]": {
+        "editor.defaultFormatter": null
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    // Git Configuration
+    "git.autofetch": true,
+    "git.enableSmartCommit": true,
+    // GitHub Copilot Configuration
+    "github.copilot.enable": {
+        "*": true,
+        "yaml": true,
+        "plaintext": false,
+        "markdown": true,
+        "python": true
+    }
+}

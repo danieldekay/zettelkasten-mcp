@@ -23,7 +23,7 @@ build/
 
 # IDE specific files
 .idea/
-.vscode/
+# .vscode/ - commented out to include workspace settings in repo
 *.swp
 *.swo
 .DS_Store
