@@ -5,7 +5,7 @@ import logging
 import os
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import frontmatter
 from sqlalchemy import and_, create_engine, func, or_, select, text
@@ -52,9 +52,62 @@ class NoteRepository(Repository[Note]):
         # File access lock
         self.file_lock = threading.RLock()
 
-        # Initialize by rebuilding index if needed
-        self.rebuild_index_if_needed()
-
+        # Check if FTS5 table exists and warn if missing
+        if not self._check_fts5_table_exists():
+            logger.warning(
+                "FTS5 full-text search table not found. "
+                "Run rebuild_index() to enable fast search capabilities."
+            )
+        
+    def _check_fts5_table_exists(self) -> bool:
+        """Check if the FTS5 virtual table exists.
+        
+        Returns:
+            bool: True if notes_fts table exists, False otherwise
+        """
+        try:
+            with self.session_factory() as session:
+                result = session.execute(text(
+                    "SELECT name FROM sqlite_master "
+                    "WHERE type='table' AND name='notes_fts'"
+                ))
+                return result.fetchone() is not None
+        except Exception as e:
+            logger.error(f"Error checking FTS5 table existence: {e}")
+            return False
+    
+    def _create_fts5_table(self, session) -> None:
+        """Create the FTS5 virtual table for full-text search.
+        
+        Args:
+            session: Active database session
+            
+        Note:
+            Creates a virtual table with columns:
+            - id (UNINDEXED): Note ID for retrieval
+            - title: Searchable note title
+            - content: Searchable note content
+            Uses unicode61 tokenizer for multilingual support (German + English)
+        """
+        try:
+            # Drop existing table if it exists (idempotent)
+            session.execute(text("DROP TABLE IF EXISTS notes_fts"))
+            
+            # Create FTS5 virtual table
+            session.execute(text("""
+                CREATE VIRTUAL TABLE notes_fts USING fts5(
+                    id UNINDEXED,
+                    title,
+                    content,
+                    tokenize='unicode61'
+                )
+            """))
+            
+            logger.info("FTS5 table created successfully")
+        except Exception as e:
+            logger.error(f"Error creating FTS5 table: {e}")
+            raise
+        
     def rebuild_index_if_needed(self) -> None:
         """Rebuild the database index from files if needed."""
         # Count notes in database
@@ -69,7 +122,15 @@ class NoteRepository(Repository[Note]):
             self.rebuild_index()
 
     def rebuild_index(self) -> None:
-        """Rebuild the database index from all markdown files."""
+        """Rebuild the database index from all markdown files.
+        
+        This includes:
+        - Clearing all tables (notes, links, note_tags)
+        - Recreating FTS5 full-text search table
+        - Re-indexing all markdown files from disk
+        """
+        logger.info("Starting index rebuild...")
+        
         # Clear the database first
         with self.session_factory() as session:
             # Delete all records from link table
@@ -78,11 +139,19 @@ class NoteRepository(Repository[Note]):
             session.execute(text("DELETE FROM note_tags"))
             # Delete all records from notes table
             session.execute(text("DELETE FROM notes"))
+            
+            # Create/recreate FTS5 table
+            logger.info("Creating FTS5 table...")
+            self._create_fts5_table(session)
+            
             # Commit changes
             session.commit()
+        
+        logger.info("Tables cleared and FTS5 table created")
 
         # Read all markdown files
         note_files = list(self.notes_dir.glob("*.md"))
+        logger.info(f"Found {len(note_files)} markdown files to index")
 
         # Process files in batches to avoid memory issues with large Zettelkasten systems
         batch_size = 100
@@ -103,8 +172,8 @@ class NoteRepository(Repository[Note]):
             # Index notes
             for note in notes:
                 self._index_note(note)
-
-    def _parse_note_from_markdown(self, content: str) -> Note:
+        
+        logger.info(f"Index rebuild complete: {len(note_files)} notes indexed")
         """Parse a note from markdown content."""
         # Parse frontmatter
         post = frontmatter.loads(content)
@@ -287,9 +356,48 @@ class NoteRepository(Repository[Note]):
                         created_at=link.created_at,
                     )
                     session.add(db_link)
+            
+            # Sync to FTS5 table for full-text search
+            self._sync_note_to_fts5(session, note)
 
             # Commit changes
             session.commit()
+    
+    def _sync_note_to_fts5(self, session, note: Note) -> None:
+        """Synchronize a note to the FTS5 full-text search table.
+        
+        Args:
+            session: Active database session
+            note: Note object to sync
+            
+        Note:
+            Uses DELETE + INSERT strategy (simpler than UPDATE for FTS5)
+        """
+        try:
+            # Delete existing FTS5 entry if it exists
+            session.execute(
+                text("DELETE FROM notes_fts WHERE id = :id"),
+                {"id": note.id}
+            )
+            
+            # Insert into FTS5 table
+            session.execute(
+                text("""
+                    INSERT INTO notes_fts (id, title, content) 
+                    VALUES (:id, :title, :content)
+                """),
+                {
+                    "id": note.id,
+                    "title": note.title,
+                    "content": note.content
+                }
+            )
+            
+            logger.debug(f"Synced note {note.id} to FTS5 table")
+            
+        except Exception as e:
+            # Don't fail the entire indexing if FTS5 sync fails
+            logger.warning(f"Failed to sync note {note.id} to FTS5: {e}")
 
     def _note_to_markdown(self, note: Note) -> str:
         """Convert a note to markdown with frontmatter."""
@@ -490,7 +598,10 @@ class NoteRepository(Repository[Note]):
                             created_at=link.created_at,
                         )
                         session.add(db_link)
-
+                    
+                    # Sync to FTS5 table
+                    self._sync_note_to_fts5(session, note)
+                    
                     session.commit()
                 else:
                     # This would be unusual, but handle it by creating a new database record
@@ -520,13 +631,88 @@ class NoteRepository(Repository[Note]):
         with self.session_factory() as session:
             # Delete note and its relationships
             session.execute(
-                text(
-                    f"DELETE FROM links WHERE source_id = '{id}' OR target_id = '{id}'"
-                )
+                text("DELETE FROM links WHERE source_id = :id OR target_id = :id"),
+                {"id": id},
             )
-            session.execute(text(f"DELETE FROM note_tags WHERE note_id = '{id}'"))
-            session.execute(text(f"DELETE FROM notes WHERE id = '{id}'"))
+            session.execute(
+                text("DELETE FROM note_tags WHERE note_id = :id"),
+                {"id": id},
+            )
+            session.execute(
+                text("DELETE FROM notes WHERE id = :id"),
+                {"id": id},
+            )
+            
+            # Delete from FTS5 table
+            try:
+                session.execute(text("DELETE FROM notes_fts WHERE id = :id"), {"id": id})
+                logger.debug(f"Deleted note {id} from FTS5 table")
+            except Exception as e:
+                logger.warning(f"Failed to delete note {id} from FTS5: {e}")
+            
             session.commit()
+    
+    def search_by_fts5(
+        self, 
+        query: str, 
+        limit: int = 100,
+        title_weight: float = 10.0,
+        content_weight: float = 1.0
+    ) -> List[Tuple[str, float, str]]:
+        """Search notes using FTS5 full-text search.
+        
+        Args:
+            query: Search query (supports FTS5 syntax)
+            limit: Maximum number of results (default: 100)
+            title_weight: BM25 weight for title field (default: 10.0)
+            content_weight: BM25 weight for content field (default: 1.0)
+            
+        Returns:
+            List of tuples: (note_id, bm25_score, snippet)
+            
+        FTS5 Query Syntax Examples:
+            - Simple: "machine learning"
+            - Phrase: '"machine learning"'
+            - Boolean: "machine AND learning"
+            - Prefix: "machin* learn*"
+            - Column-specific: "title:machine content:learning"
+            
+        Note:
+            BM25 scores are negative (more negative = better match)
+            Snippet includes highlighted matches with context
+        """
+        try:
+            with self.session_factory() as session:
+                result = session.execute(text(\"\"\"
+                    SELECT 
+                        id,
+                        bm25(notes_fts, :title_weight, :content_weight) as score,
+                        -- snippet parameters: column index 1 targets the content column;
+                        -- <b>/<\/b> are used purely as highlight markers in search result snippets
+                        -- (not rendered HTML), and 64 limits the snippet length for concise context.
+                        snippet(notes_fts, 1, '<b>', '</b>', '...', 64) as snippet
+                    FROM notes_fts 
+                    WHERE notes_fts MATCH :query
+                    ORDER BY score
+                    LIMIT :limit
+                \"\"\"), {
+                    "query": query,
+                    "limit": limit,
+                    "title_weight": title_weight,
+                    "content_weight": content_weight
+                })
+                
+                results = []
+                for row in result:
+                    results.append((row.id, row.score, row.snippet))
+                
+                logger.debug(f"FTS5 search for '{query}' returned {len(results)} results")
+                return results
+                
+        except Exception as e:
+            logger.error(f"FTS5 search failed for query '{query}': {e}")
+            # Return empty list on error (graceful degradation)
+            return []
 
     def search(self, **kwargs: Any) -> List[Note]:
         """Search for notes based on criteria."""

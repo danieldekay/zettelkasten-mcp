@@ -99,11 +99,15 @@ class DBLink(Base):
         )
 
 def init_db() -> None:
-    """Initialize the database."""
+    \"\"\"Initialize the database.\"\"\"
+    import logging
+    from sqlalchemy import text
+    
+    logger = logging.getLogger(__name__)
+    
     # Create engine based on configuration
     engine = create_engine(config.get_db_url())
     Base.metadata.create_all(engine)
-    return engine
 
 def get_session_factory(engine=None):
     """Get a session factory for the database."""

@@ -40,6 +40,7 @@ logs/
 .coverage
 htmlcov/
 .pytest_cache/
+fts5_testing/
 
 # Local configuration
 config.local.json

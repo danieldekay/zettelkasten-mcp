@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from sqlalchemy import func, select, text
 
+from zettelkasten_mcp.config import config
 from zettelkasten_mcp.models.schema import LinkType, Note, NoteType, Tag
 from zettelkasten_mcp.services.zettel_service import ZettelService
 
@@ -243,7 +244,93 @@ class SearchService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
     ) -> List[SearchResult]:
-        """Perform a combined search with multiple criteria."""
+        \"\"\"Perform a combined search with multiple criteria.
+        
+        Uses FTS5 full-text search if enabled and text query provided,
+        otherwise falls back to legacy in-memory search.
+        
+        Args:
+            text: Text query (FTS5 syntax supported if enabled)
+            tags: Filter by tags
+            note_type: Filter by note type
+            start_date: Filter by creation date (start)
+            end_date: Filter by creation date (end)
+            
+        Returns:
+            List of SearchResult objects sorted by relevance
+        \"\"\"
+        # Choose search strategy based on feature flag
+        if config.use_fts5_search and text:
+            return self._search_combined_fts5(text, tags, note_type, start_date, end_date)
+        else:
+            return self._search_combined_legacy(text, tags, note_type, start_date, end_date)
+    
+    def _search_combined_fts5(
+        self,
+        text: str,
+        tags: Optional[List[str]] = None,
+        note_type: Optional[NoteType] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> List[SearchResult]:
+        \"\"\"FTS5-based combined search (fast, uses full-text index).\"\"\"
+        # Step 1: FTS5 full-text search (fast!)
+        fts_results = self.zettel_service.repository.search_by_fts5(
+            query=text,
+            limit=100  # Over-fetch for post-filtering
+        )
+        
+        # Step 2: Load only matching notes (not all!)
+        candidate_notes = []
+        for note_id, bm25_score, snippet in fts_results:
+            note = self.zettel_service.get_note(note_id)
+            if note:
+                candidate_notes.append((note, bm25_score, snippet))
+        
+        # Step 3: Apply additional filters (tags, type, date)
+        filtered_results = []
+        for note, bm25_score, snippet in candidate_notes:
+            # Check note type
+            if note_type and note.note_type != note_type:
+                continue
+            
+            # Check date range
+            if start_date and note.created_at < start_date:
+                continue
+            if end_date and note.created_at > end_date:
+                continue
+            
+            # Check tags
+            if tags:
+                note_tag_names = {tag.name for tag in note.tags}
+                if not any(tag in note_tag_names for tag in tags):
+                    continue
+            
+            # Convert BM25 score to positive (more negative = better in FTS5)
+            # Normalize to 0-10 scale for consistency with legacy
+            normalized_score = abs(bm25_score)
+            
+            filtered_results.append(
+                SearchResult(
+                    note=note,
+                    score=normalized_score,
+                    matched_terms=set(text.lower().split()),
+                    matched_context=snippet  # Use FTS5 snippet
+                )
+            )
+        
+        # Already sorted by BM25 (FTS5 does this)
+        return filtered_results
+    
+    def _search_combined_legacy(
+        self,
+        text: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        note_type: Optional[NoteType] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> List[SearchResult]:
+        \"\"\"Legacy in-memory search (slow, loads all notes).\"\"\"
         # Start with all notes
         all_notes = self.zettel_service.get_all_notes()
         

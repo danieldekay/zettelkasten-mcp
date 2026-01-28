@@ -46,6 +46,10 @@ class ZettelkastenConfig(BaseModel):
             "{links}\n"
         )
     )
+    # FTS5 Full-Text Search configuration
+    use_fts5_search: bool = Field(
+        default=os.getenv("USE_FTS5_SEARCH", "false").lower() == "true"
+    )
     
     def get_absolute_path(self, path: Path) -> Path:
         """Convert a relative path to an absolute path based on base_dir."""
