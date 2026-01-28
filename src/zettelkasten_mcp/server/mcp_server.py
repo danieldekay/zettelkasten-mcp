@@ -79,6 +79,10 @@ class ZettelkastenMcpServer:
                 content: The main content of the note
                 note_type: Type of note (fleeting, literature, permanent, structure, hub)
                 tags: Comma-separated list of tags (optional)
+            
+            Note: The created note will be stored as a markdown file at:
+                  {notes_dir}/{note_id}.md
+                  You can create a clickable file link using: file://{absolute_path_to_notes_dir}/{note_id}.md
             """
             try:
                 # Convert note_type string to enum
@@ -99,7 +103,8 @@ class ZettelkastenMcpServer:
                     note_type=note_type_enum,
                     tags=tag_list,
                 )
-                return f"Note created successfully with ID: {note.id}"
+                note_file_path = config.get_absolute_path(config.notes_dir) / f"{note.id}.md"
+                return f"Note created successfully with ID: {note.id}\nFile: {note_file_path}"
             except Exception as e:
                 return self.format_error_response(e)
 
@@ -109,6 +114,10 @@ class ZettelkastenMcpServer:
             """Retrieve a note by ID or title.
             Args:
                 identifier: The ID or title of the note
+            
+            Note: The note is stored as a markdown file at:
+                  {notes_dir}/{note_id}.md
+                  You can create a clickable file link using: file://{absolute_path_to_notes_dir}/{note_id}.md
             """
             try:
                 identifier = str(identifier)
@@ -121,8 +130,10 @@ class ZettelkastenMcpServer:
                     return f"Note not found: {identifier}"
                 
                 # Format the note
+                note_file_path = config.get_absolute_path(config.notes_dir) / f"{note.id}.md"
                 result = f"# {note.title}\n"
                 result += f"ID: {note.id}\n"
+                result += f"File: {note_file_path}\n"
                 result += f"Type: {note.note_type.value}\n"
                 result += f"Created: {note.created_at.isoformat()}\n"
                 result += f"Updated: {note.updated_at.isoformat()}\n"
@@ -286,6 +297,10 @@ class ZettelkastenMcpServer:
                 tags: Comma-separated list of tags to filter by
                 note_type: Type of note to filter by
                 limit: Maximum number of results to return
+            
+            Note: Each result includes a file path where the note is stored as:
+                  {notes_dir}/{note_id}.md
+                  You can create a clickable file link using: file://{absolute_path_to_notes_dir}/{note_id}.md
             """
             try:
                 # Convert tags string to list if provided
@@ -314,10 +329,13 @@ class ZettelkastenMcpServer:
                     return "No matching notes found."
                 
                 # Format results
+                notes_dir = config.get_absolute_path(config.notes_dir)
                 output = f"Found {len(results)} matching notes:\n\n"
                 for i, result in enumerate(results, 1):
                     note = result.note
+                    note_file_path = notes_dir / f"{note.id}.md"
                     output += f"{i}. {note.title} (ID: {note.id})\n"
+                    output += f"   File: {note_file_path}\n"
                     if note.tags:
                         output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
                     output += f"   Created: {note.created_at.strftime('%Y-%m-%d')}\n"
@@ -340,6 +358,8 @@ class ZettelkastenMcpServer:
             Args:
                 note_id: ID of the note
                 direction: Direction of links (outgoing, incoming, both)
+            
+            Note: Each result includes a file path where the note is stored.
             """
             try:
                 if direction not in ["outgoing", "incoming", "both"]:
@@ -349,9 +369,12 @@ class ZettelkastenMcpServer:
                 if not linked_notes:
                     return f"No {direction} links found for note {note_id}."
                 # Format results
+                notes_dir = config.get_absolute_path(config.notes_dir)
                 output = f"Found {len(linked_notes)} {direction} linked notes for {note_id}:\n\n"
                 for i, note in enumerate(linked_notes, 1):
+                    note_file_path = notes_dir / f"{note.id}.md"
                     output += f"{i}. {note.title} (ID: {note.id})\n"
+                    output += f"   File: {note_file_path}\n"
                     if note.tags:
                         output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
                     # Try to determine link type
@@ -410,6 +433,9 @@ class ZettelkastenMcpServer:
                 note_id: ID of the reference note
                 threshold: Similarity threshold (0.0-1.0)
                 limit: Maximum number of results to return
+            
+            Note: Each result includes a file path where the note is stored as:
+                  {notes_dir}/{note_id}.md
             """
             try:
                 # Get similar notes
@@ -420,9 +446,12 @@ class ZettelkastenMcpServer:
                     return f"No similar notes found for {note_id} with threshold {threshold}."
                 
                 # Format results
+                notes_dir = config.get_absolute_path(config.notes_dir)
                 output = f"Found {len(similar_notes)} similar notes for {note_id}:\n\n"
                 for i, (note, similarity) in enumerate(similar_notes, 1):
+                    note_file_path = notes_dir / f"{note.id}.md"
                     output += f"{i}. {note.title} (ID: {note.id})\n"
+                    output += f"   File: {note_file_path}\n"
                     output += f"   Similarity: {similarity:.2f}\n"
                     if note.tags:
                         output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
@@ -445,6 +474,8 @@ class ZettelkastenMcpServer:
 
             Args:
                 limit: Maximum number of results to return (default: 10)
+            
+            Note: Each result includes a file path where the note is stored.
             """
             try:
                 # Get central notes
@@ -453,9 +484,12 @@ class ZettelkastenMcpServer:
                     return "No notes found with connections."
                 
                 # Format results
+                notes_dir = config.get_absolute_path(config.notes_dir)
                 output = "Central notes in the Zettelkasten (most connected):\n\n"
                 for i, (note, connection_count) in enumerate(central_notes, 1):
+                    note_file_path = notes_dir / f"{note.id}.md"
                     output += f"{i}. {note.title} (ID: {note.id})\n"
+                    output += f"   File: {note_file_path}\n"
                     output += f"   Connections: {connection_count}\n"
                     if note.tags:
                         output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
@@ -471,7 +505,10 @@ class ZettelkastenMcpServer:
         # Find orphaned notes
         @self.mcp.tool(name="zk_find_orphaned_notes")
         def zk_find_orphaned_notes() -> str:
-            """Find notes with no connections to other notes."""
+            """Find notes with no connections to other notes.
+            
+            Note: Each result includes a file path where the note is stored.
+            """
             try:
                 # Get orphaned notes
                 orphans = self.search_service.find_orphaned_notes()
@@ -479,9 +516,12 @@ class ZettelkastenMcpServer:
                     return "No orphaned notes found."
                 
                 # Format results
+                notes_dir = config.get_absolute_path(config.notes_dir)
                 output = f"Found {len(orphans)} orphaned notes:\n\n"
                 for i, note in enumerate(orphans, 1):
+                    note_file_path = notes_dir / f"{note.id}.md"
                     output += f"{i}. {note.title} (ID: {note.id})\n"
+                    output += f"   File: {note_file_path}\n"
                     if note.tags:
                         output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
                     # Add a snippet of content (first 100 chars)
@@ -507,6 +547,8 @@ class ZettelkastenMcpServer:
                 end_date: End date in ISO format (YYYY-MM-DD)
                 use_updated: Whether to use updated_at instead of created_at
                 limit: Maximum number of results to return
+            
+            Note: Each result includes a file path where the note is stored.
             """
             try:
                 # Parse dates
@@ -548,9 +590,12 @@ class ZettelkastenMcpServer:
                     elif end_date:
                         output += f" before {end_date}"
                 output += f" (showing {len(notes)} results):\n\n"
+                notes_dir = config.get_absolute_path(config.notes_dir)
                 for i, note in enumerate(notes, 1):
                     date = note.updated_at if use_updated else note.created_at
+                    note_file_path = notes_dir / f"{note.id}.md"
                     output += f"{i}. {note.title} (ID: {note.id})\n"
+                    output += f"   File: {note_file_path}\n"
                     output += f"   {date_type.capitalize()}: {date.strftime('%Y-%m-%d %H:%M')}\n"
                     if note.tags:
                         output += f"   Tags: {', '.join(tag.name for tag in note.tags)}\n"
