@@ -244,7 +244,7 @@ class SearchService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
     ) -> List[SearchResult]:
-        \"\"\"Perform a combined search with multiple criteria.
+        """Perform a combined search with multiple criteria.
         
         Uses FTS5 full-text search if enabled and text query provided,
         otherwise falls back to legacy in-memory search.
@@ -258,7 +258,7 @@ class SearchService:
             
         Returns:
             List of SearchResult objects sorted by relevance
-        \"\"\"
+        """
         # Choose search strategy based on feature flag
         if config.use_fts5_search and text:
             return self._search_combined_fts5(text, tags, note_type, start_date, end_date)
@@ -273,7 +273,7 @@ class SearchService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
     ) -> List[SearchResult]:
-        \"\"\"FTS5-based combined search (fast, uses full-text index).\"\"\"
+        """FTS5-based combined search (fast, uses full-text index)."""
         # Step 1: FTS5 full-text search (fast!)
         fts_results = self.zettel_service.repository.search_by_fts5(
             query=text,
@@ -330,7 +330,7 @@ class SearchService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
     ) -> List[SearchResult]:
-        \"\"\"Legacy in-memory search (slow, loads all notes).\"\"\"
+        """Legacy in-memory search (slow, loads all notes)."""
         # Start with all notes
         all_notes = self.zettel_service.get_all_notes()
         

@@ -99,7 +99,7 @@ class DBLink(Base):
         )
 
 def init_db() -> None:
-    \"\"\"Initialize the database.\"\"\"
+    """Initialize the database."""
     import logging
     from sqlalchemy import text
     
