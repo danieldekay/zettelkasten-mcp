@@ -1,0 +1,38 @@
+services:
+  zettelkasten-mcp:
+    build:
+      context: ..
+      dockerfile: project/Dockerfile
+      target: runtime
+    image: zettelkasten-mcp:1.2.1-efficient
+    stdin_open: true
+    tty: true
+    environment:
+      ZETTELKASTEN_NOTES_DIR: /data/notes
+      ZETTELKASTEN_DATABASE_PATH: /data/db/zettelkasten.db
+      ZETTELKASTEN_LOG_LEVEL: INFO
+    command:
+      - --notes-dir
+      - /data/notes
+      - --database-path
+      - /data/db/zettelkasten.db
+      - --log-level
+      - INFO
+    volumes:
+      - zettelkasten_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,noexec,nosuid
+    mem_limit: 384m
+    cpus: 0.50
+    pids_limit: 64
+    restart: "no"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  zettelkasten_data:
+    driver: local
