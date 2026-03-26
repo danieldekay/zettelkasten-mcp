@@ -1,0 +1,216 @@
+key: FEATURE-ZETTELKASTENMCPSERVER
+title: Zettelkasten Mcp Server
+outcomes:
+- MCP server for Zettelkasten.
+acceptance:
+- The system zettelkasten mcp server must provide zettelkasten mcp server 
+  functionality
+constraints:
+- The system must meet reliability requirements (error handling, retry logic, 
+  resilience)
+- The system must meet maintainability requirements (documentation, type hints, 
+  testing)
+- The system must use type hints for improved code maintainability and IDE 
+  support
+stories:
+- key: STORY-ZETTELKASTENMCPSERVER-001
+  title: As a developer, I can configure Zettelkasten Mcp Server
+  acceptance:
+  - note creation works correctly (see contract examples)
+  - note validation works correctly (see contract examples)
+  - note tag operations works correctly (see contract examples)
+  - Initialize the MCP server.
+  - Initialize services.
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - __init__()
+  - initialize()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - __init__ executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_list_notes_by_date
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_create_note
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_delete_note
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_get_linked_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_remove_link
+  - src/zettelkasten_mcp/server/mcp_server.py::run
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_find_orphaned_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::_register_tools
+  - src/zettelkasten_mcp/server/mcp_server.py::__init__
+  - src/zettelkasten_mcp/server/mcp_server.py::_register_prompts
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_find_central_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_find_similar_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::_register_resources
+  - src/zettelkasten_mcp/server/mcp_server.py::initialize
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_create_link
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_get_note
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_search_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::format_error_response
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_get_all_tags
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_update_note
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_rebuild_index
+  test_functions:
+  - tests/test_mcp_server.py::test_error_handling
+  - .venv/lib/python3.10/site-packages/crosshair/lsp_server_test.py::test_watch_loop
+  - tests/test_mcp_server.py::test_search_notes_tool
+  - tests/test_mcp_server.py::test_get_note_tool
+  - tests/test_mcp_server.py::test_server_initialization
+  - .venv/lib/python3.10/site-packages/crosshair/lsp_server_test.py::test_get_diagnostic
+  - tests/test_mcp_server.py::test_create_link_tool
+  - tests/test_mcp_server.py::test_create_note_tool
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-ZETTELKASTENMCPSERVER-002
+  title: As a user, I can use Zettelkasten Mcp Server features
+  acceptance:
+  - note creation works correctly (see contract examples)
+  - note validation works correctly (see contract examples)
+  - note tag operations works correctly (see contract examples)
+  - Format an error response in a consistent way.
+  - Run the MCP server.
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - format_error_response()
+  - run()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - 'format_error_response called with isinstance is called: calls logger.error
+      and returns value'
+    - 'format_error_response called with isinstance is called: calls logger.error
+      and returns value'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: error
+      type: Exception
+      required: true
+      default:
+    return_type:
+      type: str
+      nullable: false
+    preconditions:
+    - 'Requires: isinstance(error, ValueError)'
+    - 'Requires: isinstance(error, (IOError, OSError))'
+    postconditions:
+    - 'Ensures: returns str'
+    - 'Ensures: returns str'
+    - 'Ensures: returns str'
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_list_notes_by_date
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_create_note
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_delete_note
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_get_linked_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_remove_link
+  - src/zettelkasten_mcp/server/mcp_server.py::run
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_find_orphaned_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::_register_tools
+  - src/zettelkasten_mcp/server/mcp_server.py::__init__
+  - src/zettelkasten_mcp/server/mcp_server.py::_register_prompts
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_find_central_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_find_similar_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::_register_resources
+  - src/zettelkasten_mcp/server/mcp_server.py::initialize
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_create_link
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_get_note
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_search_notes
+  - src/zettelkasten_mcp/server/mcp_server.py::format_error_response
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_get_all_tags
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_update_note
+  - src/zettelkasten_mcp/server/mcp_server.py::zk_rebuild_index
+  test_functions:
+  - tests/test_mcp_server.py::test_error_handling
+  - .venv/lib/python3.10/site-packages/crosshair/lsp_server_test.py::test_watch_loop
+  - tests/test_mcp_server.py::test_search_notes_tool
+  - tests/test_mcp_server.py::test_get_note_tool
+  - tests/test_mcp_server.py::test_server_initialization
+  - .venv/lib/python3.10/site-packages/crosshair/lsp_server_test.py::test_get_diagnostic
+  - tests/test_mcp_server.py::test_create_link_tool
+  - tests/test_mcp_server.py::test_create_note_tool
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+confidence: 0.8
+draft: false
+source_tracking:
+  implementation_files:
+  - src/zettelkasten_mcp/server/mcp_server.py
+  test_files:
+  - tests/test_mcp_server.py
+  - .venv/lib/python3.10/site-packages/crosshair/lsp_server_test.py
+  file_hashes:
+    src/zettelkasten_mcp/server/mcp_server.py: 
+      cf6c2ecad3750685e5483bd5c43bb78afb0c3a9830d82022f77d81cefb662ad0
+    tests/test_mcp_server.py: 
+      495d98405403f387620b58dbb25b61e09a5d41abb078d0750f5b2bd03984a203
+    .venv/lib/python3.10/site-packages/crosshair/lsp_server_test.py: 
+      ecb3b542ac64a5eaf75edda4ae03a51aa1753bfb8339ba3bea8e0565b22aca46
+  last_synced: '2026-03-20T13:45:41.105200+00:00'
+  source_functions: []
+  test_functions: []
+  tool:
+  source_metadata: {}
+  refined_from_backlog_item_id:
+  refined_from_provider:
+  template_id:
+  refinement_confidence:
+  refinement_timestamp:
+  refinement_ai_model:
+contract:
+protocol:
+priority:
+rank:
+business_value_score:
+depends_on_features: []
+blocks_features: []
+business_value_description:
+target_users: []
+success_metrics: []
+target_release:
+estimated_story_points:
+extensions: {}

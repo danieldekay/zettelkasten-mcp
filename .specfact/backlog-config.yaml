@@ -1,0 +1,14 @@
+backlog_config:
+  providers:
+    github:
+      adapter: github
+      project_id: ''
+      settings:
+        github_issue_types:
+          type_ids: {}
+    ado:
+      adapter: ado
+      project_id: ''
+      settings:
+        framework: default
+        field_mapping_file: .specfact/templates/backlog/field_mappings/ado_custom.yaml
