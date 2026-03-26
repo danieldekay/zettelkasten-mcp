@@ -1,13 +1,15 @@
 """Common test fixtures for the Zettelkasten MCP server."""
-import os
 import tempfile
 from pathlib import Path
+
 import pytest
 from sqlalchemy import create_engine
+
 from zettelkasten_mcp.config import config
 from zettelkasten_mcp.models.db_models import Base
 from zettelkasten_mcp.services.zettel_service import ZettelService
 from zettelkasten_mcp.storage.note_repository import NoteRepository
+
 
 @pytest.fixture
 def temp_dirs():
@@ -43,14 +45,14 @@ def note_repository(test_config):
     engine.dispose()
     # Create repository
     repository = NoteRepository(
-        notes_dir=test_config.notes_dir
+        notes_dir=test_config.notes_dir,
     )
     # Initialize is handled in constructor
-    yield repository
+    return repository
 
 @pytest.fixture
 def zettel_service(note_repository):
     """Create a test ZettelService."""
     service = ZettelService(repository=note_repository)
     # Initialize is handled in constructor
-    yield service
+    return service
