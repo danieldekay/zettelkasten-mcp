@@ -181,22 +181,24 @@ Add the following configuration to your Claude Desktop:
 
 All tools have been prefixed with `zk_` for better organization:
 
-| Tool | Description |
-|---|---|
-| `zk_create_note` | Create a new note with a title, content, and optional tags |
-| `zk_get_note` | Retrieve a specific note by ID or title |
-| `zk_update_note` | Update an existing note's content or metadata |
-| `zk_delete_note` | Delete a note |
-| `zk_create_link` | Create links between notes |
-| `zk_remove_link` | Remove links between notes |
-| `zk_search_notes` | Search for notes by content, tags, or links |
-| `zk_get_linked_notes` | Find notes linked to a specific note |
-| `zk_get_all_tags` | List all tags in the system |
-| `zk_find_similar_notes` | Find notes similar to a given note |
-| `zk_find_central_notes` | Find notes with the most connections |
-| `zk_find_orphaned_notes` | Find notes with no connections |
-| `zk_list_notes_by_date` | List notes by creation/update date |
-| `zk_rebuild_index` | Rebuild the database index from Markdown files |
+| Tool | Description | Response Keys |
+|---|---|---|
+| `zk_create_note` | Create a new note with a title, content, and optional tags | `note_id`, `file_path`, `summary` |
+| `zk_get_note` | Retrieve a specific note by ID or title | `note_id`, `title`, `note_type`, `tags`, `links`, `created_at`, `updated_at`, `content`, `metadata`, `summary` |
+| `zk_update_note` | Update an existing note's content or metadata | `note_id`, `updated_fields`, `summary` |
+| `zk_delete_note` | Delete a note | `note_id`, `deleted`, `summary` |
+| `zk_create_link` | Create links between notes | `source_id`, `target_id`, `link_type`, `summary` |
+| `zk_remove_link` | Remove links between notes | `source_id`, `target_id`, `removed`, `summary` |
+| `zk_search_notes` | Search for notes by content, tags, or links | `notes[]` (each with `score`), `total`, `query`, `summary` |
+| `zk_get_linked_notes` | Find notes linked to a specific note | `note_id`, `direction`, `notes[]`, `total`, `summary` |
+| `zk_get_all_tags` | List all tags in the system | `tags[]` (each with `name`, `count`), `total`, `summary` |
+| `zk_find_similar_notes` | Find notes similar to a given note | `notes[]`, `total`, `summary` |
+| `zk_find_central_notes` | Find notes with the most connections | `notes[]` (each with `connection_count`), `total`, `summary` |
+| `zk_find_orphaned_notes` | Find notes with no connections | `notes[]`, `total`, `summary` |
+| `zk_list_notes_by_date` | List notes by creation/update date | `notes[]`, `total`, `summary` |
+| `zk_rebuild_index` | Rebuild the database index from Markdown files | `notes_indexed`, `errors[]`, `summary` |
+
+All tools return `error: true`, `error_type`, `message`, and `summary` on failure.
 
 ## Project Structure
 
