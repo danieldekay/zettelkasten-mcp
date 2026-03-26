@@ -2,18 +2,16 @@
 
 import datetime
 import logging
-import os
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import frontmatter
-from sqlalchemy import and_, create_engine, func, or_, select, text
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy.orm import joinedload
 
 from zettelkasten_mcp.config import config
 from zettelkasten_mcp.models.db_models import (
-    Base,
     DBLink,
     DBNote,
     DBTag,
@@ -34,7 +32,7 @@ class NoteRepository(Repository[Note]):
     The file system is the source of truth - database is rebuilt from files if needed.
     """
 
-    def __init__(self, notes_dir: Optional[Path] = None):
+    def __init__(self, notes_dir: Path | None = None) -> None:
         """Initialize the repository."""
         self.notes_dir = (
             config.get_absolute_path(notes_dir)
@@ -56,7 +54,7 @@ class NoteRepository(Repository[Note]):
         if not self._check_fts5_table_exists():
             logger.warning(
                 "FTS5 full-text search table not found. "
-                "Run rebuild_index() to enable fast search capabilities."
+                "Run rebuild_index() to enable fast search capabilities.",
             )
 
     def _check_fts5_table_exists(self) -> bool:
@@ -69,14 +67,14 @@ class NoteRepository(Repository[Note]):
             with self.session_factory() as session:
                 result = session.execute(text(
                     "SELECT name FROM sqlite_master "
-                    "WHERE type='table' AND name='notes_fts'"
+                    "WHERE type='table' AND name='notes_fts'",
                 ))
                 return result.fetchone() is not None
-        except Exception as e:
-            logger.error(f"Error checking FTS5 table existence: {e}")
+        except Exception:
+            logger.exception("Error checking FTS5 table existence")
             return False
 
-    def _create_fts5_table(self, session) -> None:
+    def _create_fts5_table(self, session: Any) -> None:
         """Create the FTS5 virtual table for full-text search.
 
         Args:
@@ -104,8 +102,8 @@ class NoteRepository(Repository[Note]):
             """))
 
             logger.info("FTS5 table created successfully")
-        except Exception as e:
-            logger.error(f"Error creating FTS5 table: {e}")
+        except Exception:
+            logger.exception("Error creating FTS5 table")
             raise
 
     def rebuild_index_if_needed(self) -> None:
@@ -151,9 +149,9 @@ class NoteRepository(Repository[Note]):
 
         # Read all markdown files
         note_files = list(self.notes_dir.glob("*.md"))
-        logger.info(f"Found {len(note_files)} markdown files to index")
+        logger.info("Found %s markdown files to index", len(note_files))
 
-        # Process files in batches to avoid memory issues with large Zettelkasten systems
+        # Process files in batches to avoid memory issues
         batch_size = 100
         for i in range(0, len(note_files), batch_size):
             batch = note_files[i : i + batch_size]
@@ -162,20 +160,20 @@ class NoteRepository(Repository[Note]):
             # Read files
             for file_path in batch:
                 try:
-                    with open(file_path, "r", encoding="utf-8") as f:
+                    with file_path.open(encoding="utf-8") as f:
                         content = f.read()
                     note = self._parse_note_from_markdown(content)
                     notes.append(note)
-                except Exception as e:
-                    logger.error(f"Error processing file {file_path}: {e}")
+                except Exception:  # noqa: PERF203
+                    logger.exception("Error processing file %s", file_path)
 
             # Index notes
             for note in notes:
                 self._index_note(note)
 
-        logger.info(f"Index rebuild complete: {len(note_files)} notes indexed")
+        logger.info("Index rebuild complete: %s notes indexed", len(note_files))
 
-    def _parse_note_from_markdown(self, content: str) -> Note:
+    def _parse_note_from_markdown(self, content: str) -> Note:  # noqa: PLR0912, PLR0915
         """Parse a note from markdown content."""
         # Parse frontmatter
         post = frontmatter.loads(content)
@@ -184,7 +182,8 @@ class NoteRepository(Repository[Note]):
         # Extract ID from metadata or filename
         note_id = metadata.get("id")
         if not note_id:
-            raise ValueError("Note ID missing from frontmatter")
+            msg = "Note ID missing from frontmatter"
+            raise ValueError(msg)
 
         # Extract title from metadata or first heading
         title = metadata.get("title")
@@ -196,7 +195,8 @@ class NoteRepository(Repository[Note]):
                     title = line[2:].strip()
                     break
         if not title:
-            raise ValueError("Note title missing from frontmatter or content")
+            msg = "Note title missing from frontmatter or content"
+            raise ValueError(msg)
 
         # Extract note type
         note_type_str = metadata.get("type", NoteType.PERMANENT.value)
@@ -218,8 +218,8 @@ class NoteRepository(Repository[Note]):
         # Extract links
         links = []
         links_section = False
-        for line in post.content.split("\n"):
-            line = line.strip()
+        for raw_line in post.content.split("\n"):
+            line = raw_line.strip()
             # Check if we're in the links section
             if line.startswith("## Links"):
                 links_section = True
@@ -259,18 +259,18 @@ class NoteRepository(Repository[Note]):
                                 target_id=target_id,
                                 link_type=link_type,
                                 description=description,
-                                created_at=datetime.datetime.now(),
-                            )
+                                created_at=datetime.datetime.now(tz=datetime.timezone.utc),
+                            ),
                         )
-                except Exception as e:
-                    logger.error(f"Error parsing link: {line} - {e}")
+                except Exception:
+                    logger.exception("Error parsing link: %s", line)
 
         # Extract timestamps
         created_str = metadata.get("created")
         created_at = (
             datetime.datetime.fromisoformat(created_str)
             if created_str
-            else datetime.datetime.now()
+            else datetime.datetime.now(tz=datetime.timezone.utc)
         )
         updated_str = metadata.get("updated")
         updated_at = (
@@ -307,10 +307,10 @@ class NoteRepository(Repository[Note]):
                 db_note.updated_at = note.updated_at
                 # Clear existing links and tags to rebuild them
                 session.execute(
-                    text(f"DELETE FROM links WHERE source_id = '{note.id}'")
+                    text(f"DELETE FROM links WHERE source_id = '{note.id}'"),  # noqa: S608
                 )
                 session.execute(
-                    text(f"DELETE FROM note_tags WHERE note_id = '{note.id}'")
+                    text(f"DELETE FROM note_tags WHERE note_id = '{note.id}'"),  # noqa: S608
                 )
             else:
                 # Create new note
@@ -345,8 +345,8 @@ class NoteRepository(Repository[Note]):
                     select(DBLink).where(
                         (DBLink.source_id == link.source_id)
                         & (DBLink.target_id == link.target_id)
-                        & (DBLink.link_type == link.link_type.value)
-                    )
+                        & (DBLink.link_type == link.link_type.value),
+                    ),
                 )
 
                 if not existing_link:
@@ -365,7 +365,7 @@ class NoteRepository(Repository[Note]):
             # Commit changes
             session.commit()
 
-    def _sync_note_to_fts5(self, session, note: Note) -> None:
+    def _sync_note_to_fts5(self, session: Any, note: Note) -> None:
         """Synchronize a note to the FTS5 full-text search table.
 
         Args:
@@ -379,7 +379,7 @@ class NoteRepository(Repository[Note]):
             # Delete existing FTS5 entry if it exists
             session.execute(
                 text("DELETE FROM notes_fts WHERE id = :id"),
-                {"id": note.id}
+                {"id": note.id},
             )
 
             # Insert into FTS5 table
@@ -391,15 +391,15 @@ class NoteRepository(Repository[Note]):
                 {
                     "id": note.id,
                     "title": note.title,
-                    "content": note.content
-                }
+                    "content": note.content,
+                },
             )
 
-            logger.debug(f"Synced note {note.id} to FTS5 table")
+            logger.debug("Synced note %s to FTS5 table", note.id)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # Don't fail the entire indexing if FTS5 sync fails
-            logger.warning(f"Failed to sync note {note.id} to FTS5: {e}")
+            logger.warning("Failed to sync note %s to FTS5: %s", note.id, e)
 
     def _note_to_markdown(self, note: Note) -> str:
         """Convert a note to markdown with frontmatter."""
@@ -429,7 +429,7 @@ class NoteRepository(Repository[Note]):
             if line.strip() == "## Links":
                 skip_section = True
                 continue
-            elif skip_section and line.startswith("## "):
+            if skip_section and line.startswith("## "):
                 skip_section = False
 
             if not skip_section:
@@ -457,7 +457,7 @@ class NoteRepository(Repository[Note]):
         """Create a new note."""
         # Ensure the note has an ID
         if not note.id:
-            from zettelkasten_mcp.models.schema import generate_id
+            from zettelkasten_mcp.models.schema import generate_id  # noqa: PLC0415
 
             note.id = generate_id()
 
@@ -467,17 +467,17 @@ class NoteRepository(Repository[Note]):
         # Write to file
         file_path = self.notes_dir / f"{note.id}.md"
         try:
-            with self.file_lock:
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(markdown)
-        except IOError as e:
-            raise IOError(f"Failed to write note to {file_path}: {e}")
+            with self.file_lock, file_path.open("w", encoding="utf-8") as f:
+                f.write(markdown)
+        except OSError as e:
+            msg = f"Failed to write note to {file_path}: {e}"
+            raise OSError(msg) from e
 
         # Index in database
         self._index_note(note)
         return note
 
-    def get(self, id: str) -> Optional[Note]:
+    def get(self, id: str) -> Note | None:  # noqa: A002
         """Get a note by ID.
 
         Args:
@@ -490,13 +490,14 @@ class NoteRepository(Repository[Note]):
         if not file_path.exists():
             return None
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with file_path.open(encoding="utf-8") as f:
                 content = f.read()
             return self._parse_note_from_markdown(content)
         except Exception as e:
-            raise IOError(f"Failed to read note {id}: {e}")
+            msg = f"Failed to read note {id}: {e}"
+            raise OSError(msg) from e
 
-    def get_by_title(self, title: str) -> Optional[Note]:
+    def get_by_title(self, title: str) -> Note | None:
         """Get a note by title."""
         with self.session_factory() as session:
             db_note = session.scalar(select(DBNote).where(DBNote.title == title))
@@ -504,7 +505,7 @@ class NoteRepository(Repository[Note]):
                 return None
             return self.get(db_note.id)
 
-    def get_all(self) -> List[Note]:
+    def get_all(self) -> list[Note]:
         """Get all notes."""
         with self.session_factory() as session:
             # Get all notes with eager loading of tags and links
@@ -531,8 +532,8 @@ class NoteRepository(Repository[Note]):
                         note = self.get(note_id)
                         if note:
                             note_batch.append(note)
-                    except Exception as e:
-                        logger.error(f"Error loading note {note_id}: {e}")
+                    except Exception:  # noqa: PERF203
+                        logger.exception("Error loading note %s", note_id)
                 all_notes.extend(note_batch)
             return all_notes
 
@@ -541,10 +542,11 @@ class NoteRepository(Repository[Note]):
         # Check if note exists
         existing_note = self.get(note.id)
         if not existing_note:
-            raise ValueError(f"Note with ID {note.id} does not exist")
+            msg = f"Note with ID {note.id} does not exist"
+            raise ValueError(msg)
 
         # Update timestamp
-        note.updated_at = datetime.datetime.now()
+        note.updated_at = datetime.datetime.now(tz=datetime.timezone.utc)
 
         # Convert note to markdown
         markdown = self._note_to_markdown(note)
@@ -552,11 +554,11 @@ class NoteRepository(Repository[Note]):
         # Write to file
         file_path = self.notes_dir / f"{note.id}.md"
         try:
-            with self.file_lock:
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(markdown)
-        except IOError as e:
-            raise IOError(f"Failed to write note to {file_path}: {e}")
+            with self.file_lock, file_path.open("w", encoding="utf-8") as f:
+                f.write(markdown)
+        except OSError as e:
+            msg = f"Failed to write note to {file_path}: {e}"
+            raise OSError(msg) from e
 
         try:
             # Re-index in database
@@ -577,7 +579,7 @@ class NoteRepository(Repository[Note]):
                     for tag in note.tags:
                         # Check if tag exists
                         db_tag = session.scalar(
-                            select(DBTag).where(DBTag.name == tag.name)
+                            select(DBTag).where(DBTag.name == tag.name),
                         )
                         if not db_tag:
                             db_tag = DBTag(name=tag.name)
@@ -587,7 +589,7 @@ class NoteRepository(Repository[Note]):
 
                     # For links, we'll delete existing links and add the new ones
                     session.execute(
-                        text(f"DELETE FROM links WHERE source_id = '{note.id}'")
+                        text(f"DELETE FROM links WHERE source_id = '{note.id}'"),  # noqa: S608
                     )
 
                     # Add new links
@@ -606,28 +608,30 @@ class NoteRepository(Repository[Note]):
 
                     session.commit()
                 else:
-                    # This would be unusual, but handle it by creating a new database record
+                    # Unusual case: create a new database record
                     self._index_note(note)
-        except Exception as e:
+        except Exception:
             # Log and re-raise the exception
-            logger.error(f"Failed to update note in database: {e}")
+            logger.exception("Failed to update note in database")
             raise
 
         return note
 
-    def delete(self, id: str) -> None:
+    def delete(self, id: str) -> None:  # noqa: A002
         """Delete a note by ID."""
         # Check if note exists
         file_path = self.notes_dir / f"{id}.md"
         if not file_path.exists():
-            raise ValueError(f"Note with ID {id} does not exist")
+            msg = f"Note with ID {id} does not exist"
+            raise ValueError(msg)
 
         # Delete from file system
         try:
             with self.file_lock:
-                os.remove(file_path)
-        except IOError as e:
-            raise IOError(f"Failed to delete note {id}: {e}")
+                file_path.unlink()
+        except OSError as e:
+            msg = f"Failed to delete note {id}: {e}"
+            raise OSError(msg) from e
 
         # Delete from database
         with self.session_factory() as session:
@@ -647,10 +651,12 @@ class NoteRepository(Repository[Note]):
 
             # Delete from FTS5 table
             try:
-                session.execute(text("DELETE FROM notes_fts WHERE id = :id"), {"id": id})
-                logger.debug(f"Deleted note {id} from FTS5 table")
-            except Exception as e:
-                logger.warning(f"Failed to delete note {id} from FTS5: {e}")
+                session.execute(
+                    text("DELETE FROM notes_fts WHERE id = :id"), {"id": id},
+                )
+                logger.debug("Deleted note %s from FTS5 table", id)
+            except Exception as e:  # noqa: BLE001
+                logger.warning("Failed to delete note %s from FTS5: %s", id, e)
 
             session.commit()
 
@@ -659,8 +665,8 @@ class NoteRepository(Repository[Note]):
         query: str,
         limit: int = 100,
         title_weight: float = 10.0,
-        content_weight: float = 1.0
-    ) -> List[Tuple[str, float, str]]:
+        content_weight: float = 1.0,
+    ) -> list[tuple[str, float, str]]:
         """Search notes using FTS5 full-text search.
 
         Args:
@@ -685,13 +691,12 @@ class NoteRepository(Repository[Note]):
         """
         try:
             with self.session_factory() as session:
-                result = session.execute(text("""
+                result = session.execute(text(r"""
                     SELECT
                         id,
                         bm25(notes_fts, :title_weight, :content_weight) as score,
-                        -- snippet parameters: column index 1 targets the content column;
-                        -- <b>/<\/b> are used purely as highlight markers in search result snippets
-                        -- (not rendered HTML), and 64 limits the snippet length for concise context.
+                        -- snippet: col 1=content, <b></b>=highlight markers;
+                        -- length 64 gives concise context (not rendered HTML).
                         snippet(notes_fts, 1, '<b>', '</b>', '...', 64) as snippet
                     FROM notes_fts
                     WHERE notes_fts MATCH :query
@@ -701,22 +706,24 @@ class NoteRepository(Repository[Note]):
                     "query": query,
                     "limit": limit,
                     "title_weight": title_weight,
-                    "content_weight": content_weight
+                    "content_weight": content_weight,
                 })
 
-                results = []
-                for row in result:
-                    results.append((row.id, row.score, row.snippet))
+                results = [(row.id, row.score, row.snippet) for row in result]
 
-                logger.debug(f"FTS5 search for '{query}' returned {len(results)} results")
+                logger.debug(
+                    "FTS5 search for %r returned %s results",
+                    query,
+                    len(results),
+                )
                 return results
 
-        except Exception as e:
-            logger.error(f"FTS5 search failed for query '{query}': {e}")
+        except Exception:
+            logger.exception("FTS5 search failed for query %r", query)
             # Return empty list on error (graceful degradation)
             return []
 
-    def search(self, **kwargs: Any) -> List[Note]:
+    def search(self, **kwargs: Any) -> list[Note]:
         """Search for notes based on criteria."""
         with self.session_factory() as session:
             query = select(DBNote).options(
@@ -732,14 +739,13 @@ class NoteRepository(Repository[Note]):
                     or_(
                         DBNote.content.like(f"%{search_term}%"),
                         DBNote.title.like(f"%{search_term}%"),
-                    )
+                    ),
                 )
             if "title" in kwargs:
                 search_title = kwargs["title"]
-                # query = query.where(DBNote.title.like(f"%{search_title}%"))
                 # Use case-insensitive search with func.lower()
                 query = query.where(
-                    func.lower(DBNote.title).like(f"%{search_title.lower()}%")
+                    func.lower(DBNote.title).like(f"%{search_title.lower()}%"),
                 )
             if "note_type" in kwargs:
                 note_type = (
@@ -758,12 +764,12 @@ class NoteRepository(Repository[Note]):
             if "linked_to" in kwargs:
                 target_id = kwargs["linked_to"]
                 query = query.join(DBNote.outgoing_links).where(
-                    DBLink.target_id == target_id
+                    DBLink.target_id == target_id,
                 )
             if "linked_from" in kwargs:
                 source_id = kwargs["linked_from"]
                 query = query.join(DBNote.incoming_links).where(
-                    DBLink.source_id == source_id
+                    DBLink.source_id == source_id,
                 )
             if "created_after" in kwargs:
                 query = query.where(DBNote.created_at >= kwargs["created_after"])
@@ -784,14 +790,14 @@ class NoteRepository(Repository[Note]):
                 notes.append(note)
         return notes
 
-    def find_by_tag(self, tag: Union[str, Tag]) -> List[Note]:
+    def find_by_tag(self, tag: str | Tag) -> list[Note]:
         """Find notes by tag."""
         tag_name = tag.name if isinstance(tag, Tag) else tag
         return self.search(tag=tag_name)
 
     def find_linked_notes(
-        self, note_id: str, direction: str = "outgoing"
-    ) -> List[Note]:
+        self, note_id: str, direction: str = "outgoing",
+    ) -> list[Note]:
         """Find notes linked to/from this note."""
         with self.session_factory() as session:
             if direction == "outgoing":
@@ -842,8 +848,12 @@ class NoteRepository(Repository[Note]):
                     )
                 )
             else:
+                msg = (
+                    f"Invalid direction: {direction}. "
+                    "Use 'outgoing', 'incoming', or 'both'"
+                )
                 raise ValueError(
-                    f"Invalid direction: {direction}. Use 'outgoing', 'incoming', or 'both'"
+                    msg,
                 )
 
             result = session.execute(query)
@@ -858,9 +868,21 @@ class NoteRepository(Repository[Note]):
                     notes.append(note)
             return notes
 
-    def get_all_tags(self) -> List[Tag]:
+    def get_all_tags(self) -> list[Tag]:
         """Get all tags in the system."""
         with self.session_factory() as session:
             result = session.execute(select(DBTag))
             db_tags = result.scalars().all()
         return [Tag(name=tag.name) for tag in db_tags]
+
+    def get_tags_with_counts(self) -> list[tuple[str, int]]:
+        """Get all tags with their note counts, sorted alphabetically."""
+        with self.session_factory() as session:
+            result = session.execute(text("""
+                SELECT t.name, COUNT(nt.note_id) as count
+                FROM tags t
+                LEFT JOIN note_tags nt ON t.id = nt.tag_id
+                GROUP BY t.id, t.name
+                ORDER BY t.name
+            """))
+            return [(row.name, row.count) for row in result]

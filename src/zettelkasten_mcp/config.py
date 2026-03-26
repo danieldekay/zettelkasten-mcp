@@ -1,7 +1,7 @@
 """Configuration module for the Zettelkasten MCP server."""
 import os
 from pathlib import Path
-from typing import Optional
+
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
@@ -12,23 +12,23 @@ class ZettelkastenConfig(BaseModel):
     """Configuration for the Zettelkasten server."""
     # Base directory for the project
     base_dir: Path = Field(
-        default_factory=lambda: Path(os.getenv("ZETTELKASTEN_BASE_DIR", "."))
+        default_factory=lambda: Path(os.getenv("ZETTELKASTEN_BASE_DIR", ".")),
     )
     # Storage configuration
     notes_dir: Path = Field(
         default_factory=lambda: Path(
-            os.getenv("ZETTELKASTEN_NOTES_DIR", "data/notes")
-        )
+            os.getenv("ZETTELKASTEN_NOTES_DIR", "data/notes"),
+        ),
     )
     # Database configuration
     database_path: Path = Field(
         default_factory=lambda: Path(
-            os.getenv("ZETTELKASTEN_DATABASE_PATH", "data/db/zettelkasten.db")
-        )
+            os.getenv("ZETTELKASTEN_DATABASE_PATH", "data/db/zettelkasten.db"),
+        ),
     )
     # Server configuration
     server_name: str = Field(
-        default=os.getenv("ZETTELKASTEN_SERVER_NAME", "zettelkasten-mcp")
+        default=os.getenv("ZETTELKASTEN_SERVER_NAME", "zettelkasten-mcp"),
     )
     server_version: str = Field(default="1.2.1")
     # Date format for ID generation (using ISO format for timestamps)
@@ -44,19 +44,19 @@ class ZettelkastenConfig(BaseModel):
             "{content}\n\n"
             "## Links\n"
             "{links}\n"
-        )
+        ),
     )
     # FTS5 Full-Text Search configuration
     use_fts5_search: bool = Field(
-        default=os.getenv("USE_FTS5_SEARCH", "false").lower() == "true"
+        default=os.getenv("USE_FTS5_SEARCH", "true").lower() == "true",
     )
-    
+
     def get_absolute_path(self, path: Path) -> Path:
         """Convert a relative path to an absolute path based on base_dir."""
         if path.is_absolute():
             return path
         return self.base_dir / path
-    
+
     def get_db_url(self) -> str:
         """Get the database URL for SQLite."""
         db_path = self.get_absolute_path(self.database_path)
