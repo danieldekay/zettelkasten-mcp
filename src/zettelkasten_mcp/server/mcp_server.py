@@ -10,6 +10,7 @@ from sqlalchemy import exc as sqlalchemy_exc
 
 from zettelkasten_mcp.config import config
 from zettelkasten_mcp.models.schema import LinkType, NoteType
+from zettelkasten_mcp.services.inference_service import InferenceService
 from zettelkasten_mcp.services.search_service import SearchService
 from zettelkasten_mcp.services.zettel_service import ZettelService
 
@@ -133,7 +134,7 @@ class ZettelkastenMcpServer:
             content: str,
             note_type: str = "permanent",
             tags: str | None = None,
-            metadata: str | None = None,
+            metadata: str | dict | None = None,
         ) -> dict:
             """Create a new Zettelkasten note.
             Args:
@@ -142,7 +143,7 @@ class ZettelkastenMcpServer:
                 note_type: Type of note (fleeting, literature, permanent,
                     structure, hub)
                 tags: Comma-separated list of tags (optional)
-                metadata: JSON object string with additional metadata (optional)
+                metadata: Metadata as a JSON string or dict (optional)
 
             Note: The created note will be stored as a markdown file at:
                   {notes_dir}/{note_id}.md
@@ -172,22 +173,25 @@ class ZettelkastenMcpServer:
                 # Parse metadata JSON if provided
                 metadata_dict: dict | None = None
                 if metadata:
-                    try:
-                        metadata_dict = json.loads(metadata)
-                        if not isinstance(metadata_dict, dict):
+                    if isinstance(metadata, dict):
+                        metadata_dict = metadata
+                    else:
+                        try:
+                            metadata_dict = json.loads(metadata)
+                            if not isinstance(metadata_dict, dict):
+                                return {
+                                    "error": True,
+                                    "error_type": "invalid_metadata",
+                                    "message": "metadata must be a JSON object",
+                                    "summary": "Error: metadata must be a JSON object",
+                                }
+                        except json.JSONDecodeError as exc:
                             return {
                                 "error": True,
                                 "error_type": "invalid_metadata",
-                                "message": "metadata must be a JSON object",
-                                "summary": "Error: metadata must be a JSON object",
+                                "message": f"Invalid metadata JSON: {exc}",
+                                "summary": f"Error: Invalid metadata JSON: {exc}",
                             }
-                    except json.JSONDecodeError as exc:
-                        return {
-                            "error": True,
-                            "error_type": "invalid_metadata",
-                            "message": f"Invalid metadata JSON: {exc}",
-                            "summary": f"Error: Invalid metadata JSON: {exc}",
-                        }
 
                 # Create the note
                 note = self.zettel_service.create_note(
@@ -203,11 +207,14 @@ class ZettelkastenMcpServer:
             except Exception as e:  # noqa: BLE001
                 return self.format_error_response(e)
             else:
-                return {
+                result: dict = {
                     "note_id": note.id,
                     "file_path": str(note_file_path),
                     "summary": f"Note created: '{note.title}' ({note.id})",
                 }
+                if not self.zettel_service.repository._db_available:  # noqa: SLF001
+                    result["warning"] = "Note saved to filesystem; DB index unavailable"
+                return result
 
         # Get a note by ID or title
         @self.mcp.tool(name="zk_get_note")
@@ -244,13 +251,13 @@ class ZettelkastenMcpServer:
 
         # Update a note
         @self.mcp.tool(name="zk_update_note")
-        def zk_update_note(
+        def zk_update_note(  # noqa: PLR0912
             note_id: str,
             title: str | None = None,
             content: str | None = None,
             note_type: str | None = None,
             tags: str | None = None,
-            metadata: str | None = None,
+            metadata: str | dict | None = None,
         ) -> dict:
             """Update an existing note.
             Args:
@@ -259,8 +266,8 @@ class ZettelkastenMcpServer:
                 content: New content (optional)
                 note_type: New note type (optional)
                 tags: New comma-separated list of tags (optional)
-                metadata: JSON object string to replace note metadata (optional)
-            """
+                metadata: Metadata as a JSON string or dict to replace note metadata (optional)
+            """  # noqa: E501
             try:
                 # Get the note
                 note = self.zettel_service.get_note(str(note_id))
@@ -296,22 +303,25 @@ class ZettelkastenMcpServer:
                 # Parse metadata JSON if provided
                 metadata_dict: dict | None = None
                 if metadata:
-                    try:
-                        metadata_dict = json.loads(metadata)
-                        if not isinstance(metadata_dict, dict):
+                    if isinstance(metadata, dict):
+                        metadata_dict = metadata
+                    else:
+                        try:
+                            metadata_dict = json.loads(metadata)
+                            if not isinstance(metadata_dict, dict):
+                                return {
+                                    "error": True,
+                                    "error_type": "invalid_metadata",
+                                    "message": "metadata must be a JSON object",
+                                    "summary": "Error: metadata must be a JSON object",
+                                }
+                        except json.JSONDecodeError as exc:
                             return {
                                 "error": True,
                                 "error_type": "invalid_metadata",
-                                "message": "metadata must be a JSON object",
-                                "summary": "Error: metadata must be a JSON object",
+                                "message": f"Invalid metadata JSON: {exc}",
+                                "summary": f"Error: Invalid metadata JSON: {exc}",
                             }
-                    except json.JSONDecodeError as exc:
-                        return {
-                            "error": True,
-                            "error_type": "invalid_metadata",
-                            "message": f"Invalid metadata JSON: {exc}",
-                            "summary": f"Error: Invalid metadata JSON: {exc}",
-                        }
 
                 # Track which fields are being updated
                 updated_fields = []
@@ -588,13 +598,13 @@ class ZettelkastenMcpServer:
                     if source_note:
                         for lnk in source_note.links:
                             if str(lnk.target_id) == str(note.id):
-                                link_type = lnk.link_type.value
+                                link_type = lnk.link_type
                                 link_description = lnk.description
                                 break
                     if link_type is None and direction in ["incoming", "both"]:
                         for lnk in note.links:
                             if str(lnk.target_id) == str(note_id):
-                                link_type = lnk.link_type.value
+                                link_type = lnk.link_type
                                 link_description = lnk.description
                                 break
                     entry["link_type"] = link_type
@@ -819,6 +829,7 @@ class ZettelkastenMcpServer:
 
                 # Perform the rebuild
                 self.zettel_service.rebuild_index()
+                self.search_service.invalidate_tag_cache()
 
                 # Get count after rebuild
                 note_count_after = len(self.zettel_service.get_all_notes())
@@ -835,6 +846,172 @@ class ZettelkastenMcpServer:
                         f"(change: {note_count_after - note_count_before:+d})"
                     ),
                 }
+
+        # Custom link type registration
+        @self.mcp.tool(name="zk_register_link_type")
+        def zk_register_link_type(
+            name: str,
+            inverse: str | None = None,
+            symmetric: bool = False,
+        ) -> dict:
+            """Register a custom project-scoped link type.
+
+            Args:
+                name: Unique type name (e.g. ``"implements"``)
+                inverse: Inverse type name for asymmetric types
+                    (e.g. ``"implemented_by"``). Ignored when
+                    ``symmetric=True``.
+                symmetric: Whether the relationship is symmetric
+                    (e.g. ``"complements"``).
+
+            Returns a dict with ``registered``, ``inverse``, ``symmetric``,
+            and ``summary``. Returns an error if the type already exists.
+            """
+            try:
+                result = self.zettel_service.register_link_type(
+                    name=name,
+                    inverse=inverse,
+                    symmetric=symmetric,
+                )
+            except Exception as e:  # noqa: BLE001
+                return self.format_error_response(e)
+            else:
+                result["summary"] = (
+                    f"Registered link type '{result['registered']}' "
+                    f"(inverse: '{result['inverse']}', symmetric: {result['symmetric']})"  # noqa: E501
+                )
+                return result
+
+        # Tag suggestions
+        @self.mcp.tool(name="zk_suggest_tags")
+        def zk_suggest_tags(content: str, limit: int = 10) -> dict:
+            """Suggest existing tags for new content using TF-IDF.
+
+            Args:
+                content: The note content or title to match against.
+                limit: Maximum number of tag suggestions to return (default 10).
+
+            Returns a dict with ``suggestions`` (list of ``{"tag", "confidence"}``)
+            and ``summary``.
+            """
+            try:
+                suggestions = self.search_service.suggest_tags(content, limit=limit)
+            except Exception as e:  # noqa: BLE001
+                return self.format_error_response(e)
+            else:
+                return {
+                    "suggestions": suggestions,
+                    "summary": f"{len(suggestions)} tag suggestion(s) found",
+                }
+
+        # Link type inference
+        @self.mcp.tool(name="zk_suggest_link_type")
+        def zk_suggest_link_type(source_id: str, target_id: str) -> dict:
+            """Suggest a link type between two notes using heuristic inference.
+
+            Args:
+                source_id: The ID of the source note.
+                target_id: The ID of the target note.
+
+            Returns a dict with ``suggestions`` (list of
+            ``{"link_type", "confidence"}``), ``low_confidence`` flag, and
+            ``summary``.
+            """
+            try:
+                source = self.zettel_service.get_note(source_id)
+                target = self.zettel_service.get_note(target_id)
+                result = InferenceService().suggest_link_type(source, target)
+            except Exception as e:  # noqa: BLE001
+                return self.format_error_response(e)
+            else:
+                top = (
+                    result["suggestions"][0]["link_type"]
+                    if result["suggestions"]
+                    else "reference"
+                )
+                result["summary"] = (
+                    f"Top suggestion: '{top}'"
+                    + (" (low confidence)" if result["low_confidence"] else "")
+                )
+                return result
+
+        # Temporal range query
+        @self.mcp.tool(name="zk_find_notes_in_timerange")
+        def zk_find_notes_in_timerange(
+            start_date: str,
+            end_date: str,
+            date_field: str = "created_at",
+            include_linked: bool = False,
+            note_type: str | None = None,
+            limit: int = 100,
+        ) -> dict:
+            """Find notes created or updated within an ISO 8601 date range.
+
+            Uses a SQLite index for fast filtering — suitable for large collections.
+
+            Args:
+                start_date: ISO 8601 start date (e.g. ``"2026-01-01"``).
+                end_date: ISO 8601 end date, inclusive (e.g. ``"2026-01-31"``).
+                date_field: ``"created_at"`` (default) or ``"updated_at"``.
+                include_linked: Also return notes linked from the primary
+                    result set (neighbours, not recursive).
+                note_type: Optional note type filter (e.g. ``"permanent"``).
+                limit: Maximum number of notes to return (default 100).
+            """
+            try:
+                result = self.zettel_service.find_notes_in_timerange(
+                    start_date=start_date,
+                    end_date=end_date,
+                    date_field=date_field,
+                    include_linked=include_linked,
+                    note_type=note_type,
+                )
+                notes = result["notes"][:limit]
+                note_list = [self._note_summary_dict(n) for n in notes]
+            except Exception as e:  # noqa: BLE001
+                return self.format_error_response(e)
+            else:
+                count = len(note_list)
+                return {
+                    "count": count,
+                    "notes": note_list,
+                    "date_field": date_field,
+                    "summary": (
+                        f"Found {count} notes ({date_field} between "
+                        f"{start_date} and {end_date})"
+                        if count
+                        else f"No notes found ({date_field} between "
+                        f"{start_date} and {end_date})"
+                    ),
+                }
+
+        # Tag co-occurrence cluster analysis
+        @self.mcp.tool(name="zk_analyze_tag_clusters")
+        def zk_analyze_tag_clusters(min_co_occurrence: int = 2) -> dict:
+            """Identify tag groups that frequently co-appear on the same notes.
+
+            Uses a SQL co-occurrence join and union-find clustering — no external
+            graph libraries required.
+
+            Args:
+                min_co_occurrence: Minimum number of shared notes for a tag pair to
+                    be included (default 2).
+            """
+            try:
+                result = self.search_service.analyze_tag_clusters(
+                    min_co_occurrence=min_co_occurrence,
+                )
+            except Exception as e:  # noqa: BLE001
+                return self.format_error_response(e)
+            else:
+                cluster_count = len(result["clusters"])
+                result["summary"] = (
+                    f"Found {cluster_count} tag cluster(s) "
+                    f"(min_co_occurrence={min_co_occurrence})"
+                    if cluster_count
+                    else "No tag clusters found at this threshold"
+                )
+                return result
 
     def _register_resources(self) -> None:
         """Register MCP resources."""
