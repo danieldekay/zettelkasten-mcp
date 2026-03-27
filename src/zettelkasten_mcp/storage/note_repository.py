@@ -18,7 +18,14 @@ from zettelkasten_mcp.models.db_models import (
     get_session_factory,
     init_db,
 )
-from zettelkasten_mcp.models.schema import Link, LinkType, Note, NoteType, Tag
+from zettelkasten_mcp.models.schema import (
+    Link,
+    LinkType,
+    Note,
+    NoteType,
+    Tag,
+    link_type_registry,
+)
 from zettelkasten_mcp.storage.base import Repository
 
 logger = logging.getLogger(__name__)
@@ -50,6 +57,9 @@ class NoteRepository(Repository[Note]):
         # File access lock
         self.file_lock = threading.RLock()
 
+        # Tracks whether the SQLite index is usable at runtime
+        self._db_available: bool = True
+
         # Check if FTS5 table exists and warn if missing
         if not self._check_fts5_table_exists():
             logger.warning(
@@ -65,10 +75,12 @@ class NoteRepository(Repository[Note]):
         """
         try:
             with self.session_factory() as session:
-                result = session.execute(text(
-                    "SELECT name FROM sqlite_master "
-                    "WHERE type='table' AND name='notes_fts'",
-                ))
+                result = session.execute(
+                    text(
+                        "SELECT name FROM sqlite_master "
+                        "WHERE type='table' AND name='notes_fts'",
+                    ),
+                )
                 return result.fetchone() is not None
         except Exception:
             logger.exception("Error checking FTS5 table existence")
@@ -92,14 +104,16 @@ class NoteRepository(Repository[Note]):
             session.execute(text("DROP TABLE IF EXISTS notes_fts"))
 
             # Create FTS5 virtual table
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE VIRTUAL TABLE notes_fts USING fts5(
                     id UNINDEXED,
                     title,
                     content,
                     tokenize='unicode61'
                 )
-            """))
+            """),
+            )
 
             logger.info("FTS5 table created successfully")
         except Exception:
@@ -173,7 +187,7 @@ class NoteRepository(Repository[Note]):
 
         logger.info("Index rebuild complete: %s notes indexed", len(note_files))
 
-    def _parse_note_from_markdown(self, content: str) -> Note:  # noqa: PLR0912, PLR0915
+    def _parse_note_from_markdown(self, content: str) -> Note:  # noqa: PLR0912
         """Parse a note from markdown content."""
         # Parse frontmatter
         post = frontmatter.loads(content)
@@ -247,19 +261,19 @@ class NoteRepository(Repository[Note]):
                         description = None
                         if len(id_and_description) > 1:
                             description = id_and_description[1].strip()
-                        # Validate link type
-                        try:
-                            link_type = LinkType(link_type_str)
-                        except ValueError:
-                            # If not a valid type, default to reference
-                            link_type = LinkType.REFERENCE
+                        # Validate link type using registry (supports custom types)
+                        if not link_type_registry.is_valid(link_type_str):
+                            # Unknown type — treat as reference
+                            link_type_str = LinkType.REFERENCE.value
                         links.append(
                             Link(
                                 source_id=note_id,
                                 target_id=target_id,
-                                link_type=link_type,
+                                link_type=link_type_str,
                                 description=description,
-                                created_at=datetime.datetime.now(tz=datetime.timezone.utc),
+                                created_at=datetime.datetime.now(
+                                    tz=datetime.timezone.utc,
+                                ),
                             ),
                         )
                 except Exception:
@@ -345,7 +359,7 @@ class NoteRepository(Repository[Note]):
                     select(DBLink).where(
                         (DBLink.source_id == link.source_id)
                         & (DBLink.target_id == link.target_id)
-                        & (DBLink.link_type == link.link_type.value),
+                        & (DBLink.link_type == link.link_type),
                     ),
                 )
 
@@ -353,7 +367,7 @@ class NoteRepository(Repository[Note]):
                     db_link = DBLink(
                         source_id=link.source_id,
                         target_id=link.target_id,
-                        link_type=link.link_type.value,
+                        link_type=link.link_type,
                         description=link.description,
                         created_at=link.created_at,
                     )
@@ -442,12 +456,12 @@ class NoteRepository(Repository[Note]):
         if note.links:
             unique_links = {}  # Use dict to deduplicate
             for link in note.links:
-                key = f"{link.target_id}:{link.link_type.value}"
+                key = f"{link.target_id}:{link.link_type}"
                 unique_links[key] = link
             content += "\n\n## Links\n"
             for link in unique_links.values():
                 desc = f" {link.description}" if link.description else ""
-                content += f"- {link.link_type.value} [[{link.target_id}]]{desc}\n"
+                content += f"- {link.link_type} [[{link.target_id}]]{desc}\n"
 
         # Create markdown with frontmatter
         post = frontmatter.Post(content, **metadata)
@@ -473,11 +487,38 @@ class NoteRepository(Repository[Note]):
             msg = f"Failed to write note to {file_path}: {e}"
             raise OSError(msg) from e
 
-        # Index in database
-        self._index_note(note)
+        # Index in database (non-fatal: filesystem write already succeeded)
+        try:
+            self._index_note(note)
+        except Exception:  # noqa: BLE001
+            self._db_available = False
+            logger.warning(
+                "Failed to index note %s in database; filesystem write succeeded",
+                note.id,
+            )
         return note
 
-    def get(self, id: str) -> Note | None:  # noqa: A002
+    def _read_from_markdown(self, note_id: str) -> "Note | None":
+        """Load a note directly from its Markdown file (bypasses the DB index).
+
+        Args:
+            note_id: ID of the note to load.
+
+        Returns:
+            Parsed Note or None if the file does not exist.
+        """
+        file_path = self.notes_dir / f"{note_id}.md"
+        if not file_path.exists():
+            return None
+        try:
+            with file_path.open(encoding="utf-8") as f:
+                content = f.read()
+            return self._parse_note_from_markdown(content)
+        except Exception as e:
+            msg = f"Failed to read note {note_id}: {e}"
+            raise OSError(msg) from e
+
+    def get(self, id: str) -> "Note | None":  # noqa: A002
         """Get a note by ID.
 
         Args:
@@ -486,16 +527,7 @@ class NoteRepository(Repository[Note]):
         Returns:
             Note object if found, None otherwise
         """
-        file_path = self.notes_dir / f"{id}.md"
-        if not file_path.exists():
-            return None
-        try:
-            with file_path.open(encoding="utf-8") as f:
-                content = f.read()
-            return self._parse_note_from_markdown(content)
-        except Exception as e:
-            msg = f"Failed to read note {id}: {e}"
-            raise OSError(msg) from e
+        return self._read_from_markdown(id)
 
     def get_by_title(self, title: str) -> Note | None:
         """Get a note by title."""
@@ -506,36 +538,58 @@ class NoteRepository(Repository[Note]):
             return self.get(db_note.id)
 
     def get_all(self) -> list[Note]:
-        """Get all notes."""
-        with self.session_factory() as session:
-            # Get all notes with eager loading of tags and links
-            query = select(DBNote).options(
-                joinedload(DBNote.tags),
-                joinedload(DBNote.outgoing_links),
-                joinedload(DBNote.incoming_links),
-            )
-            result = session.execute(query)
-            # Apply unique() to handle the duplicate rows from eager loading
-            db_notes = result.unique().scalars().all()
+        """Get all notes.
 
-            # Process notes in batches to reduce memory usage
-            batch_size = 50
-            all_notes = []
-            # Create batches of note IDs
-            note_ids = [note.id for note in db_notes]
-            for i in range(0, len(note_ids), batch_size):
-                batch_ids = note_ids[i : i + batch_size]
-                note_batch = []
-                # Process each note in the batch
-                for note_id in batch_ids:
-                    try:
-                        note = self.get(note_id)
-                        if note:
-                            note_batch.append(note)
-                    except Exception:  # noqa: PERF203
-                        logger.exception("Error loading note %s", note_id)
-                all_notes.extend(note_batch)
-            return all_notes
+        Falls back to a filesystem glob if the database index is unavailable.
+        """
+        if not self._db_available:
+            logger.warning(
+                "Database index unavailable; falling back to filesystem glob for get_all()",  # noqa: E501
+            )
+            notes = []
+            for md_file in sorted(self.notes_dir.glob("*.md")):
+                try:
+                    note = self._read_from_markdown(md_file.stem)
+                    if note:
+                        notes.append(note)
+                except Exception:  # noqa: PERF203
+                    logger.exception("Error loading note from %s", md_file)
+            return notes
+
+        try:
+            with self.session_factory() as session:
+                # Get all notes with eager loading of tags and links
+                query = select(DBNote).options(
+                    joinedload(DBNote.tags),
+                    joinedload(DBNote.outgoing_links),
+                    joinedload(DBNote.incoming_links),
+                )
+                result = session.execute(query)
+                # Apply unique() to handle the duplicate rows from eager loading
+                db_notes = result.unique().scalars().all()
+
+                # Process notes in batches to reduce memory usage
+                batch_size = 50
+                all_notes = []
+                note_ids = [note.id for note in db_notes]
+                for i in range(0, len(note_ids), batch_size):
+                    batch_ids = note_ids[i : i + batch_size]
+                    note_batch = []
+                    for note_id in batch_ids:
+                        try:
+                            note = self.get(note_id)
+                            if note:
+                                note_batch.append(note)
+                        except Exception:  # noqa: PERF203
+                            logger.exception("Error loading note %s", note_id)
+                    all_notes.extend(note_batch)
+                return all_notes
+        except Exception:  # noqa: BLE001
+            self._db_available = False
+            logger.warning(
+                "Database unavailable in get_all(); falling back to filesystem glob",
+            )
+            return self.get_all()  # recursive — _db_available is now False
 
     def update(self, note: Note) -> Note:
         """Update a note."""
@@ -597,7 +651,7 @@ class NoteRepository(Repository[Note]):
                         db_link = DBLink(
                             source_id=link.source_id,
                             target_id=link.target_id,
-                            link_type=link.link_type.value,
+                            link_type=link.link_type,
                             description=link.description,
                             created_at=link.created_at,
                         )
@@ -610,10 +664,13 @@ class NoteRepository(Repository[Note]):
                 else:
                     # Unusual case: create a new database record
                     self._index_note(note)
-        except Exception:
-            # Log and re-raise the exception
-            logger.exception("Failed to update note in database")
-            raise
+        except Exception:  # noqa: BLE001
+            self._db_available = False
+            logger.warning(
+                "Failed to update note %s in database index; "
+                "filesystem write succeeded",
+                note.id,
+            )
 
         return note
 
@@ -652,7 +709,8 @@ class NoteRepository(Repository[Note]):
             # Delete from FTS5 table
             try:
                 session.execute(
-                    text("DELETE FROM notes_fts WHERE id = :id"), {"id": id},
+                    text("DELETE FROM notes_fts WHERE id = :id"),
+                    {"id": id},
                 )
                 logger.debug("Deleted note %s from FTS5 table", id)
             except Exception as e:  # noqa: BLE001
@@ -691,7 +749,8 @@ class NoteRepository(Repository[Note]):
         """
         try:
             with self.session_factory() as session:
-                result = session.execute(text(r"""
+                result = session.execute(
+                    text(r"""
                     SELECT
                         id,
                         bm25(notes_fts, :title_weight, :content_weight) as score,
@@ -702,12 +761,14 @@ class NoteRepository(Repository[Note]):
                     WHERE notes_fts MATCH :query
                     ORDER BY score
                     LIMIT :limit
-                """), {
-                    "query": query,
-                    "limit": limit,
-                    "title_weight": title_weight,
-                    "content_weight": content_weight,
-                })
+                """),
+                    {
+                        "query": query,
+                        "limit": limit,
+                        "title_weight": title_weight,
+                        "content_weight": content_weight,
+                    },
+                )
 
                 results = [(row.id, row.score, row.snippet) for row in result]
 
@@ -796,7 +857,9 @@ class NoteRepository(Repository[Note]):
         return self.search(tag=tag_name)
 
     def find_linked_notes(
-        self, note_id: str, direction: str = "outgoing",
+        self,
+        note_id: str,
+        direction: str = "outgoing",
     ) -> list[Note]:
         """Find notes linked to/from this note."""
         with self.session_factory() as session:
@@ -878,11 +941,234 @@ class NoteRepository(Repository[Note]):
     def get_tags_with_counts(self) -> list[tuple[str, int]]:
         """Get all tags with their note counts, sorted alphabetically."""
         with self.session_factory() as session:
-            result = session.execute(text("""
+            result = session.execute(
+                text("""
                 SELECT t.name, COUNT(nt.note_id) as count
                 FROM tags t
                 LEFT JOIN note_tags nt ON t.id = nt.tag_id
                 GROUP BY t.id, t.name
                 ORDER BY t.name
-            """))
+            """),
+            )
             return [(row.name, row.count) for row in result]
+
+    def find_in_timerange(
+        self,
+        start: datetime.datetime,
+        end: datetime.datetime,
+        date_field: str = "created_at",
+        note_type: str | None = None,
+        include_linked: bool = False,
+    ) -> list[Note]:
+        """Find notes within a date range using a DB index query.
+
+        Args:
+            start: Start of the date range (inclusive).
+            end: End of the date range (inclusive).
+            date_field: ``"created_at"`` (default) or ``"updated_at"``.
+            note_type: Optional note type filter (e.g. ``"permanent"``).
+            include_linked: When True, also fetch notes linked from the primary
+                result set (one extra IN clause, no recursion).
+
+        Returns:
+            List of Note objects sorted by the selected date field (descending).
+
+        Raises:
+            ValueError: If ``date_field`` is not ``"created_at"`` or
+                ``"updated_at"``.
+        """
+        if date_field not in ("created_at", "updated_at"):
+            msg = f"date_field must be 'created_at' or 'updated_at', got '{date_field}'"
+            raise ValueError(msg)
+
+        col = DBNote.created_at if date_field == "created_at" else DBNote.updated_at
+
+        with self.session_factory() as session:
+            stmt = (
+                select(DBNote)
+                .where(col >= start, col <= end)
+                .options(
+                    joinedload(DBNote.tags),
+                    joinedload(DBNote.outgoing_links),
+                )
+            )
+            if note_type:
+                stmt = stmt.where(DBNote.note_type == note_type)
+
+            db_notes = session.execute(stmt).unique().scalars().all()
+            primary_ids = [n.id for n in db_notes]
+
+            linked_ids: list[str] = []
+            if include_linked and primary_ids:
+                linked_stmt = (
+                    select(DBNote.id)
+                    .join(DBLink, DBNote.id == DBLink.target_id)
+                    .where(
+                        DBLink.source_id.in_(primary_ids),
+                        DBNote.id.notin_(primary_ids),
+                    )
+                )
+                linked_ids = list(session.execute(linked_stmt).scalars().all())
+
+        notes = []
+        for note_id in primary_ids:
+            note = self.get(note_id)
+            if note:
+                notes.append(note)
+
+        seen = set(primary_ids)
+        for note_id in linked_ids:
+            if note_id not in seen:
+                note = self.get(note_id)
+                if note:
+                    notes.append(note)
+                    seen.add(note_id)
+
+        def _naive(dt: datetime.datetime | None) -> datetime.datetime:
+            if dt is None:
+                return datetime.datetime.min
+            return dt.replace(tzinfo=None) if dt.tzinfo is not None else dt
+
+        sort_key = (
+            (lambda n: _naive(n.created_at)) if date_field == "created_at"
+            else (lambda n: _naive(n.updated_at))
+        )
+        notes.sort(key=sort_key, reverse=True)
+        return notes
+
+    def create_batch(self, notes: list[Note]) -> list[Note]:
+        """Create multiple notes atomically in one transaction.
+
+        Writes all Markdown files first, then commits all DB records in one
+        session.commit(). On any failure, already-written files are deleted
+        and the exception is re-raised so the caller can handle rollback.
+
+        Args:
+            notes: List of Note objects to create. IDs are generated if absent.
+
+        Returns:
+            List of created Note objects with IDs populated.
+
+        Raises:
+            ValueError: If any note fails validation before any writes occur.
+            OSError: If a file cannot be written.
+            Exception: On DB error; written files are cleaned up before re-raise.
+        """
+        from zettelkasten_mcp.models.schema import generate_id  # noqa: PLC0415
+
+        # Assign IDs and validate before any IO
+        for note in notes:
+            if not note.id:
+                note.id = generate_id()
+            if not note.title:
+                msg = f"Note at index {notes.index(note)} has an empty title"
+                raise ValueError(msg)
+            if not note.content:
+                msg = f"Note at index {notes.index(note)} has empty content"
+                raise ValueError(msg)
+
+        written_paths: list[Path] = []
+        try:
+            # Write all files first
+            for note in notes:
+                markdown = self._note_to_markdown(note)
+                file_path = self.notes_dir / f"{note.id}.md"
+                with self.file_lock, file_path.open("w", encoding="utf-8") as f:
+                    f.write(markdown)
+                written_paths.append(file_path)
+
+            # Commit all DB records in one transaction
+            with self.session_factory() as session:
+                for note in notes:
+                    db_note = DBNote(
+                        id=note.id,
+                        title=note.title,
+                        content=note.content,
+                        note_type=note.note_type.value,
+                        created_at=note.created_at,
+                        updated_at=note.updated_at,
+                    )
+                    session.add(db_note)
+                    session.flush()
+
+                    for tag in note.tags:
+                        db_tag = session.scalar(
+                            select(DBTag).where(DBTag.name == tag.name),
+                        )
+                        if not db_tag:
+                            db_tag = DBTag(name=tag.name)
+                            session.add(db_tag)
+                            session.flush()
+                        if db_tag not in db_note.tags:
+                            db_note.tags.append(db_tag)
+
+                    for link in note.links:
+                        db_link = DBLink(
+                            source_id=link.source_id,
+                            target_id=link.target_id,
+                            link_type=link.link_type,
+                            description=link.description,
+                            created_at=link.created_at,
+                        )
+                        session.add(db_link)
+
+                    self._sync_note_to_fts5(session, note)
+
+                session.commit()
+        except Exception:
+            # Clean up written files on any failure
+            for path in written_paths:
+                try:
+                    path.unlink(missing_ok=True)
+                except OSError:  # noqa: PERF203
+                    logger.warning(
+                        "Could not remove partial file %s during rollback",
+                        path,
+                    )
+            raise
+
+        return notes
+
+    def create_links_batch(self, source_id: str, links: list[dict]) -> int:
+        """Create multiple links from source_id in one transaction.
+
+        Args:
+            source_id: ID of the source note for all links.
+            links: List of dicts with keys ``target_id``, ``link_type``,
+                and optional ``description``.
+
+        Returns:
+            Number of links created.
+
+        Raises:
+            ValueError: If any link_type is invalid.
+            Exception: On DB error (full rollback via session context manager).
+        """
+        db_links = []
+        for i, link_def in enumerate(links):
+            raw_type = link_def.get("link_type", LinkType.REFERENCE.value)
+            if not link_type_registry.is_valid(raw_type):
+                msg = (
+                    f"Link at index {i} has invalid link_type '{raw_type}'. "
+                    f"Valid types: {', '.join(link_type_registry.all_types())}"
+                )
+                raise ValueError(msg)
+            db_links.append(
+                DBLink(
+                    source_id=source_id,
+                    target_id=link_def["target_id"],
+                    link_type=raw_type,
+                    description=link_def.get("description"),
+                    created_at=link_def.get(
+                        "created_at",
+                        datetime.datetime.now(datetime.timezone.utc),
+                    ),
+                ),
+            )
+
+        with self.session_factory() as session:
+            for db_link in db_links:
+                session.add(db_link)
+            session.commit()
+
+        return len(db_links)
