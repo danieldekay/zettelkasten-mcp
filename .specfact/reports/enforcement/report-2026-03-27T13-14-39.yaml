@@ -1,0 +1,50 @@
+total_duration: 7.803858280181885
+total_checks: 3
+passed_checks: 2
+failed_checks: 1
+timeout_checks: 0
+skipped_checks: 0
+budget_exceeded: false
+checks:
+- name: Linting (ruff)
+  tool: ruff
+  status: failed
+  duration: 0.22142791748046875
+  exit_code: 1
+  timeout: false
+  output_length: 6656
+  error_length: 0
+  findings:
+    violations: []
+    total_violations: 0
+    files_checked: 0
+- name: Type checking (basedpyright)
+  tool: basedpyright
+  status: passed
+  duration: 4.610792398452759
+  exit_code: 0
+  timeout: false
+  output_length: 30
+  error_length: 0
+  findings:
+    errors: []
+    warnings: []
+    total_errors: 0
+    total_warnings: 0
+- name: Contract exploration (CrossHair)
+  tool: crosshair
+  status: passed
+  duration: 2.884953260421753
+  exit_code: 0
+  timeout: false
+  output_length: 0
+  error_length: 546
+  findings:
+    counterexamples: []
+    total_counterexamples: 0
+metadata:
+  timestamp: '2026-03-27T13:14:31.985901'
+  repo_path: /home/kaesmad/projects/external/zettelkasten-mcp
+  budget: 120
+  enforcement_config_path: .specfact/gates/config/enforcement.yaml
+  enforcement_preset: minimal
