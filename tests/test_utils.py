@@ -3,7 +3,7 @@
 
 import re
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -57,7 +57,7 @@ class TestFormatNoteForDisplay:
     """Tests for format_note_for_display."""
 
     def _make_dt(self):
-        return datetime(2024, 1, 15, 10, 30, 0)
+        return datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
 
     def test_basic_format(self):
         result = format_note_for_display(
@@ -154,16 +154,16 @@ class TestConfig:
     """Tests for config utility methods."""
 
     def test_get_absolute_path_absolute_input(self, tmp_path):
-        from zettelkasten_mcp.config import ZettelkastenConfig
+        from zettelkasten_mcp.config import ZettelkastenConfig  # noqa: PLC0415
 
         cfg = ZettelkastenConfig(base_dir=tmp_path)
         result = cfg.get_absolute_path(tmp_path / "subdir")
         assert result == tmp_path / "subdir"
 
     def test_get_absolute_path_relative_input(self, tmp_path):
-        from pathlib import Path
+        from pathlib import Path  # noqa: PLC0415
 
-        from zettelkasten_mcp.config import ZettelkastenConfig
+        from zettelkasten_mcp.config import ZettelkastenConfig  # noqa: PLC0415
 
         cfg = ZettelkastenConfig(base_dir=tmp_path)
         result = cfg.get_absolute_path(Path("data/notes"))

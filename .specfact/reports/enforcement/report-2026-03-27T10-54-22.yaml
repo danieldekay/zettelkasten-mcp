@@ -1,0 +1,160 @@
+total_duration: 20.953480005264282
+total_checks: 3
+passed_checks: 1
+failed_checks: 2
+timeout_checks: 0
+skipped_checks: 0
+budget_exceeded: false
+checks:
+- name: Linting (ruff)
+  tool: ruff
+  status: failed
+  duration: 2.648789882659912
+  exit_code: 1
+  timeout: false
+  output_length: 31484
+  error_length: 230
+  findings:
+    violations: []
+    total_violations: 0
+    files_checked: 0
+- name: Type checking (basedpyright)
+  tool: basedpyright
+  status: failed
+  duration: 15.617066860198975
+  exit_code: 1
+  timeout: false
+  output_length: 6755
+  error_length: 0
+  findings:
+    errors:
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/models/schema.py
+      line: 90
+      column: 5
+      message: Declaration "_built_in" is obscured by a declaration of the same 
+        name (reportRedeclaration)
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/models/schema.py
+      line: 91
+      column: 5
+      message: Declaration "_custom" is obscured by a declaration of the same 
+        name (reportRedeclaration)
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/models/schema.py
+      line: 157
+      column: 37
+      message: '"Path" is not defined (reportUndefinedVariable)'
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_integration.py
+      line: 224
+      column: 72
+      message: '"content" is not a known attribute of "None" (reportOptionalMemberAccess)'
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_integration.py
+      line: 234
+      column: 28
+      message: '"content" is not a known attribute of "None" (reportOptionalMemberAccess)'
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_models.py
+      line: 50
+      column: 13
+      message: Argument missing for parameter "content" (reportCallIssue)
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_models.py
+      line: 148
+      column: 13
+      message: Argument missing for parameter "source_id" (reportCallIssue)
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_models.py
+      line: 151
+      column: 13
+      message: Argument missing for parameter "target_id" (reportCallIssue)
+    warnings:
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/server/mcp_server.py
+      line: 923
+      column: 63
+      message: Argument of type "Note | None" cannot be assigned to parameter 
+        "source" of type "Note" in function "suggest_link_type"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/server/mcp_server.py
+      line: 923
+      column: 71
+      message: Argument of type "Note | None" cannot be assigned to parameter 
+        "target" of type "Note" in function "suggest_link_type"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/services/search_service.py
+      line: 144
+      column: 25
+      message: Argument of type "bool" cannot be assigned to parameter 
+        "initial_clause" of type "_ColumnExpressionArgument[bool] | 
+        Literal[False]" in function "or_"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/services/search_service.py
+      line: 145
+      column: 25
+      message: Argument of type "bool" cannot be assigned to parameter "clauses"
+        of type "_ColumnExpressionArgument[bool]" in function "or_"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/services/search_service.py
+      line: 613
+      column: 13
+      message: Argument of type "tuple[Unknown, list[LiteralString] | Unknown]" 
+        cannot be assigned to parameter "value" of type "tuple[int, list[str]]" 
+        in function "__setitem__"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 270
+      column: 43
+      message: Argument of type "object" cannot be assigned to parameter 
+        "source_id" of type "str" in function "__init__"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 285
+      column: 45
+      message: Argument of type "object" cannot be assigned to parameter 
+        "date_string" of type "str" in function "fromisoformat"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 291
+      column: 45
+      message: Argument of type "object" cannot be assigned to parameter 
+        "date_string" of type "str" in function "fromisoformat"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 296
+      column: 16
+      message: Argument of type "object" cannot be assigned to parameter "id" of
+        type "str" in function "__init__"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 297
+      column: 19
+      message: Argument of type "str | object" cannot be assigned to parameter 
+        "title" of type "str" in function "__init__"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_mcp_server.py
+      line: 888
+      column: 47
+      message: Argument of type "None" cannot be assigned to parameter "orig" of
+        type "BaseException" in function "__init__"
+    total_errors: 8
+    total_warnings: 11
+- name: Contract exploration (CrossHair)
+  tool: crosshair
+  status: passed
+  duration: 2.592290163040161
+  exit_code: 0
+  timeout: false
+  output_length: 0
+  error_length: 546
+  findings:
+    counterexamples: []
+    total_counterexamples: 0
+metadata:
+  timestamp: '2026-03-27T10:54:01.820040'
+  repo_path: /home/kaesmad/projects/external/zettelkasten-mcp
+  budget: 120
+  enforcement_config_path: .specfact/gates/config/enforcement.yaml
+  enforcement_preset: minimal

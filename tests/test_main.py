@@ -9,14 +9,14 @@ class TestParseArgs:
     """Tests for parse_args."""
 
     def test_defaults(self):
-        from zettelkasten_mcp.main import parse_args
+        from zettelkasten_mcp.main import parse_args  # noqa: PLC0415
 
         with patch.object(sys, "argv", ["prog"]):
             args = parse_args()
         assert args.log_level == "INFO"
 
     def test_custom_args(self, tmp_path):
-        from zettelkasten_mcp.main import parse_args
+        from zettelkasten_mcp.main import parse_args  # noqa: PLC0415
 
         db_path = str(tmp_path / "db.sqlite")
         notes_path = str(tmp_path / "notes")
@@ -43,17 +43,17 @@ class TestUpdateConfig:
     """Tests for update_config."""
 
     def test_updates_notes_dir(self, tmp_path):
-        from argparse import Namespace
+        from argparse import Namespace  # noqa: PLC0415
 
-        from zettelkasten_mcp.main import update_config
+        from zettelkasten_mcp.main import update_config  # noqa: PLC0415
 
         args = Namespace(notes_dir=str(tmp_path / "notes"), database_path=None)
         update_config(args)
 
     def test_no_update_when_none(self):
-        from argparse import Namespace
+        from argparse import Namespace  # noqa: PLC0415
 
-        from zettelkasten_mcp.main import update_config
+        from zettelkasten_mcp.main import update_config  # noqa: PLC0415
 
         args = Namespace(notes_dir=None, database_path=None)
         update_config(args)
@@ -63,7 +63,7 @@ class TestMain:
     """Tests for the main() function."""
 
     def test_main_starts_server(self, tmp_path):
-        from zettelkasten_mcp.main import main
+        from zettelkasten_mcp.main import main  # noqa: PLC0415
 
         notes_dir = tmp_path / "notes"
         notes_dir.mkdir()
@@ -94,7 +94,7 @@ class TestMain:
         mock_server.run.assert_called_once()
 
     def test_main_exits_on_db_error(self, tmp_path):
-        from zettelkasten_mcp.main import main
+        from zettelkasten_mcp.main import main  # noqa: PLC0415
 
         notes_dir = tmp_path / "notes"
         notes_dir.mkdir()
@@ -121,7 +121,7 @@ class TestMain:
         mock_exit.assert_called_with(1)
 
     def test_main_exits_on_server_error(self, tmp_path):
-        from zettelkasten_mcp.main import main
+        from zettelkasten_mcp.main import main  # noqa: PLC0415
 
         notes_dir = tmp_path / "notes"
         notes_dir.mkdir()

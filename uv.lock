@@ -1089,6 +1089,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyan3"
+version = "2.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jinja2" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5a/01/756bf3f3d7fcb3fb1491c45680a34a168266bc4a796ec43ac2356b067e0e/pyan3-2.2.2.tar.gz", hash = "sha256:420496c29469cc1cec5cbb2d039526ba87fd506ed73a1fce1b4e37d11a247923", size = 74594, upload-time = "2026-03-22T23:44:41.325Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/9b/b7562cf3c885c287fafb7209b646c7522fa945e91c78b576073f0214f123/pyan3-2.2.2-py3-none-any.whl", hash = "sha256:3097909928a4733ac0263cf8fd636468f0f1c85ae09fc7494eb82df14a990703", size = 75901, upload-time = "2026-03-22T23:44:39.402Z" },
+]
+
+[[package]]
 name = "pycparser"
 version = "3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1778,6 +1790,15 @@ wheels = [
 ]
 
 [[package]]
+name = "types-pyyaml"
+version = "6.0.12.20250915"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7e/69/3c51b36d04da19b92f9e815be12753125bd8bc247ba0470a982e6979e71c/types_pyyaml-6.0.12.20250915.tar.gz", hash = "sha256:0f8b54a528c303f0e6f7165687dd33fafa81c807fcac23f632b63aa624ced1d3", size = 17522, upload-time = "2025-09-15T03:01:00.728Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/e0/1eed384f02555dde685fff1a1ac805c1c7dcb6dd019c916fe659b1c1f9ec/types_pyyaml-6.0.12.20250915-py3-none-any.whl", hash = "sha256:e7d4d9e064e89a3b3cae120b4990cd370874d2bf12fa5f46c97018dd5d3c9ab6", size = 20338, upload-time = "2025-09-15T03:00:59.218Z" },
+]
+
+[[package]]
 name = "typeshed-client"
 version = "2.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1878,7 +1899,7 @@ wheels = [
 
 [[package]]
 name = "zettelkasten-mcp"
-version = "1.2.1"
+version = "1.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "markdown" },
@@ -1897,6 +1918,7 @@ dev = [
     { name = "crosshair-tool" },
     { name = "mypy" },
     { name = "pre-commit" },
+    { name = "pyan3" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1904,6 +1926,12 @@ dev = [
     { name = "ruff" },
     { name = "safety" },
     { name = "types-markdown" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pyan3" },
+    { name = "types-pyyaml" },
 ]
 
 [package.metadata]
@@ -1916,6 +1944,7 @@ requires-dist = [
     { name = "mcp", extras = ["cli"], specifier = ">=1.2.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
+    { name = "pyan3", marker = "extra == 'dev'", specifier = ">=1.1.1" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
@@ -1929,6 +1958,12 @@ requires-dist = [
     { name = "types-markdown", marker = "extra == 'dev'", specifier = ">=3.4.0" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pyan3", specifier = ">=2.2.2" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
+]
 
 [[package]]
 name = "zipp"

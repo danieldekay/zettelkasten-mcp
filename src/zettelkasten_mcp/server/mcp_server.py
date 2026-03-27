@@ -1,4 +1,5 @@
 """MCP server implementation for the Zettelkasten."""
+
 import json
 import logging
 import uuid
@@ -22,11 +23,13 @@ _CONTENT_PREVIEW_LEN = 100
 
 class ToolResponse(TypedDict, total=False):
     """Base type for all MCP tool responses. Every response MUST include `summary`."""
+
     summary: str
 
 
 class ZettelkastenMcpServer:
     """MCP server for Zettelkasten."""
+
     def __init__(self) -> None:
         """Initialize the MCP server."""
         self.mcp = FastMCP(
@@ -127,6 +130,7 @@ class ZettelkastenMcpServer:
 
     def _register_tools(self) -> None:  # noqa: PLR0915
         """Register MCP tools."""
+
         # Create a new note
         @self.mcp.tool(name="zk_create_note")
         def zk_create_note(
@@ -452,6 +456,7 @@ class ZettelkastenMcpServer:
                         f"{source_id} → {target_id} ({link_type})"
                     ),
                 }
+
         self.zk_create_link = zk_create_link
 
         # Remove a link between notes
@@ -582,7 +587,8 @@ class ZettelkastenMcpServer:
                     }
                 # Get linked notes
                 linked_notes = self.zettel_service.get_linked_notes(
-                    str(note_id), direction,
+                    str(note_id),
+                    direction,
                 )
                 # Fetch source note once for link type lookup
                 source_note = (
@@ -625,6 +631,7 @@ class ZettelkastenMcpServer:
                         else f"No {direction} links found for note {note_id}"
                     ),
                 }
+
         self.zk_get_linked_notes = zk_get_linked_notes
 
         # Get all tags
@@ -637,16 +644,13 @@ class ZettelkastenMcpServer:
                 return self.format_error_response(e)
             else:
                 tag_list = [
-                    {"name": name, "count": count}
-                    for name, count in tags_with_counts
+                    {"name": name, "count": count} for name, count in tags_with_counts
                 ]
                 return {
                     "tags": tag_list,
                     "total": len(tag_list),
                     "summary": (
-                        f"Found {len(tag_list)} tags"
-                        if tag_list
-                        else "No tags found"
+                        f"Found {len(tag_list)} tags" if tag_list else "No tags found"
                     ),
                 }
 
@@ -669,7 +673,8 @@ class ZettelkastenMcpServer:
             try:
                 # Get similar notes
                 similar_notes = self.zettel_service.find_similar_notes(
-                    str(note_id), threshold,
+                    str(note_id),
+                    threshold,
                 )
                 similar_notes = similar_notes[:limit]
                 note_list = []
@@ -920,6 +925,10 @@ class ZettelkastenMcpServer:
             try:
                 source = self.zettel_service.get_note(source_id)
                 target = self.zettel_service.get_note(target_id)
+                if source is None or target is None:
+                    return self.format_error_response(
+                        ValueError("Source or target note not found")
+                    )
                 result = InferenceService().suggest_link_type(source, target)
             except Exception as e:  # noqa: BLE001
                 return self.format_error_response(e)
@@ -929,9 +938,8 @@ class ZettelkastenMcpServer:
                     if result["suggestions"]
                     else "reference"
                 )
-                result["summary"] = (
-                    f"Top suggestion: '{top}'"
-                    + (" (low confidence)" if result["low_confidence"] else "")
+                result["summary"] = f"Top suggestion: '{top}'" + (
+                    " (low confidence)" if result["low_confidence"] else ""
                 )
                 return result
 

@@ -87,13 +87,14 @@ class TestIntegration:
         assert note_file.exists(), "Note file was not created on disk"
 
         # Verify file content
-        with open(note_file) as f:
+        with note_file.open() as f:
             file_content = f.read()
             assert title in file_content
             assert content in file_content
 
     def test_knowledge_graph_flow(self):
-        """Test creating a small knowledge graph with links and semantic relationships."""
+        """Test creating a small knowledge graph with links and semantic
+        relationships."""
         # Create several notes to form a knowledge graph
         hub_note = self.zettel_service.create_note(
             title="Knowledge Graph Hub",
@@ -203,7 +204,7 @@ class TestIntegration:
         assert note_file.exists(), "Note file was not created on disk"
 
         # Read the current file content
-        with open(note_file) as f:
+        with note_file.open() as f:
             file_content = f.read()
 
         # Modify the file content directly, ensuring we replace the content part only
@@ -215,13 +216,15 @@ class TestIntegration:
         )
 
         # Write the modified content back
-        with open(note_file, "w") as f:
+        with note_file.open("w") as f:
             f.write(modified_content)
 
         # At this point, the file has been modified but the database hasn't been updated
 
         # Verify the database still has old content by reading through the repository
-        modified_file_content = self.zettel_service.get_note(note1.id).content
+        note_from_db = self.zettel_service.get_note(note1.id)
+        assert note_from_db is not None
+        modified_file_content = note_from_db.content
         assert "manually edited" in modified_file_content
 
         # Rebuild the index
@@ -229,6 +232,7 @@ class TestIntegration:
 
         # Verify the note now has the updated content
         note1_after = self.zettel_service.get_note(note1.id)
+        assert note1_after is not None
         assert (
             "This content was manually edited outside the system."
             in note1_after.content

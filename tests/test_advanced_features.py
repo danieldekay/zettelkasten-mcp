@@ -57,7 +57,12 @@ class TestLinkTypeRegistry:
 
     def test_builtin_types_present(self):
         for builtin in (
-            "reference", "extends", "refines", "supports", "contradicts", "related",
+            "reference",
+            "extends",
+            "refines",
+            "supports",
+            "contradicts",
+            "related",
         ):
             assert self.registry.is_valid(builtin), f"Built-in '{builtin}' missing"
 
@@ -125,7 +130,8 @@ class TestInferenceService:
     def test_confident_match_extends(self):
         source = _make_note("Base concept", "This is the foundational idea.")
         target = _make_note(
-            "Extended concept", "This builds upon and expands the base concept.",
+            "Extended concept",
+            "This builds upon and expands the base concept.",
         )
         result = self.svc.suggest_link_type(source, target)
         assert "suggestions" in result
@@ -135,7 +141,8 @@ class TestInferenceService:
 
     def test_confident_match_contradicts(self):
         source = _make_note(
-            "A", "This argument strongly contradicts and opposes the other view.",
+            "A",
+            "This argument strongly contradicts and opposes the other view.",
         )
         target = _make_note("B", "The opposing view.")
         result = self.svc.suggest_link_type(source, target)
@@ -158,7 +165,8 @@ class TestInferenceService:
 
     def test_max_three_suggestions(self):
         source = _make_note(
-            "P", "This builds expands contradicts opposes questions evidence.",
+            "P",
+            "This builds expands contradicts opposes questions evidence.",
         )
         target = _make_note("Q", "A comprehensive note.")
         result = self.svc.suggest_link_type(source, target)
@@ -273,7 +281,8 @@ class TestTagSuggestions:
 
     def test_limit_respected(self):
         suggestions = self.search.suggest_tags(
-            "some content about learning and programming", limit=2,
+            "some content about learning and programming",
+            limit=2,
         )
         assert len(suggestions) <= 2
 
@@ -348,7 +357,9 @@ class TestGracefulDegradation:
             note_type=NoteType.PERMANENT,
         )
         with patch.object(
-            repo_with_temp, "_index_note", side_effect=RuntimeError("db down"),
+            repo_with_temp,
+            "_index_note",
+            side_effect=RuntimeError("db down"),
         ):
             created = repo_with_temp.create(note)
 
@@ -381,9 +392,14 @@ class TestGracefulDegradation:
             content="content",
             note_type=NoteType.PERMANENT,
         )
-        with patch.object(
-            repo_with_temp, "_index_note", side_effect=RuntimeError("db down"),
-        ), caplog.at_level(logging.WARNING):
+        with (
+            patch.object(
+                repo_with_temp,
+                "_index_note",
+                side_effect=RuntimeError("db down"),
+            ),
+            caplog.at_level(logging.WARNING),
+        ):
             repo_with_temp.create(note)
 
         assert any("filesystem write succeeded" in r.message for r in caplog.records)
@@ -397,6 +413,7 @@ class TestGracefulDegradation:
             def wrapper(func):
                 registered_tools[kwargs.get("name")] = func
                 return func
+
             return wrapper
 
         mock_mcp.tool = capture_tool
@@ -411,13 +428,17 @@ class TestGracefulDegradation:
 
         with (
             patch("zettelkasten_mcp.server.mcp_server.FastMCP", return_value=mock_mcp),
-            patch("zettelkasten_mcp.server.mcp_server.ZettelService", return_value=mock_zettel),  # noqa: E501
+            patch(
+                "zettelkasten_mcp.server.mcp_server.ZettelService",
+                return_value=mock_zettel,
+            ),
             patch("zettelkasten_mcp.server.mcp_server.SearchService"),
         ):
             ZettelkastenMcpServer()
 
         result = registered_tools["zk_create_note"](
-            title="DB-down note", content="test content",
+            title="DB-down note",
+            content="test content",
         )
         assert "warning" in result
         assert "DB index unavailable" in result["warning"]
