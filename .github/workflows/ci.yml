@@ -50,7 +50,7 @@ jobs:
         run: uv run bandit -r src/
 
       - name: Dependency vulnerability check with safety
-        run: uv run safety scan --output text
+        run: uv run safety scan --output screen
 
       - name: Test with pytest
         run: uv run pytest --cov --cov-report=xml
