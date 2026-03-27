@@ -23,7 +23,7 @@ build/
 
 # IDE specific files
 .idea/
-.vscode/
+# .vscode/ - commented out to include workspace settings in repo
 *.swp
 *.swo
 .DS_Store
@@ -40,6 +40,7 @@ logs/
 .coverage
 htmlcov/
 .pytest_cache/
+fts5_testing/
 
 # Local configuration
 config.local.json
@@ -54,6 +55,9 @@ temp/
 .repomix
 repomix-output.txt
 repomix-output.xml
+
+# SpecFact run reports (generated artifacts — retained via CI artifact uploads)
+.specfact/reports/
 
 # Data files
 data/db/*.db

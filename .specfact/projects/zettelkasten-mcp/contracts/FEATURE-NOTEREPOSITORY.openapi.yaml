@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: Note Repository
+  version: 1.0.0
+  description: API contract extracted from code for Note Repository
+paths:
+  /note-repository/rebuild-index:
+    get:
+      operationId: rebuild_index
+      summary: Rebuild Index
+      description: 'Rebuild the database index from all markdown files.
+
+
+        This includes:
+
+        - Clearing all tables (notes, links, note_tags)
+
+        - Recreating FTS5 full-text search table
+
+        - Re-indexing all markdown files from disk'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - NoteRepository
+  /note-repository:
+    post:
+      operationId: create
+      summary: Create
+      description: Create a new note.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      tags:
+      - NoteRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Note'
+    put:
+      operationId: update
+      summary: Update
+      description: Update a note.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      tags:
+      - NoteRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Note'
+  /note-repository/{id}:
+    get:
+      operationId: get
+      summary: Get
+      description: "Get a note by ID.\n\nArgs:\n    id: The ISO 8601 formatted identifier\
+        \ of the note\n\nReturns:\n    Note object if found, None otherwise"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          description: Not Found
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      tags:
+      - NoteRepository
+    delete:
+      operationId: delete
+      summary: Delete
+      description: Delete a note by ID.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      tags:
+      - NoteRepository
+  /note-repository/search:
+    get:
+      operationId: search
+      summary: Search
+      description: Search for notes based on criteria.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - NoteRepository
+components:
+  schemas: {}

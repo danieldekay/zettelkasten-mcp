@@ -170,7 +170,9 @@ Add the following configuration to your Claude Desktop:
       "env": {
         "ZETTELKASTEN_NOTES_DIR": "/absolute/path/to/zettelkasten-mcp/data/notes",
         "ZETTELKASTEN_DATABASE_PATH": "/absolute/path/to/zettelkasten-mcp/data/db/zettelkasten.db",
-        "ZETTELKASTEN_LOG_LEVEL": "INFO"
+        "ZETTELKASTEN_LOG_LEVEL": "INFO",
+        "ZETTELKASTEN_AUTO_REBUILD_THRESHOLD": "5",
+        "ZETTELKASTEN_CUSTOM_LINK_TYPES_PATH": "/absolute/path/to/custom_link_types.yaml"
       }
     }
   }
@@ -181,40 +183,67 @@ Add the following configuration to your Claude Desktop:
 
 All tools have been prefixed with `zk_` for better organization:
 
-| Tool | Description |
-|---|---|
-| `zk_create_note` | Create a new note with a title, content, and optional tags |
-| `zk_get_note` | Retrieve a specific note by ID or title |
-| `zk_update_note` | Update an existing note's content or metadata |
-| `zk_delete_note` | Delete a note |
-| `zk_create_link` | Create links between notes |
-| `zk_remove_link` | Remove links between notes |
-| `zk_search_notes` | Search for notes by content, tags, or links |
-| `zk_get_linked_notes` | Find notes linked to a specific note |
-| `zk_get_all_tags` | List all tags in the system |
-| `zk_find_similar_notes` | Find notes similar to a given note |
-| `zk_find_central_notes` | Find notes with the most connections |
-| `zk_find_orphaned_notes` | Find notes with no connections |
-| `zk_list_notes_by_date` | List notes by creation/update date |
-| `zk_rebuild_index` | Rebuild the database index from Markdown files |
+| Tool | Description | Response Keys |
+|---|---|---|
+| `zk_create_note` | Create a new note with a title, content, and optional tags | `note_id`, `file_path`, `summary` |
+| `zk_create_notes_batch` | Create multiple notes in one atomic transaction | `created`, `note_ids`, `failed`, `errors`, `summary` |
+| `zk_get_note` | Retrieve a specific note by ID or title | `note_id`, `title`, `note_type`, `tags`, `links`, `created_at`, `updated_at`, `content`, `metadata`, `summary` |
+| `zk_update_note` | Update an existing note's content or metadata | `note_id`, `updated_fields`, `summary` |
+| `zk_delete_note` | Delete a note | `note_id`, `deleted`, `summary` |
+| `zk_create_link` | Create links between notes | `source_id`, `target_id`, `link_type`, `summary` |
+| `zk_create_links_batch` | Create multiple semantic links atomically | `created`, `failed`, `errors`, `summary` |
+| `zk_verify_note` | Verify filesystem/DB consistency for a note | `note_id`, `file_exists`, `db_indexed`, `link_count`, `tag_count`, `summary` |
+| `zk_get_index_status` | Return filesystem vs. DB index health summary | `total_notes_filesystem`, `total_notes_indexed`, `orphaned_files`, `orphaned_db_records`, `database_size_mb`, `summary` |
+| `zk_remove_link` | Remove links between notes | `source_id`, `target_id`, `removed`, `summary` |
+| `zk_search_notes` | Search for notes by content, tags, or links | `notes[]` (each with `score`), `total`, `query`, `summary` |
+| `zk_get_linked_notes` | Find notes linked to a specific note | `note_id`, `direction`, `notes[]`, `total`, `summary` |
+| `zk_get_all_tags` | List all tags in the system | `tags[]` (each with `name`, `count`), `total`, `summary` |
+| `zk_find_similar_notes` | Find notes similar to a given note | `notes[]`, `total`, `summary` |
+| `zk_find_central_notes` | Find notes with the most connections | `notes[]` (each with `connection_count`), `total`, `summary` |
+| `zk_find_orphaned_notes` | Find notes with no connections | `notes[]`, `total`, `summary` |
+| `zk_list_notes_by_date` | List notes by creation/update date | `notes[]`, `total`, `summary` |
+| `zk_rebuild_index` | Rebuild the database index from Markdown files | `notes_indexed`, `errors[]`, `summary` |
+| `zk_register_link_type` | Register a custom link type with optional inverse | `registered`, `inverse`, `symmetric`, `summary` |
+| `zk_suggest_link_type` | Suggest a link type for two notes using heuristics | `suggestions[]` (each with `link_type`, `confidence`), `low_confidence`, `summary` |
+| `zk_suggest_tags` | Suggest tags for note content using TF-IDF similarity | `suggestions[]` (each with `tag`, `score`), `total`, `summary` |
+| `zk_find_notes_in_timerange` | Find notes by `created_at` or `updated_at` date range (ISO 8601) | `count`, `notes[]`, `date_field`, `summary` |
+| `zk_analyze_tag_clusters` | Identify tag clusters by co-occurrence frequency | `clusters[]` (each with `tags`, `count`, `representative_notes`), `total_tag_pairs_analysed`, `summary` |
+
+All tools return `error: true`, `error_type`, `message`, and `summary` on failure.
 
 ## Project Structure
 
 ```
 zettelkasten-mcp/
-├── src/
-│   └── zettelkasten_mcp/
-│       ├── models/       # Data models
-│       ├── storage/      # Storage layer
-│       ├── services/     # Business logic
-│       └── server/       # MCP server implementation
+├── src/zettelkasten_mcp/
+│   ├── config.py                 Configuration (env vars, Pydantic model)
+│   ├── main.py                   Entry point, arg parsing, startup drift check
+│   ├── models/
+│   │   ├── schema.py             Pydantic domain models + LinkTypeRegistry
+│   │   └── db_models.py          SQLAlchemy ORM + init_db()
+│   ├── storage/
+│   │   ├── base.py               Abstract Repository[T] interface
+│   │   └── note_repository.py    Dual-storage implementation
+│   ├── services/
+│   │   ├── zettel_service.py     Note CRUD, links, batch ops, health, analytics
+│   │   ├── search_service.py     FTS5 search, tag suggestions, clustering
+│   │   └── inference_service.py  Pattern-based link-type inference
+│   └── server/
+│       └── mcp_server.py         FastMCP tool registrations + error handling
 ├── data/
-│   ├── notes/            # Note storage (Markdown files)
-│   └── db/               # Database for indexing
-├── tests/                # Test suite
-├── .env.example          # Environment variable template
+│   ├── notes/                    Markdown note files (source of truth)
+│   └── db/                       SQLite database (index, rebuildable)
+├── docs/
+│   ├── ARCHITECTURE.md           Detailed system architecture
+│   └── moscow-top10-features.md  MoSCoW feature analysis
+├── tests/                        Comprehensive test suite (233+ tests)
+├── openspec/                     OpenSpec change proposals and archives
+├── .env.example                  Environment variable template
 └── README.md
 ```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a full walkthrough of
+every layer, data flows, and design decisions.
 
 ## Tests
 
@@ -258,14 +287,19 @@ uv run pytest -v tests/test_models.py::TestNoteModel::test_note_validation
 
 ```
 tests/
-├── conftest.py - Common fixtures for all tests
-├── test_integration.py - Integration tests for the entire system
-├── test_mcp_server.py - Tests for MCP server tools
-├── test_models.py - Tests for data models
-├── test_note_repository.py - Tests for note repository
-├── test_search_service.py - Tests for search service
-├── test_semantic_links.py - Tests for semantic linking
-└── test_zettel_service.py - Tests for zettel service
+├── conftest.py                  Shared fixtures (temp dirs, config, repo, service)
+├── test_models.py               Note/Link/Tag model validation, ID format
+├── test_note_repository.py      CRUD, Markdown round-trips, metadata
+├── test_zettel_service.py       Service delegation and note lifecycle
+├── test_search_service.py       FTS5, legacy search, orphan/central discovery
+├── test_semantic_links.py       All 12 link types, bidirectional semantics
+├── test_integration.py          Full system: create → link → search → rebuild
+├── test_mcp_server.py           Tool registration, structured responses, errors
+├── test_main.py                 CLI arg parsing, server startup, db error exit
+├── test_utils.py                ID generation, tag parsing, display formatting
+├── test_advanced_features.py    Custom types, inference, TF-IDF, degradation
+├── test_batch_operations.py     Batch note/link creation, verify, index health
+└── test_analytics_discovery.py  Temporal queries, tag clusters, performance
 ```
 
 ## Important Notice

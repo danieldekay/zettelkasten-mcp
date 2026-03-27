@@ -1,0 +1,39 @@
+key: fts5-search
+title: Fts5 Search
+outcomes: []
+acceptance: []
+constraints: []
+stories: []
+confidence: 1.0
+draft: false
+source_tracking:
+  implementation_files: []
+  test_files: []
+  file_hashes: {}
+  last_synced: '2026-03-27T10:34:45.290223+00:00'
+  source_functions: []
+  test_functions: []
+  tool: openspec
+  source_metadata:
+    path: openspec/specs/fts5-search/spec.md
+    openspec_path: openspec/specs/fts5-search/spec.md
+    openspec_type: specification
+  refined_from_backlog_item_id:
+  refined_from_provider:
+  template_id:
+  refinement_confidence:
+  refinement_timestamp:
+  refinement_ai_model:
+contract:
+protocol:
+priority:
+rank:
+business_value_score:
+depends_on_features: []
+blocks_features: []
+business_value_description:
+target_users: []
+success_metrics: []
+target_release:
+estimated_story_points:
+extensions: {}

@@ -1,0 +1,844 @@
+key: FEATURE-SEARCHSERVICE
+title: Search Service
+outcomes:
+- Service for searching notes in the Zettelkasten.
+acceptance:
+- The system search service must provide search service functionality
+constraints:
+- The system must meet performance requirements (async operations, caching, 
+  optimization)
+- The system must meet security requirements (authentication, authorization, 
+  encryption)
+- The system must meet reliability requirements (error handling, retry logic, 
+  resilience)
+- The system must meet maintainability requirements (documentation, type hints, 
+  testing)
+- The system must use type hints for improved code maintainability and IDE 
+  support
+stories:
+- key: STORY-SEARCHSERVICE-001
+  title: As a developer, I can configure Search Service
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Initialize the search service.
+  - Initialize the service and dependencies.
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - __init__()
+  - initialize()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - __init__ executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: zettel_service
+      type: ZettelService | None
+      required: false
+      default: None
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/services/search_service.py::_tokenize
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_link
+  - src/zettelkasten_mcp/services/inference_service.py::_score_text
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_fts5
+  - src/zettelkasten_mcp/services/zettel_service.py::update_note
+  - src/zettelkasten_mcp/services/inference_service.py::_tokenize
+  - src/zettelkasten_mcp/services/search_service.py::search_combined
+  - src/zettelkasten_mcp/services/zettel_service.py::initialize
+  - src/zettelkasten_mcp/services/search_service.py::search_by_tag
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags_with_counts
+  - src/zettelkasten_mcp/services/search_service.py::suggest_tags
+  - src/zettelkasten_mcp/services/search_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::search_by_link
+  - src/zettelkasten_mcp/services/search_service.py::find_central_notes
+  - src/zettelkasten_mcp/services/search_service.py::_find
+  - src/zettelkasten_mcp/services/zettel_service.py::search_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::export_note
+  - src/zettelkasten_mcp/services/zettel_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_notes
+  - src/zettelkasten_mcp/services/search_service.py::find_orphaned_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags
+  - src/zettelkasten_mcp/services/search_service.py::search_by_text
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note_by_title
+  - src/zettelkasten_mcp/services/zettel_service.py::add_tag_to_note
+  - src/zettelkasten_mcp/services/zettel_service.py::create_notes_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::rebuild_index
+  - src/zettelkasten_mcp/services/zettel_service.py::register_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note
+  - src/zettelkasten_mcp/services/search_service.py::find_notes_by_date_range
+  - src/zettelkasten_mcp/services/search_service.py::_cosine_similarity
+  - src/zettelkasten_mcp/services/search_service.py::_build_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::verify_note
+  - src/zettelkasten_mcp/services/search_service.py::analyze_tag_clusters
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_legacy
+  - src/zettelkasten_mcp/services/search_service.py::_union
+  - src/zettelkasten_mcp/services/zettel_service.py::get_notes_by_tag
+  - src/zettelkasten_mcp/services/search_service.py::initialize
+  - src/zettelkasten_mcp/services/zettel_service.py::get_index_status
+  - src/zettelkasten_mcp/services/zettel_service.py::create_link
+  - src/zettelkasten_mcp/services/search_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_tag_from_note
+  - src/zettelkasten_mcp/services/zettel_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::invalidate_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::create_links_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::create_note
+  - src/zettelkasten_mcp/services/zettel_service.py::delete_note
+  - src/zettelkasten_mcp/services/inference_service.py::suggest_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_linked_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::find_notes_in_timerange
+  test_functions:
+  - tests/test_search_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_text_query_fts5
+  - tests/test_search_service.py::test_search_combined_legacy_text_scoring
+  - tests/test_zettel_service.py::test_get_note
+  - tests/test_search_service.py::test_search_combined_tag_only
+  - tests/test_search_service.py::test_find_notes_by_date_range_direct
+  - tests/test_search_service.py::test_search_by_text
+  - tests/test_zettel_service.py::test_add_tag_to_note_not_found
+  - tests/test_search_service.py::test_search_by_link_delegated
+  - tests/test_search_service.py::test_find_orphaned_notes
+  - tests/test_search_service.py::test_search_combined_no_criteria
+  - tests/test_search_service.py::test_search_by_text_content_only_match
+  - tests/test_zettel_service.py::test_get_all_tags_with_counts
+  - tests/test_search_service.py::test_search_by_text_title_only_match
+  - tests/test_zettel_service.py::test_create_note_empty_title
+  - tests/test_search_service.py::test_find_central_notes_direct
+  - tests/test_zettel_service.py::test_get_linked_notes_not_found
+  - tests/test_search_service.py::test_search_combined_legacy_no_text
+  - tests/test_search_service.py::test_find_notes_by_date_range
+  - tests/test_zettel_service.py::test_create_note_empty_content
+  - tests/test_search_service.py::test_find_notes_by_date_range_no_filters
+  - tests/test_search_service.py::test_search_by_text_method
+  - tests/test_zettel_service.py::test_create_link_target_not_found
+  - tests/test_search_service.py::test_search_by_text_skip_content
+  - tests/test_search_service.py::test_find_orphaned_notes_direct
+  - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
+  - tests/test_zettel_service.py::test_create_link
+  - tests/test_search_service.py::test_search_by_tag_multiple
+  - tests/test_zettel_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_fts5_path
+  - tests/test_search_service.py::test_find_central_notes_empty_db
+  - tests/test_search_service.py::test_search_combined
+  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
+  - tests/test_search_service.py::test_search_by_text_empty_query
+  - tests/test_search_service.py::test_find_central_notes
+  - tests/test_zettel_service.py::test_update_note_not_found
+  - tests/test_search_service.py::test_search_by_text_no_match
+  - tests/test_zettel_service.py::test_update_note
+  - tests/test_search_service.py::test_search_combined_note_type_filter
+  - tests/test_zettel_service.py::test_delete_note
+  - tests/test_search_service.py::test_search_by_text_single_tag
+  - tests/test_search_service.py::test_search_by_text_skip_title
+  - tests/test_search_service.py::test_search_by_link
+  - tests/test_zettel_service.py::test_create_link_source_not_found
+  - tests/test_zettel_service.py::test_remove_link_source_not_found
+  - tests/test_zettel_service.py::test_get_all_tags
+  - tests/test_search_service.py::test_find_notes_by_date_range_use_updated
+  - tests/test_search_service.py::test_search_by_tag
+  - tests/test_search_service.py::test_search_combined_legacy_text_path
+  - tests/test_zettel_service.py::test_update_note_type_and_metadata
+  - tests/test_zettel_service.py::test_get_note_by_title
+  - tests/test_zettel_service.py::test_search_notes
+  - tests/test_search_service.py::test_find_similar_notes_via_service
+  - tests/test_zettel_service.py::test_create_note
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-SEARCHSERVICE-002
+  title: As a user, I can use Search Service features
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Search for notes by text content.
+  - Search for notes by tags.
+  - Search for notes linked to/from a note.
+  - Perform a combined search with multiple criteria.
+  - Suggest tags for *content* using TF-IDF cosine similarity.
+  tags: []
+  story_points: 5
+  value_points: 5
+  tasks:
+  - search_by_text()
+  - search_by_tag()
+  - search_by_link()
+  - search_combined()
+  - suggest_tags()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - 'search_by_text called with condition is met: returns value'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: query
+      type: str
+      required: true
+      default:
+    - name: include_content
+      type: bool
+      required: false
+      default: "True"
+    - name: include_title
+      type: bool
+      required: false
+      default: "True"
+    return_type:
+      type: list[SearchResult]
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns list[SearchResult]'
+    - 'Ensures: returns list[SearchResult]'
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/services/search_service.py::_tokenize
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_link
+  - src/zettelkasten_mcp/services/inference_service.py::_score_text
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_fts5
+  - src/zettelkasten_mcp/services/zettel_service.py::update_note
+  - src/zettelkasten_mcp/services/inference_service.py::_tokenize
+  - src/zettelkasten_mcp/services/search_service.py::search_combined
+  - src/zettelkasten_mcp/services/zettel_service.py::initialize
+  - src/zettelkasten_mcp/services/search_service.py::search_by_tag
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags_with_counts
+  - src/zettelkasten_mcp/services/search_service.py::suggest_tags
+  - src/zettelkasten_mcp/services/search_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::search_by_link
+  - src/zettelkasten_mcp/services/search_service.py::find_central_notes
+  - src/zettelkasten_mcp/services/search_service.py::_find
+  - src/zettelkasten_mcp/services/zettel_service.py::search_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::export_note
+  - src/zettelkasten_mcp/services/zettel_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_notes
+  - src/zettelkasten_mcp/services/search_service.py::find_orphaned_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags
+  - src/zettelkasten_mcp/services/search_service.py::search_by_text
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note_by_title
+  - src/zettelkasten_mcp/services/zettel_service.py::add_tag_to_note
+  - src/zettelkasten_mcp/services/zettel_service.py::create_notes_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::rebuild_index
+  - src/zettelkasten_mcp/services/zettel_service.py::register_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note
+  - src/zettelkasten_mcp/services/search_service.py::find_notes_by_date_range
+  - src/zettelkasten_mcp/services/search_service.py::_cosine_similarity
+  - src/zettelkasten_mcp/services/search_service.py::_build_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::verify_note
+  - src/zettelkasten_mcp/services/search_service.py::analyze_tag_clusters
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_legacy
+  - src/zettelkasten_mcp/services/search_service.py::_union
+  - src/zettelkasten_mcp/services/zettel_service.py::get_notes_by_tag
+  - src/zettelkasten_mcp/services/search_service.py::initialize
+  - src/zettelkasten_mcp/services/zettel_service.py::get_index_status
+  - src/zettelkasten_mcp/services/zettel_service.py::create_link
+  - src/zettelkasten_mcp/services/search_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_tag_from_note
+  - src/zettelkasten_mcp/services/zettel_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::invalidate_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::create_links_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::create_note
+  - src/zettelkasten_mcp/services/zettel_service.py::delete_note
+  - src/zettelkasten_mcp/services/inference_service.py::suggest_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_linked_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::find_notes_in_timerange
+  test_functions:
+  - tests/test_search_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_text_query_fts5
+  - tests/test_search_service.py::test_search_combined_legacy_text_scoring
+  - tests/test_zettel_service.py::test_get_note
+  - tests/test_search_service.py::test_search_combined_tag_only
+  - tests/test_search_service.py::test_find_notes_by_date_range_direct
+  - tests/test_search_service.py::test_search_by_text
+  - tests/test_zettel_service.py::test_add_tag_to_note_not_found
+  - tests/test_search_service.py::test_search_by_link_delegated
+  - tests/test_search_service.py::test_find_orphaned_notes
+  - tests/test_search_service.py::test_search_combined_no_criteria
+  - tests/test_search_service.py::test_search_by_text_content_only_match
+  - tests/test_zettel_service.py::test_get_all_tags_with_counts
+  - tests/test_search_service.py::test_search_by_text_title_only_match
+  - tests/test_zettel_service.py::test_create_note_empty_title
+  - tests/test_search_service.py::test_find_central_notes_direct
+  - tests/test_zettel_service.py::test_get_linked_notes_not_found
+  - tests/test_search_service.py::test_search_combined_legacy_no_text
+  - tests/test_search_service.py::test_find_notes_by_date_range
+  - tests/test_zettel_service.py::test_create_note_empty_content
+  - tests/test_search_service.py::test_find_notes_by_date_range_no_filters
+  - tests/test_search_service.py::test_search_by_text_method
+  - tests/test_zettel_service.py::test_create_link_target_not_found
+  - tests/test_search_service.py::test_search_by_text_skip_content
+  - tests/test_search_service.py::test_find_orphaned_notes_direct
+  - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
+  - tests/test_zettel_service.py::test_create_link
+  - tests/test_search_service.py::test_search_by_tag_multiple
+  - tests/test_zettel_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_fts5_path
+  - tests/test_search_service.py::test_find_central_notes_empty_db
+  - tests/test_search_service.py::test_search_combined
+  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
+  - tests/test_search_service.py::test_search_by_text_empty_query
+  - tests/test_search_service.py::test_find_central_notes
+  - tests/test_zettel_service.py::test_update_note_not_found
+  - tests/test_search_service.py::test_search_by_text_no_match
+  - tests/test_zettel_service.py::test_update_note
+  - tests/test_search_service.py::test_search_combined_note_type_filter
+  - tests/test_zettel_service.py::test_delete_note
+  - tests/test_search_service.py::test_search_by_text_single_tag
+  - tests/test_search_service.py::test_search_by_text_skip_title
+  - tests/test_search_service.py::test_search_by_link
+  - tests/test_zettel_service.py::test_create_link_source_not_found
+  - tests/test_zettel_service.py::test_remove_link_source_not_found
+  - tests/test_zettel_service.py::test_get_all_tags
+  - tests/test_search_service.py::test_find_notes_by_date_range_use_updated
+  - tests/test_search_service.py::test_search_by_tag
+  - tests/test_search_service.py::test_search_combined_legacy_text_path
+  - tests/test_zettel_service.py::test_update_note_type_and_metadata
+  - tests/test_zettel_service.py::test_get_note_by_title
+  - tests/test_zettel_service.py::test_search_notes
+  - tests/test_search_service.py::test_find_similar_notes_via_service
+  - tests/test_zettel_service.py::test_create_note
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-SEARCHSERVICE-003
+  title: As a user, I can view Search Service data
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Find notes with no incoming or outgoing links.
+  - Find notes with the most connections (incoming + outgoing links).
+  - Find notes created or updated within a date range.
+  - Find notes similar to the given note based on shared tags and links.
+  tags: []
+  story_points: 5
+  value_points: 8
+  tasks:
+  - find_orphaned_notes()
+  - find_central_notes()
+  - find_notes_by_date_range()
+  - find_similar_notes()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - find_orphaned_notes executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    return_type:
+      type: list[Note]
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns list[Note]'
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/services/search_service.py::_tokenize
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_link
+  - src/zettelkasten_mcp/services/inference_service.py::_score_text
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_fts5
+  - src/zettelkasten_mcp/services/zettel_service.py::update_note
+  - src/zettelkasten_mcp/services/inference_service.py::_tokenize
+  - src/zettelkasten_mcp/services/search_service.py::search_combined
+  - src/zettelkasten_mcp/services/zettel_service.py::initialize
+  - src/zettelkasten_mcp/services/search_service.py::search_by_tag
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags_with_counts
+  - src/zettelkasten_mcp/services/search_service.py::suggest_tags
+  - src/zettelkasten_mcp/services/search_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::search_by_link
+  - src/zettelkasten_mcp/services/search_service.py::find_central_notes
+  - src/zettelkasten_mcp/services/search_service.py::_find
+  - src/zettelkasten_mcp/services/zettel_service.py::search_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::export_note
+  - src/zettelkasten_mcp/services/zettel_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_notes
+  - src/zettelkasten_mcp/services/search_service.py::find_orphaned_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags
+  - src/zettelkasten_mcp/services/search_service.py::search_by_text
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note_by_title
+  - src/zettelkasten_mcp/services/zettel_service.py::add_tag_to_note
+  - src/zettelkasten_mcp/services/zettel_service.py::create_notes_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::rebuild_index
+  - src/zettelkasten_mcp/services/zettel_service.py::register_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note
+  - src/zettelkasten_mcp/services/search_service.py::find_notes_by_date_range
+  - src/zettelkasten_mcp/services/search_service.py::_cosine_similarity
+  - src/zettelkasten_mcp/services/search_service.py::_build_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::verify_note
+  - src/zettelkasten_mcp/services/search_service.py::analyze_tag_clusters
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_legacy
+  - src/zettelkasten_mcp/services/search_service.py::_union
+  - src/zettelkasten_mcp/services/zettel_service.py::get_notes_by_tag
+  - src/zettelkasten_mcp/services/search_service.py::initialize
+  - src/zettelkasten_mcp/services/zettel_service.py::get_index_status
+  - src/zettelkasten_mcp/services/zettel_service.py::create_link
+  - src/zettelkasten_mcp/services/search_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_tag_from_note
+  - src/zettelkasten_mcp/services/zettel_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::invalidate_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::create_links_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::create_note
+  - src/zettelkasten_mcp/services/zettel_service.py::delete_note
+  - src/zettelkasten_mcp/services/inference_service.py::suggest_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_linked_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::find_notes_in_timerange
+  test_functions:
+  - tests/test_search_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_text_query_fts5
+  - tests/test_search_service.py::test_search_combined_legacy_text_scoring
+  - tests/test_zettel_service.py::test_get_note
+  - tests/test_search_service.py::test_search_combined_tag_only
+  - tests/test_search_service.py::test_find_notes_by_date_range_direct
+  - tests/test_search_service.py::test_search_by_text
+  - tests/test_zettel_service.py::test_add_tag_to_note_not_found
+  - tests/test_search_service.py::test_search_by_link_delegated
+  - tests/test_search_service.py::test_find_orphaned_notes
+  - tests/test_search_service.py::test_search_combined_no_criteria
+  - tests/test_search_service.py::test_search_by_text_content_only_match
+  - tests/test_zettel_service.py::test_get_all_tags_with_counts
+  - tests/test_search_service.py::test_search_by_text_title_only_match
+  - tests/test_zettel_service.py::test_create_note_empty_title
+  - tests/test_search_service.py::test_find_central_notes_direct
+  - tests/test_zettel_service.py::test_get_linked_notes_not_found
+  - tests/test_search_service.py::test_search_combined_legacy_no_text
+  - tests/test_search_service.py::test_find_notes_by_date_range
+  - tests/test_zettel_service.py::test_create_note_empty_content
+  - tests/test_search_service.py::test_find_notes_by_date_range_no_filters
+  - tests/test_search_service.py::test_search_by_text_method
+  - tests/test_zettel_service.py::test_create_link_target_not_found
+  - tests/test_search_service.py::test_search_by_text_skip_content
+  - tests/test_search_service.py::test_find_orphaned_notes_direct
+  - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
+  - tests/test_zettel_service.py::test_create_link
+  - tests/test_search_service.py::test_search_by_tag_multiple
+  - tests/test_zettel_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_fts5_path
+  - tests/test_search_service.py::test_find_central_notes_empty_db
+  - tests/test_search_service.py::test_search_combined
+  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
+  - tests/test_search_service.py::test_search_by_text_empty_query
+  - tests/test_search_service.py::test_find_central_notes
+  - tests/test_zettel_service.py::test_update_note_not_found
+  - tests/test_search_service.py::test_search_by_text_no_match
+  - tests/test_zettel_service.py::test_update_note
+  - tests/test_search_service.py::test_search_combined_note_type_filter
+  - tests/test_zettel_service.py::test_delete_note
+  - tests/test_search_service.py::test_search_by_text_single_tag
+  - tests/test_search_service.py::test_search_by_text_skip_title
+  - tests/test_search_service.py::test_search_by_link
+  - tests/test_zettel_service.py::test_create_link_source_not_found
+  - tests/test_zettel_service.py::test_remove_link_source_not_found
+  - tests/test_zettel_service.py::test_get_all_tags
+  - tests/test_search_service.py::test_find_notes_by_date_range_use_updated
+  - tests/test_search_service.py::test_search_by_tag
+  - tests/test_search_service.py::test_search_combined_legacy_text_path
+  - tests/test_zettel_service.py::test_update_note_type_and_metadata
+  - tests/test_zettel_service.py::test_get_note_by_title
+  - tests/test_zettel_service.py::test_search_notes
+  - tests/test_search_service.py::test_find_similar_notes_via_service
+  - tests/test_zettel_service.py::test_create_note
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-SEARCHSERVICE-004
+  title: As a developer, I can validate Search Service data
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Invalidate the TF-IDF tag cache (call after rebuild_index).
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - invalidate_tag_cache()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - invalidate_tag_cache executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/services/search_service.py::_tokenize
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_link
+  - src/zettelkasten_mcp/services/inference_service.py::_score_text
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_fts5
+  - src/zettelkasten_mcp/services/zettel_service.py::update_note
+  - src/zettelkasten_mcp/services/inference_service.py::_tokenize
+  - src/zettelkasten_mcp/services/search_service.py::search_combined
+  - src/zettelkasten_mcp/services/zettel_service.py::initialize
+  - src/zettelkasten_mcp/services/search_service.py::search_by_tag
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags_with_counts
+  - src/zettelkasten_mcp/services/search_service.py::suggest_tags
+  - src/zettelkasten_mcp/services/search_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::search_by_link
+  - src/zettelkasten_mcp/services/search_service.py::find_central_notes
+  - src/zettelkasten_mcp/services/search_service.py::_find
+  - src/zettelkasten_mcp/services/zettel_service.py::search_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::export_note
+  - src/zettelkasten_mcp/services/zettel_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_notes
+  - src/zettelkasten_mcp/services/search_service.py::find_orphaned_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags
+  - src/zettelkasten_mcp/services/search_service.py::search_by_text
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note_by_title
+  - src/zettelkasten_mcp/services/zettel_service.py::add_tag_to_note
+  - src/zettelkasten_mcp/services/zettel_service.py::create_notes_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::rebuild_index
+  - src/zettelkasten_mcp/services/zettel_service.py::register_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note
+  - src/zettelkasten_mcp/services/search_service.py::find_notes_by_date_range
+  - src/zettelkasten_mcp/services/search_service.py::_cosine_similarity
+  - src/zettelkasten_mcp/services/search_service.py::_build_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::verify_note
+  - src/zettelkasten_mcp/services/search_service.py::analyze_tag_clusters
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_legacy
+  - src/zettelkasten_mcp/services/search_service.py::_union
+  - src/zettelkasten_mcp/services/zettel_service.py::get_notes_by_tag
+  - src/zettelkasten_mcp/services/search_service.py::initialize
+  - src/zettelkasten_mcp/services/zettel_service.py::get_index_status
+  - src/zettelkasten_mcp/services/zettel_service.py::create_link
+  - src/zettelkasten_mcp/services/search_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_tag_from_note
+  - src/zettelkasten_mcp/services/zettel_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::invalidate_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::create_links_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::create_note
+  - src/zettelkasten_mcp/services/zettel_service.py::delete_note
+  - src/zettelkasten_mcp/services/inference_service.py::suggest_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_linked_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::find_notes_in_timerange
+  test_functions:
+  - tests/test_search_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_text_query_fts5
+  - tests/test_search_service.py::test_search_combined_legacy_text_scoring
+  - tests/test_zettel_service.py::test_get_note
+  - tests/test_search_service.py::test_search_combined_tag_only
+  - tests/test_search_service.py::test_find_notes_by_date_range_direct
+  - tests/test_search_service.py::test_search_by_text
+  - tests/test_zettel_service.py::test_add_tag_to_note_not_found
+  - tests/test_search_service.py::test_search_by_link_delegated
+  - tests/test_search_service.py::test_find_orphaned_notes
+  - tests/test_search_service.py::test_search_combined_no_criteria
+  - tests/test_search_service.py::test_search_by_text_content_only_match
+  - tests/test_zettel_service.py::test_get_all_tags_with_counts
+  - tests/test_search_service.py::test_search_by_text_title_only_match
+  - tests/test_zettel_service.py::test_create_note_empty_title
+  - tests/test_search_service.py::test_find_central_notes_direct
+  - tests/test_zettel_service.py::test_get_linked_notes_not_found
+  - tests/test_search_service.py::test_search_combined_legacy_no_text
+  - tests/test_search_service.py::test_find_notes_by_date_range
+  - tests/test_zettel_service.py::test_create_note_empty_content
+  - tests/test_search_service.py::test_find_notes_by_date_range_no_filters
+  - tests/test_search_service.py::test_search_by_text_method
+  - tests/test_zettel_service.py::test_create_link_target_not_found
+  - tests/test_search_service.py::test_search_by_text_skip_content
+  - tests/test_search_service.py::test_find_orphaned_notes_direct
+  - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
+  - tests/test_zettel_service.py::test_create_link
+  - tests/test_search_service.py::test_search_by_tag_multiple
+  - tests/test_zettel_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_fts5_path
+  - tests/test_search_service.py::test_find_central_notes_empty_db
+  - tests/test_search_service.py::test_search_combined
+  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
+  - tests/test_search_service.py::test_search_by_text_empty_query
+  - tests/test_search_service.py::test_find_central_notes
+  - tests/test_zettel_service.py::test_update_note_not_found
+  - tests/test_search_service.py::test_search_by_text_no_match
+  - tests/test_zettel_service.py::test_update_note
+  - tests/test_search_service.py::test_search_combined_note_type_filter
+  - tests/test_zettel_service.py::test_delete_note
+  - tests/test_search_service.py::test_search_by_text_single_tag
+  - tests/test_search_service.py::test_search_by_text_skip_title
+  - tests/test_search_service.py::test_search_by_link
+  - tests/test_zettel_service.py::test_create_link_source_not_found
+  - tests/test_zettel_service.py::test_remove_link_source_not_found
+  - tests/test_zettel_service.py::test_get_all_tags
+  - tests/test_search_service.py::test_find_notes_by_date_range_use_updated
+  - tests/test_search_service.py::test_search_by_tag
+  - tests/test_search_service.py::test_search_combined_legacy_text_path
+  - tests/test_zettel_service.py::test_update_note_type_and_metadata
+  - tests/test_zettel_service.py::test_get_note_by_title
+  - tests/test_zettel_service.py::test_search_notes
+  - tests/test_search_service.py::test_find_similar_notes_via_service
+  - tests/test_zettel_service.py::test_create_note
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-SEARCHSERVICE-005
+  title: As a user, I can analyze data with Search Service
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Identify clusters of tags that frequently appear together.
+  tags: []
+  story_points: 8
+  value_points: 5
+  tasks:
+  - analyze_tag_clusters()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - 'analyze_tag_clusters called with condition is met: returns value'
+    - 'analyze_tag_clusters called with px does not equal py: sets value to px'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: min_co_occurrence
+      type: int
+      required: false
+      default: '2'
+    return_type:
+      type: dict
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns dict'
+    - 'Ensures: returns dict'
+    - 'Ensures: returns dict'
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/services/search_service.py::_tokenize
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_link
+  - src/zettelkasten_mcp/services/inference_service.py::_score_text
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_fts5
+  - src/zettelkasten_mcp/services/zettel_service.py::update_note
+  - src/zettelkasten_mcp/services/inference_service.py::_tokenize
+  - src/zettelkasten_mcp/services/search_service.py::search_combined
+  - src/zettelkasten_mcp/services/zettel_service.py::initialize
+  - src/zettelkasten_mcp/services/search_service.py::search_by_tag
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags_with_counts
+  - src/zettelkasten_mcp/services/search_service.py::suggest_tags
+  - src/zettelkasten_mcp/services/search_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::search_by_link
+  - src/zettelkasten_mcp/services/search_service.py::find_central_notes
+  - src/zettelkasten_mcp/services/search_service.py::_find
+  - src/zettelkasten_mcp/services/zettel_service.py::search_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::export_note
+  - src/zettelkasten_mcp/services/zettel_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_notes
+  - src/zettelkasten_mcp/services/search_service.py::find_orphaned_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags
+  - src/zettelkasten_mcp/services/search_service.py::search_by_text
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note_by_title
+  - src/zettelkasten_mcp/services/zettel_service.py::add_tag_to_note
+  - src/zettelkasten_mcp/services/zettel_service.py::create_notes_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::rebuild_index
+  - src/zettelkasten_mcp/services/zettel_service.py::register_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_note
+  - src/zettelkasten_mcp/services/search_service.py::find_notes_by_date_range
+  - src/zettelkasten_mcp/services/search_service.py::_cosine_similarity
+  - src/zettelkasten_mcp/services/search_service.py::_build_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::verify_note
+  - src/zettelkasten_mcp/services/search_service.py::analyze_tag_clusters
+  - src/zettelkasten_mcp/services/search_service.py::_search_combined_legacy
+  - src/zettelkasten_mcp/services/search_service.py::_union
+  - src/zettelkasten_mcp/services/zettel_service.py::get_notes_by_tag
+  - src/zettelkasten_mcp/services/search_service.py::initialize
+  - src/zettelkasten_mcp/services/zettel_service.py::get_index_status
+  - src/zettelkasten_mcp/services/zettel_service.py::create_link
+  - src/zettelkasten_mcp/services/search_service.py::find_similar_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::remove_tag_from_note
+  - src/zettelkasten_mcp/services/zettel_service.py::__init__
+  - src/zettelkasten_mcp/services/search_service.py::invalidate_tag_cache
+  - src/zettelkasten_mcp/services/zettel_service.py::create_links_batch
+  - src/zettelkasten_mcp/services/zettel_service.py::create_note
+  - src/zettelkasten_mcp/services/zettel_service.py::delete_note
+  - src/zettelkasten_mcp/services/inference_service.py::suggest_link_type
+  - src/zettelkasten_mcp/services/zettel_service.py::get_linked_notes
+  - src/zettelkasten_mcp/services/zettel_service.py::find_notes_in_timerange
+  test_functions:
+  - tests/test_search_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_text_query_fts5
+  - tests/test_search_service.py::test_search_combined_legacy_text_scoring
+  - tests/test_zettel_service.py::test_get_note
+  - tests/test_search_service.py::test_search_combined_tag_only
+  - tests/test_search_service.py::test_find_notes_by_date_range_direct
+  - tests/test_search_service.py::test_search_by_text
+  - tests/test_zettel_service.py::test_add_tag_to_note_not_found
+  - tests/test_search_service.py::test_search_by_link_delegated
+  - tests/test_search_service.py::test_find_orphaned_notes
+  - tests/test_search_service.py::test_search_combined_no_criteria
+  - tests/test_search_service.py::test_search_by_text_content_only_match
+  - tests/test_zettel_service.py::test_get_all_tags_with_counts
+  - tests/test_search_service.py::test_search_by_text_title_only_match
+  - tests/test_zettel_service.py::test_create_note_empty_title
+  - tests/test_search_service.py::test_find_central_notes_direct
+  - tests/test_zettel_service.py::test_get_linked_notes_not_found
+  - tests/test_search_service.py::test_search_combined_legacy_no_text
+  - tests/test_search_service.py::test_find_notes_by_date_range
+  - tests/test_zettel_service.py::test_create_note_empty_content
+  - tests/test_search_service.py::test_find_notes_by_date_range_no_filters
+  - tests/test_search_service.py::test_search_by_text_method
+  - tests/test_zettel_service.py::test_create_link_target_not_found
+  - tests/test_search_service.py::test_search_by_text_skip_content
+  - tests/test_search_service.py::test_find_orphaned_notes_direct
+  - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
+  - tests/test_zettel_service.py::test_create_link
+  - tests/test_search_service.py::test_search_by_tag_multiple
+  - tests/test_zettel_service.py::test_find_similar_notes
+  - tests/test_search_service.py::test_search_combined_fts5_path
+  - tests/test_search_service.py::test_find_central_notes_empty_db
+  - tests/test_search_service.py::test_search_combined
+  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
+  - tests/test_search_service.py::test_search_by_text_empty_query
+  - tests/test_search_service.py::test_find_central_notes
+  - tests/test_zettel_service.py::test_update_note_not_found
+  - tests/test_search_service.py::test_search_by_text_no_match
+  - tests/test_zettel_service.py::test_update_note
+  - tests/test_search_service.py::test_search_combined_note_type_filter
+  - tests/test_zettel_service.py::test_delete_note
+  - tests/test_search_service.py::test_search_by_text_single_tag
+  - tests/test_search_service.py::test_search_by_text_skip_title
+  - tests/test_search_service.py::test_search_by_link
+  - tests/test_zettel_service.py::test_create_link_source_not_found
+  - tests/test_zettel_service.py::test_remove_link_source_not_found
+  - tests/test_zettel_service.py::test_get_all_tags
+  - tests/test_search_service.py::test_find_notes_by_date_range_use_updated
+  - tests/test_search_service.py::test_search_by_tag
+  - tests/test_search_service.py::test_search_combined_legacy_text_path
+  - tests/test_zettel_service.py::test_update_note_type_and_metadata
+  - tests/test_zettel_service.py::test_get_note_by_title
+  - tests/test_zettel_service.py::test_search_notes
+  - tests/test_search_service.py::test_find_similar_notes_via_service
+  - tests/test_zettel_service.py::test_create_note
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+confidence: 1.0
+draft: false
+source_tracking:
+  implementation_files:
+  - src/zettelkasten_mcp/services/inference_service.py
+  - src/zettelkasten_mcp/services/search_service.py
+  - src/zettelkasten_mcp/services/zettel_service.py
+  test_files:
+  - tests/test_zettel_service.py
+  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py
+  - tests/test_search_service.py
+  file_hashes:
+    src/zettelkasten_mcp/services/inference_service.py: 
+      c16107f92b333318bb90b5c38a344c02258e5eb35b40d04e59ab89674e35b60b
+    src/zettelkasten_mcp/services/search_service.py: 
+      bbe8b574cd5893b6dea900a0b8ee1017ec4f6ebe2b64efc90079151ea512fab6
+    src/zettelkasten_mcp/services/zettel_service.py: 
+      ca56f92a85bc3f8b2d469db548c88a2547a17b3b890243dcde531229f3e71d7c
+    tests/test_zettel_service.py: 
+      ba6ff702cf99c0b4d831d80058f3d096fa208411f62fb808ac79454fd6cc8093
+    .venv/lib/python3.10/site-packages/crosshair/path_search_test.py: 
+      edcab300c5d4600b40d349aaf5747901a64286a790c97c827eebafe77ff9d699
+    tests/test_search_service.py: 
+      6e4be2f06d0feefeaa941ed7bb2ff646912026c1bd019a3d59aa09ed33438a4b
+  last_synced: '2026-03-27T10:26:23.370818+00:00'
+  source_functions: []
+  test_functions: []
+  tool:
+  source_metadata: {}
+  refined_from_backlog_item_id:
+  refined_from_provider:
+  template_id:
+  refinement_confidence:
+  refinement_timestamp:
+  refinement_ai_model:
+contract:
+protocol:
+priority:
+rank:
+business_value_score:
+depends_on_features: []
+blocks_features: []
+business_value_description:
+target_users: []
+success_metrics: []
+target_release:
+estimated_story_points:
+extensions: {}

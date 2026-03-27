@@ -1,0 +1,119 @@
+key: FEATURE-ZETTELKASTENCONFIG
+title: Zettelkasten Config
+outcomes:
+- Configuration for the Zettelkasten server.
+acceptance:
+- The system zettelkasten config must provide zettelkasten config functionality
+constraints:
+- The system must meet maintainability requirements (documentation, type hints, 
+  testing)
+- The system must use type hints for improved code maintainability and IDE 
+  support
+stories:
+- key: STORY-ZETTELKASTENCONFIG-001
+  title: As a user, I can view Zettelkasten Config data
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Convert a relative path to an absolute path based on base_dir.
+  - Get the database URL for SQLite.
+  tags: []
+  story_points: 2
+  value_points: 8
+  tasks:
+  - get_absolute_path()
+  - get_db_url()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - 'get_absolute_path called with path.is_absolute is called: returns path'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: path
+      type: Path
+      required: true
+      default:
+    return_type:
+      type: Path
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns Path'
+    - 'Ensures: returns Path'
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/config.py::get_db_url
+  - src/zettelkasten_mcp/config.py::get_absolute_path
+  test_functions:
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_constructor_params
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_threadpool_limitation_in_child_context_error
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_nested
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_global_parallel_backend
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_external_backends
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_bad_params
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_params_explicit_set
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_no_backend
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_no_config
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence_missing_section
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_parent_config_with_and_without_git
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_n_jobs_none
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_n_jobs_none
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+confidence: 0.8
+draft: false
+source_tracking:
+  implementation_files:
+  - src/zettelkasten_mcp/config.py
+  test_files:
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py
+  file_hashes:
+    src/zettelkasten_mcp/config.py: 
+      801379b759f16bc0fdec556f1c4aeab1a905da0207444650c066d88c75918fb3
+    .venv/lib/python3.10/site-packages/joblib/test/test_config.py: 
+      d59d74d803bb19bf19f261d86a19d9cb67f1040fbdfef63466d5b234d93571fe
+    .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py: 
+      e340ff6aa443e900aa254e01b03066ff8edbe17f839eed399f7e88d8163594e5
+  last_synced: '2026-03-27T10:26:23.370792+00:00'
+  source_functions: []
+  test_functions: []
+  tool:
+  source_metadata: {}
+  refined_from_backlog_item_id:
+  refined_from_provider:
+  template_id:
+  refinement_confidence:
+  refinement_timestamp:
+  refinement_ai_model:
+contract:
+protocol:
+priority:
+rank:
+business_value_score:
+depends_on_features: []
+blocks_features: []
+business_value_description:
+target_users: []
+success_metrics: []
+target_release:
+estimated_story_points:
+extensions: {}

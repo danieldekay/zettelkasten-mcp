@@ -1,3 +1,18 @@
+================================================================
+Start of Project Knowledge File
+================================================================
+
+Purpose:
+--------
+This file is designed to be consumed by AI systems for analysis, review,
+or other automated processes. It solely serves the purpose of background
+information and should NOT under any circumstances leak into the user's
+interaction with the AI when actually USING the Zettelkasten MCP tools to
+process, explore or synthesize user-supplied information.
+
+Content:
+--------
+
 I'd like to explore how this information connects to my existing Zettelkasten. Please:
 
 1. Identify the central concepts in this information and find related notes in my system
@@ -15,3 +30,6 @@ I'd like to explore how this information connects to my existing Zettelkasten. P
    - Potential areas for development
 
 Finally, summarize what you've learned about my Zettelkasten through this exploration and highlight the most valuable insights found.
+================================================================
+End of Project Knowledge File
+================================================================

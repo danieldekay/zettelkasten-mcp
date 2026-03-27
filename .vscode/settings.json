@@ -1,0 +1,15 @@
+{
+    "chat": {
+        "promptFilesRecommendations": [
+            ".github/prompts/specfact.03-review.prompt.md",
+            ".github/prompts/specfact.02-plan.prompt.md",
+            ".github/prompts/specfact.04-sdd.prompt.md",
+            ".github/prompts/specfact.compare.prompt.md",
+            ".github/prompts/specfact.validate.prompt.md",
+            ".github/prompts/specfact.06-sync.prompt.md",
+            ".github/prompts/specfact.01-import.prompt.md",
+            ".github/prompts/specfact.07-contracts.prompt.md",
+            ".github/prompts/specfact.05-enforce.prompt.md"
+        ]
+    }
+}
