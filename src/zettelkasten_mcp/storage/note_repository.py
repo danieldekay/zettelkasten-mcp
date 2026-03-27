@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+import re
 import threading
 from pathlib import Path
 from typing import Any
@@ -723,6 +724,20 @@ class NoteRepository(Repository[Note]):
 
             session.commit()
 
+    @staticmethod
+    def _sanitize_fts5_query(query: str) -> str:
+        """Sanitize a user query for safe use in FTS5.
+
+        FTS5 only accepts alphanumeric tokens, quoted phrases, prefix wildcards (*),
+        grouping parentheses, and boolean operators (AND/OR/NOT/NEAR).
+        Characters such as '.' trigger a syntax error and must be removed.
+        """
+        # Replace any character that is not alphanumeric, whitespace, or a valid
+        # FTS5 operator symbol with a space.
+        sanitized = re.sub(r'[^\w\s"*()\u00C0-\u024F]', " ", query)
+        # Collapse runs of whitespace and strip edges.
+        return " ".join(sanitized.split())
+
     def search_by_fts5(
         self,
         query: str,
@@ -752,6 +767,21 @@ class NoteRepository(Repository[Note]):
             BM25 scores are negative (more negative = better match)
             Snippet includes highlighted matches with context
         """
+        sanitized_query = self._sanitize_fts5_query(query)
+        if not sanitized_query:
+            logger.debug(
+                "FTS5 search skipped: %r reduced to empty string after sanitization",
+                query,
+            )
+            return []
+
+        if sanitized_query != query:
+            logger.debug(
+                "FTS5 query sanitized: %r -> %r",
+                query,
+                sanitized_query,
+            )
+
         try:
             with self.session_factory() as session:
                 result = session.execute(
@@ -768,7 +798,7 @@ class NoteRepository(Repository[Note]):
                     LIMIT :limit
                 """),
                     {
-                        "query": query,
+                        "query": sanitized_query,
                         "limit": limit,
                         "title_weight": title_weight,
                         "content_weight": content_weight,
