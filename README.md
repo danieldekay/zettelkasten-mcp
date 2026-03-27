@@ -215,19 +215,35 @@ All tools return `error: true`, `error_type`, `message`, and `summary` on failur
 
 ```
 zettelkasten-mcp/
-├── src/
-│   └── zettelkasten_mcp/
-│       ├── models/       # Data models
-│       ├── storage/      # Storage layer
-│       ├── services/     # Business logic
-│       └── server/       # MCP server implementation
+├── src/zettelkasten_mcp/
+│   ├── config.py                 Configuration (env vars, Pydantic model)
+│   ├── main.py                   Entry point, arg parsing, startup drift check
+│   ├── models/
+│   │   ├── schema.py             Pydantic domain models + LinkTypeRegistry
+│   │   └── db_models.py          SQLAlchemy ORM + init_db()
+│   ├── storage/
+│   │   ├── base.py               Abstract Repository[T] interface
+│   │   └── note_repository.py    Dual-storage implementation
+│   ├── services/
+│   │   ├── zettel_service.py     Note CRUD, links, batch ops, health, analytics
+│   │   ├── search_service.py     FTS5 search, tag suggestions, clustering
+│   │   └── inference_service.py  Pattern-based link-type inference
+│   └── server/
+│       └── mcp_server.py         FastMCP tool registrations + error handling
 ├── data/
-│   ├── notes/            # Note storage (Markdown files)
-│   └── db/               # Database for indexing
-├── tests/                # Test suite
-├── .env.example          # Environment variable template
+│   ├── notes/                    Markdown note files (source of truth)
+│   └── db/                       SQLite database (index, rebuildable)
+├── docs/
+│   ├── ARCHITECTURE.md           Detailed system architecture
+│   └── moscow-top10-features.md  MoSCoW feature analysis
+├── tests/                        Comprehensive test suite (233+ tests)
+├── openspec/                     OpenSpec change proposals and archives
+├── .env.example                  Environment variable template
 └── README.md
 ```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a full walkthrough of
+every layer, data flows, and design decisions.
 
 ## Tests
 
@@ -271,14 +287,19 @@ uv run pytest -v tests/test_models.py::TestNoteModel::test_note_validation
 
 ```
 tests/
-├── conftest.py - Common fixtures for all tests
-├── test_integration.py - Integration tests for the entire system
-├── test_mcp_server.py - Tests for MCP server tools
-├── test_models.py - Tests for data models
-├── test_note_repository.py - Tests for note repository
-├── test_search_service.py - Tests for search service
-├── test_semantic_links.py - Tests for semantic linking
-└── test_zettel_service.py - Tests for zettel service
+├── conftest.py                  Shared fixtures (temp dirs, config, repo, service)
+├── test_models.py               Note/Link/Tag model validation, ID format
+├── test_note_repository.py      CRUD, Markdown round-trips, metadata
+├── test_zettel_service.py       Service delegation and note lifecycle
+├── test_search_service.py       FTS5, legacy search, orphan/central discovery
+├── test_semantic_links.py       All 12 link types, bidirectional semantics
+├── test_integration.py          Full system: create → link → search → rebuild
+├── test_mcp_server.py           Tool registration, structured responses, errors
+├── test_main.py                 CLI arg parsing, server startup, db error exit
+├── test_utils.py                ID generation, tag parsing, display formatting
+├── test_advanced_features.py    Custom types, inference, TF-IDF, degradation
+├── test_batch_operations.py     Batch note/link creation, verify, index health
+└── test_analytics_discovery.py  Temporal queries, tag clusters, performance
 ```
 
 ## Important Notice
