@@ -60,7 +60,7 @@ beyond the built-in seven.
 
 - Fix duplicate tag associations causing `IntegrityError` on note update
   (`if db_tag not in db_note.tags` guard added)
-- Comprehensive debug and fix documentation in `docs/DEBUG-FIXES-2026-01-30.md`
+- Comprehensive debug and fix documentation in `docs/archive/debug-fixes-2026-01-30.md`
 
 ---
 
