@@ -10,10 +10,10 @@ server.
 
 | Issue                                                            | Title                                                   | Label |
 | ---------------------------------------------------------------- | ------------------------------------------------------- | ----- |
-| [#5](https://github.com/basf-global/zettelkasten-mcp/issues/5)   | Implement batch note creation (`zk_create_notes_batch`) | p1    |
-| [#6](https://github.com/basf-global/zettelkasten-mcp/issues/6)   | Implement batch link creation (`zk_create_links_batch`) | p1    |
-| [#9](https://github.com/basf-global/zettelkasten-mcp/issues/9)   | Add note verification tool (`zk_verify_note`)           | p1    |
-| [#14](https://github.com/basf-global/zettelkasten-mcp/issues/14) | Add database health dashboard (`zk_get_index_status`)   | p1    |
+| [#5](https://github.com/entanglr/zettelkasten-mcp/issues/5)   | Implement batch note creation (`zk_create_notes_batch`) | p1    |
+| [#6](https://github.com/entanglr/zettelkasten-mcp/issues/6)   | Implement batch link creation (`zk_create_links_batch`) | p1    |
+| [#9](https://github.com/entanglr/zettelkasten-mcp/issues/9)   | Add note verification tool (`zk_verify_note`)           | p1    |
+| [#14](https://github.com/entanglr/zettelkasten-mcp/issues/14) | Add database health dashboard (`zk_get_index_status`)   | p1    |
 
 ## Problem
 

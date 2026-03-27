@@ -88,7 +88,7 @@ beyond the built-in seven.
 
 ---
 
-[Unreleased]: https://github.com/basf-global/zettelkasten-mcp/compare/v1.3.0...HEAD
-[1.3.0]: https://github.com/basf-global/zettelkasten-mcp/compare/v1.2.1...v1.3.0
-[1.2.1]: https://github.com/basf-global/zettelkasten-mcp/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/basf-global/zettelkasten-mcp/releases/tag/v1.2.0
+[Unreleased]: https://github.com/entanglr/zettelkasten-mcp/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/entanglr/zettelkasten-mcp/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/entanglr/zettelkasten-mcp/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/entanglr/zettelkasten-mcp/releases/tag/v1.2.0
