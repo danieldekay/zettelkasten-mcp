@@ -1,4 +1,5 @@
 """Utility functions for the Zettelkasten MCP server."""
+
 import logging
 import sys
 import time
@@ -34,6 +35,7 @@ def setup_logging(level: str = "INFO", log_file: str | None = None) -> None:
     # Apply configuration
     logging.basicConfig(**log_config)
 
+
 def generate_timestamp_id() -> str:
     """Generate a timestamp-based ID in ISO 8601 Zettelkasten format with nanosecond
     precision.
@@ -61,6 +63,7 @@ def generate_timestamp_id() -> str:
     # Return the ISO 8601 timestamp with nanosecond precision
     return f"{date_time}{nanoseconds:09d}"
 
+
 def parse_tags(tags_str: str) -> list[str]:
     """Parse a comma-separated list of tags into a list of tag strings.
     Args:
@@ -72,9 +75,16 @@ def parse_tags(tags_str: str) -> list[str]:
         return []
     return [tag.strip() for tag in tags_str.split(",") if tag.strip()]
 
-def format_note_for_display(title: str, note_id: str, content: str, tags: list[str],
-                          created_at: datetime, updated_at: datetime,
-                          links: list | None = None) -> str:
+
+def format_note_for_display(
+    title: str,
+    note_id: str,
+    content: str,
+    tags: list[str],
+    created_at: datetime,
+    updated_at: datetime,
+    links: list | None = None,
+) -> str:
     """Format a note for display in the console.
     Args:
         title: Note title
@@ -102,10 +112,9 @@ def format_note_for_display(title: str, note_id: str, content: str, tags: list[s
         for link in links:
             if hasattr(link, "description") and link.description:
                 result += (
-                    f"- {link.link_type.value}: {link.target_id}"
-                    f" - {link.description}\n"
+                    f"- {link.link_type}: {link.target_id} - {link.description}\n"
                 )
             else:
-                result += f"- {link.link_type.value}: {link.target_id}\n"
+                result += f"- {link.link_type}: {link.target_id}\n"
 
     return result

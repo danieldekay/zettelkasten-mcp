@@ -1,15 +1,22 @@
 """Data models for the Zettelkasten MCP server."""
+
 import datetime
+import logging
 import threading
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+import yaml
 from pydantic import BaseModel, Field, field_validator
+
+logger = logging.getLogger(__name__)
 
 # Thread-safe counter for uniqueness
 _id_lock = threading.Lock()
 _last_timestamp = 0
 _counter = 0
+
 
 def generate_id() -> str:
     """Generate an ISO 8601 compliant timestamp-based ID with guaranteed uniqueness
@@ -50,28 +57,138 @@ def generate_id() -> str:
 
         return f"{date_time}{microseconds:06d}{_counter:03d}"
 
+
 class LinkType(str, Enum):
-    """Types of links between notes."""
-    REFERENCE = "reference"        # Simple reference to another note
-    EXTENDS = "extends"            # Current note extends another note
-    EXTENDED_BY = "extended_by"    # Current note is extended by another note
-    REFINES = "refines"            # Current note refines another note
-    REFINED_BY = "refined_by"      # Current note is refined by another note
-    CONTRADICTS = "contradicts"    # Current note contradicts another note
-    CONTRADICTED_BY = "contradicted_by"  # Current note is contradicted by another note
-    QUESTIONS = "questions"        # Current note questions another note
-    QUESTIONED_BY = "questioned_by"  # Current note is questioned by another note
-    SUPPORTS = "supports"          # Current note supports another note
-    SUPPORTED_BY = "supported_by"  # Current note is supported by another note
-    RELATED = "related"            # Notes are related in some way
+    """Built-in link type constants (preserved for backward compatibility)."""
+
+    REFERENCE = "reference"
+    EXTENDS = "extends"
+    EXTENDED_BY = "extended_by"
+    REFINES = "refines"
+    REFINED_BY = "refined_by"
+    CONTRADICTS = "contradicts"
+    CONTRADICTED_BY = "contradicted_by"
+    QUESTIONS = "questions"
+    QUESTIONED_BY = "questioned_by"
+    SUPPORTS = "supports"
+    SUPPORTED_BY = "supported_by"
+    RELATED = "related"
+
+
+@dataclass
+class LinkTypeDef:
+    """Definition of a link type (built-in or custom)."""
+
+    name: str
+    inverse: str
+    symmetric: bool
+
+
+class LinkTypeRegistry:
+    """Registry of all valid link types (built-in + project-local custom)."""
+
+    _built_in: dict[str, LinkTypeDef] = field(default_factory=dict)
+    _custom: dict[str, LinkTypeDef] = field(default_factory=dict)
+
+    def __init__(self) -> None:
+        def _lt(name: str, inverse: str, symmetric: bool) -> LinkTypeDef:
+            return LinkTypeDef(name=name, inverse=inverse, symmetric=symmetric)
+
+        self._built_in: dict[str, LinkTypeDef] = {
+            "reference": _lt("reference", "reference", symmetric=True),
+            "extends": _lt("extends", "extended_by", symmetric=False),
+            "extended_by": _lt("extended_by", "extends", symmetric=False),
+            "refines": _lt("refines", "refined_by", symmetric=False),
+            "refined_by": _lt("refined_by", "refines", symmetric=False),
+            "contradicts": _lt("contradicts", "contradicted_by", symmetric=False),
+            "contradicted_by": _lt("contradicted_by", "contradicts", symmetric=False),
+            "questions": _lt("questions", "questioned_by", symmetric=False),
+            "questioned_by": _lt("questioned_by", "questions", symmetric=False),
+            "supports": _lt("supports", "supported_by", symmetric=False),
+            "supported_by": _lt("supported_by", "supports", symmetric=False),
+            "related": _lt("related", "related", symmetric=True),
+        }
+        self._custom: dict[str, LinkTypeDef] = {}
+
+    def is_valid(self, name: str) -> bool:
+        """Return True if `name` is a registered link type."""
+        return name in self._built_in or name in self._custom
+
+    def register(self, name: str, inverse: str, symmetric: bool) -> None:
+        """Register a custom link type.
+
+        Args:
+            name: Unique type name (e.g. ``"implements"``)
+            inverse: Inverse type name (same as ``name`` for symmetric types)
+            description: Optional human-readable description
+            symmetric: Whether the relationship is symmetric
+
+        Raises:
+            ValueError: If the type name already exists (built-in or custom)
+        """
+        if name in self._built_in:
+            msg = f"'{name}' is a built-in link type and cannot be overridden"
+            raise ValueError(msg)
+        if name in self._custom:
+            msg = f"Custom link type '{name}' is already registered"
+            raise ValueError(msg)
+
+        defn = LinkTypeDef(name=name, inverse=inverse, symmetric=symmetric)
+        self._custom[name] = defn
+        # Register inverse if different
+        if inverse != name and inverse not in self._built_in and inverse not in self._custom:  # noqa: E501
+            self._custom[inverse] = LinkTypeDef(
+                name=inverse, inverse=name, symmetric=symmetric,
+            )
+
+    def get_inverse(self, name: str) -> str:
+        """Return the inverse type name for `name`."""
+        defn = self._built_in.get(name) or self._custom.get(name)
+        return defn.inverse if defn else name
+
+    def all_types(self) -> list[str]:
+        """Return all registered type names."""
+        return sorted(list(self._built_in.keys()) + list(self._custom.keys()))
+
+    def custom_types(self) -> list[LinkTypeDef]:
+        """Return only the custom (non-built-in) type definitions."""
+        return list(self._custom.values())
+
+    def load_from_yaml(self, path: "Path") -> None:  # noqa: F821
+        """Load custom link types from a YAML config file."""
+        if not path.exists():
+            return
+        try:
+            with path.open(encoding="utf-8") as fh:
+                data = yaml.safe_load(fh) or {}
+            for entry in data.get("custom_link_types", []):
+                name = entry.get("name", "")
+                inverse = entry.get("inverse", name)
+                symmetric = bool(entry.get("symmetric", False))
+                if name and not self.is_valid(name):
+                    defn = LinkTypeDef(name=name, inverse=inverse, symmetric=symmetric)
+                    self._custom[name] = defn
+                    if inverse != name and not self.is_valid(inverse):
+                        self._custom[inverse] = LinkTypeDef(
+                            name=inverse, inverse=name, symmetric=symmetric,
+                        )
+        except Exception:  # noqa: BLE001
+            logger.debug("Failed to load custom link types from %s", path)
+
+
+# Module-level registry singleton
+link_type_registry = LinkTypeRegistry()
+
 
 class Link(BaseModel):
     """A link between two notes."""
+
     source_id: str = Field(..., description="ID of the source note")
     target_id: str = Field(..., description="ID of the target note")
-    link_type: LinkType = Field(default=LinkType.REFERENCE, description="Type of link")
+    link_type: str = Field(default="reference", description="Type of link")
     description: str | None = Field(
-        default=None, description="Optional description of the link",
+        default=None,
+        description="Optional description of the link",
     )
     created_at: datetime.datetime = Field(
         default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc),
@@ -84,16 +201,35 @@ class Link(BaseModel):
         "frozen": True,  # Links are immutable
     }
 
+    @field_validator("link_type")
+    @classmethod
+    def validate_link_type(cls, v: str) -> str:
+        """Validate that link_type is in the registry."""
+        # Coerce LinkType enum values to their string form
+        if isinstance(v, LinkType):
+            return v.value
+        if not link_type_registry.is_valid(v):
+            msg = (
+                f"Invalid link type '{v}'. "
+                f"Valid types: {', '.join(link_type_registry.all_types())}"
+            )
+            raise ValueError(msg)
+        return v
+
+
 class NoteType(str, Enum):
     """Types of notes in a Zettelkasten."""
-    FLEETING = "fleeting"    # Quick, temporary notes
+
+    FLEETING = "fleeting"  # Quick, temporary notes
     LITERATURE = "literature"  # Notes from reading material
     PERMANENT = "permanent"  # Permanent, well-formulated notes
     STRUCTURE = "structure"  # Structure/index notes that organize other notes
-    HUB = "hub"              # Hub notes that serve as entry points
+    HUB = "hub"  # Hub notes that serve as entry points
+
 
 class Tag(BaseModel):
     """A tag for categorizing notes."""
+
     name: str = Field(..., description="Tag name")
 
     model_config = {
@@ -105,8 +241,10 @@ class Tag(BaseModel):
         """Return string representation of tag."""
         return self.name
 
+
 class Note(BaseModel):
     """A Zettelkasten note."""
+
     id: str = Field(default_factory=generate_id, description="Unique ID of the note")
     title: str = Field(..., description="Title of the note")
     content: str = Field(..., description="Content of the note")
@@ -156,28 +294,36 @@ class Note(BaseModel):
         self.tags = [t for t in self.tags if t.name != tag_name]
         self.updated_at = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    def add_link(self, target_id: str, link_type: LinkType = LinkType.REFERENCE,
-                description: str | None = None) -> None:
+    def add_link(
+        self,
+        target_id: str,
+        link_type: LinkType | str = LinkType.REFERENCE,
+        description: str | None = None,
+    ) -> None:
         """Add a link to another note."""
+        # Normalise to string
+        lt_str = link_type.value if isinstance(link_type, LinkType) else str(link_type)
         # Check if link already exists
         for link in self.links:
-            if link.target_id == target_id and link.link_type == link_type:
+            if link.target_id == target_id and link.link_type == lt_str:
                 return  # Link already exists
         link = Link(
             source_id=self.id,
             target_id=target_id,
-            link_type=link_type,
+            link_type=lt_str,
             description=description,
         )
         self.links.append(link)
         self.updated_at = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    def remove_link(self, target_id: str, link_type: LinkType | None = None) -> None:
+    def remove_link(self, target_id: str, link_type: LinkType | str | None = None) -> None:  # noqa: E501
         """Remove a link to another note."""
-        if link_type:
+        if link_type is not None:
+            lt_str = link_type.value if isinstance(link_type, LinkType) else str(link_type)  # noqa: E501
             self.links = [
-                link for link in self.links
-                if not (link.target_id == target_id and link.link_type == link_type)
+                link
+                for link in self.links
+                if not (link.target_id == target_id and link.link_type == lt_str)
             ]
         else:
             self.links = [link for link in self.links if link.target_id != target_id]
@@ -190,15 +336,18 @@ class Note(BaseModel):
     def to_markdown(self) -> str:
         """Convert the note to a markdown formatted string."""
         from zettelkasten_mcp.config import config  # noqa: PLC0415
+
         # Format tags
         tags_str = ", ".join([tag.name for tag in self.tags])
         # Format links
         links_str = ""
         if self.links:
-            links_str = "\n".join([
-                f"- [{link.link_type}] [[{link.target_id}]] {link.description or ''}"
-                for link in self.links
-            ])
+            links_str = "\n".join(
+                [
+                    f"- [{link.link_type}] [[{link.target_id}]] {link.description or ''}"  # noqa: E501
+                    for link in self.links
+                ],
+            )
         # Apply template
         return config.default_note_template.format(
             title=self.title,

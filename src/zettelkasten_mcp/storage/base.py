@@ -1,10 +1,12 @@
 """Base repository interface for data storage."""
+
 import abc
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
+
 
 class Repository(abc.ABC, Generic[T]):
     """Abstract base class for repositories."""
