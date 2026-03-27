@@ -89,6 +89,8 @@ class TestMcpServer:
         assert isinstance(result, dict)
         assert result["note_id"] == mock_note.id
         assert "file_path" in result
+        assert "vscode_uri" in result
+        assert result["vscode_uri"].startswith("vscode://file/")
         assert "summary" in result
         assert mock_note.id in result["summary"]
         # Verify service call
@@ -135,6 +137,9 @@ class TestMcpServer:
         assert result["content"] == "Test content"
         assert "tag1" in result["tags"]
         assert "metadata" in result
+        assert "file_path" in result
+        assert "vscode_uri" in result
+        assert result["vscode_uri"].startswith("vscode://file/")
         assert "summary" in result
 
         # Verify service call
@@ -242,6 +247,9 @@ class TestMcpServer:
         note_titles = [n["title"] for n in result["notes"]]
         assert "Note 1" in note_titles
         assert "Note 2" in note_titles
+        for note_dict in result["notes"]:
+            assert "vscode_uri" in note_dict
+            assert note_dict["vscode_uri"].startswith("vscode://file/")
 
         # Verify service call
         self.mock_search_service.search_combined.assert_called_with(

@@ -1,7 +1,5 @@
-## Purpose
+## MODIFIED Requirements
 
-Defines the structured JSON response contract for all MCP tools. Every tool returns a JSON-serialisable dict with a `summary` key and tool-specific structured keys.
-## Requirements
 ### Requirement: structured-response
 Every MCP tool MUST return a JSON-serialisable dict as its primary response.
 The dict MUST contain a `"summary"` key with a human-readable string equivalent

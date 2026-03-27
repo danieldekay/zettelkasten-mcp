@@ -109,6 +109,7 @@ class ZettelkastenMcpServer:
             "content": note.content,
             "metadata": note.metadata if note.metadata else {},
             "file_path": str(notes_dir / f"{note.id}.md"),
+            "vscode_uri": "vscode://file/" + str(notes_dir / f"{note.id}.md"),
         }
 
     def _note_summary_dict(self, note: Any) -> dict:
@@ -126,6 +127,7 @@ class ZettelkastenMcpServer:
             "updated_at": note.updated_at.isoformat(),
             "preview": preview,
             "file_path": str(notes_dir / f"{note.id}.md"),
+            "vscode_uri": "vscode://file/" + str(notes_dir / f"{note.id}.md"),
         }
 
     def _register_tools(self) -> None:  # noqa: PLR0915
@@ -149,10 +151,8 @@ class ZettelkastenMcpServer:
                 tags: Comma-separated list of tags (optional)
                 metadata: Metadata as a JSON string or dict (optional)
 
-            Note: The created note will be stored as a markdown file at:
-                  {notes_dir}/{note_id}.md
-                  You can create a clickable file link using:
-                  file://{absolute_path_to_notes_dir}/{note_id}.md
+            Response includes `vscode_uri` — use it to create a clickable
+            VS Code link to the note file.
             """
             try:
                 # Convert note_type string to enum
@@ -214,6 +214,7 @@ class ZettelkastenMcpServer:
                 result: dict = {
                     "note_id": note.id,
                     "file_path": str(note_file_path),
+                    "vscode_uri": "vscode://file/" + str(note_file_path),
                     "summary": f"Note created: '{note.title}' ({note.id})",
                 }
                 if not self.zettel_service.repository._db_available:  # noqa: SLF001
@@ -227,10 +228,8 @@ class ZettelkastenMcpServer:
             Args:
                 identifier: The ID or title of the note
 
-            Note: The note is stored as a markdown file at:
-                  {notes_dir}/{note_id}.md
-                  You can create a clickable file link using:
-                  file://{absolute_path_to_notes_dir}/{note_id}.md
+            Response includes `vscode_uri` — use it to create a clickable
+            VS Code link to the note file.
             """
             try:
                 identifier = str(identifier)
@@ -506,10 +505,8 @@ class ZettelkastenMcpServer:
                 note_type: Type of note to filter by
                 limit: Maximum number of results to return
 
-            Note: Each result includes a file path where the note is stored as:
-                  {notes_dir}/{note_id}.md
-                  You can create a clickable file link using:
-                  file://{absolute_path_to_notes_dir}/{note_id}.md
+            Each result includes `vscode_uri` — use it to create a clickable
+            VS Code link to each note file.
             """
             try:
                 # Convert tags string to list if provided
@@ -572,7 +569,8 @@ class ZettelkastenMcpServer:
                 note_id: ID of the note
                 direction: Direction of links (outgoing, incoming, both)
 
-            Note: Each result includes a file path where the note is stored.
+            Each result includes `vscode_uri` — use it to create a clickable
+            VS Code link to each note file.
             """
             try:
                 if direction not in ["outgoing", "incoming", "both"]:
@@ -667,8 +665,8 @@ class ZettelkastenMcpServer:
                 threshold: Similarity threshold (0.0-1.0)
                 limit: Maximum number of results to return
 
-            Note: Each result includes a file path where the note is stored as:
-                  {notes_dir}/{note_id}.md
+            Each result includes `vscode_uri` — use it to create a clickable
+            VS Code link to each note file.
             """
             try:
                 # Get similar notes
@@ -710,7 +708,8 @@ class ZettelkastenMcpServer:
             Args:
                 limit: Maximum number of results to return (default: 10)
 
-            Note: Each result includes a file path where the note is stored.
+            Each result includes `vscode_uri` — use it to create a clickable
+            VS Code link to each note file.
             """
             try:
                 # Get central notes
@@ -738,7 +737,8 @@ class ZettelkastenMcpServer:
         def zk_find_orphaned_notes() -> dict:
             """Find notes with no connections to other notes.
 
-            Note: Each result includes a file path where the note is stored.
+            Each result includes `vscode_uri` — use it to create a clickable
+            VS Code link to each note file.
             """
             try:
                 # Get orphaned notes
@@ -772,7 +772,8 @@ class ZettelkastenMcpServer:
                 use_updated: Whether to use updated_at instead of created_at
                 limit: Maximum number of results to return
 
-            Note: Each result includes a file path where the note is stored.
+            Each result includes `vscode_uri` — use it to create a clickable
+            VS Code link to each note file.
             """
             try:
                 # Parse dates
