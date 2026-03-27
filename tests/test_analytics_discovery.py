@@ -19,7 +19,10 @@ class TestFindNotesInTimerange:
     """Tests for ZettelService.find_notes_in_timerange."""
 
     def _make_note(
-        self, zettel_service, title: str, content: str = "Content",
+        self,
+        zettel_service,
+        title: str,
+        content: str = "Content",
     ) -> object:
         return zettel_service.create_note(title=title, content=content)
 
@@ -180,18 +183,20 @@ class TestFindNotesInTimerangePerformance:
 
         t0 = time.perf_counter()
         with repo.session_factory() as session:
-            ids = session.execute(
-                select(DBNote.id).where(
-                    DBNote.created_at >= start_dt,
-                    DBNote.created_at <= end_dt,
-                ),
-            ).scalars().all()
+            ids = (
+                session.execute(
+                    select(DBNote.id).where(
+                        DBNote.created_at >= start_dt,
+                        DBNote.created_at <= end_dt,
+                    ),
+                )
+                .scalars()
+                .all()
+            )
         elapsed_ms = (time.perf_counter() - t0) * 1000
 
         assert len(ids) >= 10_000
-        assert elapsed_ms < 200, (
-            f"Query took {elapsed_ms:.1f} ms (limit: 200 ms)"
-        )
+        assert elapsed_ms < 200, f"Query took {elapsed_ms:.1f} ms (limit: 200 ms)"
 
 
 # ---------------------------------------------------------------------------
@@ -309,9 +314,13 @@ class TestAnalyzeTagClustersPerformance:
                 session.add(DBTag(name=f"perf-cluster-tag-{i}"))
             session.flush()
 
-            tag_id_rows = session.execute(
-                text("SELECT id FROM tags WHERE name LIKE 'perf-cluster-tag-%'"),
-            ).scalars().all()
+            tag_id_rows = (
+                session.execute(
+                    text("SELECT id FROM tags WHERE name LIKE 'perf-cluster-tag-%'"),
+                )
+                .scalars()
+                .all()
+            )
             tag_ids = list(tag_id_rows)
 
             for j in range(n_notes):

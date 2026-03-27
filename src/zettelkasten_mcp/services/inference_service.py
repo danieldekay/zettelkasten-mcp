@@ -1,6 +1,7 @@
 """Link-type inference service using pattern-matching heuristics."""
 
 import re
+from typing import cast
 
 from zettelkasten_mcp.models.schema import Note
 
@@ -176,13 +177,18 @@ class InferenceService:
         if "reference" not in scores:
             scores["reference"] = 0.1
 
-        sorted_types = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:_MAX_SUGGESTIONS]  # noqa: E501
+        sorted_types = sorted(scores.items(), key=lambda x: x[1], reverse=True)[
+            :_MAX_SUGGESTIONS
+        ]
         suggestions = [
             {"link_type": lt, "confidence": round(score, 3)}
             for lt, score in sorted_types
         ]
 
-        low_confidence = all(s["confidence"] < _LOW_CONFIDENCE_THRESHOLD for s in suggestions)  # noqa: E501
+        low_confidence = all(
+            cast("float", s["confidence"]) < _LOW_CONFIDENCE_THRESHOLD
+            for s in suggestions
+        )
 
         return {
             "suggestions": suggestions,

@@ -3,8 +3,9 @@
 import datetime
 import logging
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -87,14 +88,14 @@ class LinkTypeDef:
 class LinkTypeRegistry:
     """Registry of all valid link types (built-in + project-local custom)."""
 
-    _built_in: dict[str, LinkTypeDef] = field(default_factory=dict)
-    _custom: dict[str, LinkTypeDef] = field(default_factory=dict)
+    _built_in: dict[str, LinkTypeDef]
+    _custom: dict[str, LinkTypeDef]
 
     def __init__(self) -> None:
         def _lt(name: str, inverse: str, symmetric: bool) -> LinkTypeDef:
             return LinkTypeDef(name=name, inverse=inverse, symmetric=symmetric)
 
-        self._built_in: dict[str, LinkTypeDef] = {
+        self._built_in = {
             "reference": _lt("reference", "reference", symmetric=True),
             "extends": _lt("extends", "extended_by", symmetric=False),
             "extended_by": _lt("extended_by", "extends", symmetric=False),
@@ -108,7 +109,7 @@ class LinkTypeRegistry:
             "supported_by": _lt("supported_by", "supports", symmetric=False),
             "related": _lt("related", "related", symmetric=True),
         }
-        self._custom: dict[str, LinkTypeDef] = {}
+        self._custom = {}
 
     def is_valid(self, name: str) -> bool:
         """Return True if `name` is a registered link type."""
@@ -136,9 +137,15 @@ class LinkTypeRegistry:
         defn = LinkTypeDef(name=name, inverse=inverse, symmetric=symmetric)
         self._custom[name] = defn
         # Register inverse if different
-        if inverse != name and inverse not in self._built_in and inverse not in self._custom:  # noqa: E501
+        if (
+            inverse != name
+            and inverse not in self._built_in
+            and inverse not in self._custom
+        ):
             self._custom[inverse] = LinkTypeDef(
-                name=inverse, inverse=name, symmetric=symmetric,
+                name=inverse,
+                inverse=name,
+                symmetric=symmetric,
             )
 
     def get_inverse(self, name: str) -> str:
@@ -154,7 +161,7 @@ class LinkTypeRegistry:
         """Return only the custom (non-built-in) type definitions."""
         return list(self._custom.values())
 
-    def load_from_yaml(self, path: "Path") -> None:  # noqa: F821
+    def load_from_yaml(self, path: Path) -> None:
         """Load custom link types from a YAML config file."""
         if not path.exists():
             return
@@ -170,7 +177,9 @@ class LinkTypeRegistry:
                     self._custom[name] = defn
                     if inverse != name and not self.is_valid(inverse):
                         self._custom[inverse] = LinkTypeDef(
-                            name=inverse, inverse=name, symmetric=symmetric,
+                            name=inverse,
+                            inverse=name,
+                            symmetric=symmetric,
                         )
         except Exception:  # noqa: BLE001
             logger.debug("Failed to load custom link types from %s", path)
@@ -316,10 +325,14 @@ class Note(BaseModel):
         self.links.append(link)
         self.updated_at = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    def remove_link(self, target_id: str, link_type: LinkType | str | None = None) -> None:  # noqa: E501
+    def remove_link(
+        self, target_id: str, link_type: LinkType | str | None = None
+    ) -> None:
         """Remove a link to another note."""
         if link_type is not None:
-            lt_str = link_type.value if isinstance(link_type, LinkType) else str(link_type)  # noqa: E501
+            lt_str = (
+                link_type.value if isinstance(link_type, LinkType) else str(link_type)
+            )
             self.links = [
                 link
                 for link in self.links

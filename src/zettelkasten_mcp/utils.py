@@ -33,7 +33,7 @@ def setup_logging(level: str = "INFO", log_file: str | None = None) -> None:
         log_config["stream"] = sys.stderr
 
     # Apply configuration
-    logging.basicConfig(**log_config)
+    logging.basicConfig(**log_config)  # type: ignore[arg-type]
 
 
 def generate_timestamp_id() -> str:
@@ -111,9 +111,7 @@ def format_note_for_display(
         result += "\n## Links\n"
         for link in links:
             if hasattr(link, "description") and link.description:
-                result += (
-                    f"- {link.link_type}: {link.target_id} - {link.description}\n"
-                )
+                result += f"- {link.link_type}: {link.target_id} - {link.description}\n"
             else:
                 result += f"- {link.link_type}: {link.target_id}\n"
 

@@ -1,4 +1,5 @@
-"""Comprehensive test suite for semantic link types in the Zettelkasten MCP implementation."""
+"""Comprehensive test suite for semantic link types
+in the Zettelkasten MCP implementation."""
 
 import datetime
 from unittest.mock import patch
@@ -16,9 +17,16 @@ class TestSemanticLinks:
     def mock_datetime_now(self):
         """Mock datetime.now() to return a fixed timestamp."""
         with patch("datetime.datetime") as mock_dt:
-            mock_dt.now.return_value = datetime.datetime(2025, 1, 1, 12, 0, 0)
+            mock_dt.now.return_value = datetime.datetime(  # noqa: DTZ001
+                2025,
+                1,
+                1,
+                12,
+                0,
+                0,
+            )
             # Ensure constructor still works correctly
-            mock_dt.side_effect = lambda *args, **kw: datetime.datetime(*args, **kw)
+            mock_dt.side_effect = lambda *args, **kw: datetime.datetime(*args, **kw)  # noqa: DTZ001
             yield mock_dt
 
     def test_all_link_types_creation(self, zettel_service):
@@ -105,7 +113,6 @@ class TestSemanticLinks:
 
         # Test pairs of semantic inverse relationships
         inverse_pairs = [
-            # (from_source, expected_inverse)
             (LinkType.EXTENDS, LinkType.EXTENDED_BY),
             (LinkType.EXTENDED_BY, LinkType.EXTENDS),
             (LinkType.REFINES, LinkType.REFINED_BY),
@@ -163,7 +170,8 @@ class TestSemanticLinks:
 
             # Verify through get_linked_notes (incoming)
             incoming_links = zettel_service.get_linked_notes(
-                target_notes[i].id, "incoming",
+                target_notes[i].id,
+                "incoming",
             )
             assert any(note.id == source_note.id for note in incoming_links)
 
@@ -199,7 +207,7 @@ class TestSemanticLinks:
         _target, _ = zettel_service.create_link(
             source_id=target_note.id,
             target_id=source_note.id,
-            link_type=LinkType.QUESTIONS,  # Custom inverse type (not the expected EXTENDED_BY)
+            link_type=LinkType.QUESTIONS,  # Custom inverse (not expected EXTENDED_BY)
             description="Custom backward direction",
         )
 
@@ -512,7 +520,7 @@ Test content for parsing links from markdown.
 """
 
         # Parse note from markdown
-        note = note_repository._parse_note_from_markdown(markdown_content)
+        note = note_repository._parse_note_from_markdown(markdown_content)  # noqa: SLF001
 
         # Verify links were parsed with correct types
         assert len(note.links) == 3
@@ -526,8 +534,8 @@ Test content for parsing links from markdown.
     def test_markdown_generation_with_links(self, zettel_service):
         """Test that markdown is generated with the correct link types."""
         # Create test notes with explicit datetime objects rather than mocks
-        original_created_at = datetime.datetime.now()
-        original_updated_at = datetime.datetime.now()
+        original_created_at = datetime.datetime.now(tz=datetime.timezone.utc)
+        original_updated_at = datetime.datetime.now(tz=datetime.timezone.utc)
 
         source_note = zettel_service.create_note(
             title="Markdown Generation Source",
@@ -547,7 +555,7 @@ Test content for parsing links from markdown.
         )
 
         # Access the repository's _note_to_markdown function
-        markdown = zettel_service.repository._note_to_markdown(source_note)
+        markdown = zettel_service.repository._note_to_markdown(source_note)  # noqa: SLF001
 
         # Verify markdown contains the link with correct type
         assert "## Links" in markdown
@@ -845,11 +853,11 @@ Test content for parsing links from markdown.
         )
 
         # Create search service
-        from zettelkasten_mcp.services.search_service import SearchService
+        from zettelkasten_mcp.services.search_service import (  # noqa: PLC0415
+            SearchService,
+        )
 
         SearchService(zettel_service)
-
-        # Search for linked notes
         linked_notes = zettel_service.get_linked_notes(hub_note.id, "outgoing")
         assert len(linked_notes) == 1
         assert linked_notes[0].id == linked_note.id
@@ -923,7 +931,9 @@ Test content for parsing links from markdown.
 
     def test_central_notes_with_semantic_links(self, zettel_service):
         """Test the find_central_notes function with semantic links."""
-        from zettelkasten_mcp.services.search_service import SearchService
+        from zettelkasten_mcp.services.search_service import (  # noqa: PLC0415
+            SearchService,
+        )
 
         search_service = SearchService(zettel_service)
 

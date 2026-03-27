@@ -15,9 +15,11 @@ from zettelkasten_mcp.storage.note_repository import NoteRepository
 @pytest.fixture
 def temp_dirs():
     """Create temporary directories for notes and database."""
-    with tempfile.TemporaryDirectory() as notes_dir:
-        with tempfile.TemporaryDirectory() as db_dir:
-            yield Path(notes_dir), Path(db_dir)
+    with (
+        tempfile.TemporaryDirectory() as notes_dir,
+        tempfile.TemporaryDirectory() as db_dir,
+    ):
+        yield Path(notes_dir), Path(db_dir)
 
 
 @pytest.fixture

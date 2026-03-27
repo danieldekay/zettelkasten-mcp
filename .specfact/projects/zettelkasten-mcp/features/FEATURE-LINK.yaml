@@ -1,0 +1,99 @@
+key: FEATURE-LINK
+title: Link
+outcomes:
+- A link between two notes.
+acceptance:
+- The system link must provide link functionality
+constraints:
+- The system must meet reliability requirements (error handling, retry logic, 
+  resilience)
+- The system must meet maintainability requirements (documentation, type hints, 
+  testing)
+- The system must use type hints for improved code maintainability and IDE 
+  support
+stories:
+- key: STORY-LINK-001
+  title: As a developer, I can validate Link data
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Validate that link_type is in the registry.
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - validate_link_type()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - 'validate_link_type called with isinstance is called: returns v.value'
+    - 'validate_link_type called with condition is met: sets msg to value'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: cls
+      type: Any
+      required: true
+      default:
+    - name: v
+      type: str
+      required: true
+      default:
+    return_type:
+      type: str
+      nullable: false
+    preconditions:
+    - 'Requires: isinstance(v, LinkType)'
+    - 'Requires: not link_type_registry.is_valid(v)'
+    postconditions:
+    - 'Ensures: returns str'
+    - 'Ensures: returns str'
+    error_contracts:
+    - exception_type: ValueError
+      condition: Error condition
+  source_functions: []
+  test_functions: []
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+confidence: 0.8
+draft: false
+source_tracking:
+  implementation_files: []
+  test_files: []
+  file_hashes: {}
+  last_synced: '2026-03-27T10:26:23.370806+00:00'
+  source_functions: []
+  test_functions: []
+  tool:
+  source_metadata: {}
+  refined_from_backlog_item_id:
+  refined_from_provider:
+  template_id:
+  refinement_confidence:
+  refinement_timestamp:
+  refinement_ai_model:
+contract:
+protocol:
+priority:
+rank:
+business_value_score:
+depends_on_features: []
+blocks_features: []
+business_value_description:
+target_users: []
+success_metrics: []
+target_release:
+estimated_story_points:
+extensions: {}

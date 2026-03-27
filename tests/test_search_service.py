@@ -96,7 +96,9 @@ class TestSearchService:
         zettel_service.create_link(note1.id, note2.id, LinkType.REFERENCE)
         zettel_service.create_link(note1.id, note3.id, LinkType.EXTENDS)
         zettel_service.create_link(
-            note2.id, note3.id, LinkType.SUPPORTS,
+            note2.id,
+            note3.id,
+            LinkType.SUPPORTS,
         )  # Changed link type
 
         # Create search service
@@ -286,7 +288,8 @@ class TestSearchServiceMethods:
         assert tgt.id in ids
 
     def test_find_orphaned_notes_direct(self, zettel_service):
-        """Test SearchService.find_orphaned_notes returns a list (method is callable)."""
+        """Test SearchService.find_orphaned_notes returns a list
+        (method is callable)."""
         zettel_service.create_note(
             title="Orphan Direct",
             content="No links at all.",
@@ -317,7 +320,7 @@ class TestSearchServiceMethods:
 
     def test_find_notes_by_date_range_direct(self, zettel_service):
         """Test SearchService.find_notes_by_date_range returns notes in range."""
-        from datetime import datetime, timezone
+        from datetime import datetime, timezone  # noqa: PLC0415
 
         note = zettel_service.create_note(
             title="Date Range Note",
@@ -501,7 +504,7 @@ class TestSearchServiceMethods:
             side_effect=Exception("FTS5 unavailable"),
         ):
             pass
-        results = service._search_combined_legacy(text="legacytarget")
+        results = service._search_combined_legacy(text="legacytarget")  # noqa: SLF001
         assert isinstance(results, list)
 
     def test_search_combined_legacy_no_text(self, zettel_service):
@@ -512,13 +515,13 @@ class TestSearchServiceMethods:
             tags=["legacy-test"],
         )
         service = SearchService(zettel_service)
-        results = service._search_combined_legacy(tags=["legacy-test"])
+        results = service._search_combined_legacy(tags=["legacy-test"])  # noqa: SLF001
         assert len(results) >= 1
         assert results[0].score == 1.0
 
     def test_search_combined_legacy_text_scoring(self, zettel_service):
         """Test _search_combined_legacy text scoring with actual matching note."""
-        from zettelkasten_mcp.config import config
+        from zettelkasten_mcp.config import config  # noqa: PLC0415
 
         zettel_service.create_note(
             title="Thermodynamics Introduction",
@@ -537,7 +540,7 @@ class TestSearchServiceMethods:
 
     def test_search_combined_fts5_path(self, zettel_service):
         """Test _search_combined_fts5 path when FTS5 table exists after rebuild."""
-        from zettelkasten_mcp.config import config
+        from zettelkasten_mcp.config import config  # noqa: PLC0415
 
         zettel_service.create_note(
             title="FTS5 Quantum Physics",

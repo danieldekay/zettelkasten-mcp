@@ -40,7 +40,8 @@ def test_get_note(note_repository):
     assert retrieved_note is not None
     assert retrieved_note.id == saved_note.id
     assert retrieved_note.title == "Get Test Note"
-    # Note content includes the title as a markdown header - account for this in our test
+    # Note content includes the title as a markdown header -
+    # account for this in our test
     expected_content = f"# {note.title}\n\n{note.content}"
     assert retrieved_note.content.strip() == expected_content.strip()
     assert retrieved_note.note_type == NoteType.PERMANENT
@@ -201,7 +202,9 @@ def test_metadata_round_trip(note_repository):
 def test_metadata_empty_on_plain_note(note_repository):
     """Notes created without metadata return an empty dict on retrieval."""
     note = Note(
-        title="Plain Note", content="No metadata.", note_type=NoteType.PERMANENT,
+        title="Plain Note",
+        content="No metadata.",
+        note_type=NoteType.PERMANENT,
     )
     saved = note_repository.create(note)
     retrieved = note_repository.get(saved.id)

@@ -3,7 +3,8 @@
 import math
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import cast
 
 from sqlalchemy import or_, select, text
 from sqlalchemy.orm import joinedload
@@ -141,8 +142,8 @@ class SearchService:
                 )
                 .where(
                     or_(
-                        DBLink.source_id is not None,
-                        DBLink.target_id is not None,
+                        DBLink.source_id.isnot(None),
+                        DBLink.target_id.isnot(None),
                     ),
                 )
                 .subquery()
@@ -232,7 +233,7 @@ class SearchService:
             # Check if in range
             if start_date and date < start_date:
                 continue
-            if end_date and date >= end_date + datetime.timedelta(seconds=1):
+            if end_date and date >= end_date + timedelta(seconds=1):
                 continue
 
             matching_notes.append(note)
@@ -484,7 +485,9 @@ class SearchService:
         return tag_vectors
 
     def _cosine_similarity(
-        self, vec_a: dict[str, float], vec_b: dict[str, float],
+        self,
+        vec_a: dict[str, float],
+        vec_b: dict[str, float],
     ) -> float:
         """Compute cosine similarity between two sparse TF-IDF vectors."""
         shared = set(vec_a) & set(vec_b)
@@ -529,7 +532,7 @@ class SearchService:
             if sim > 0:
                 results.append({"tag": tag_name, "confidence": round(sim, 4)})
 
-        results.sort(key=lambda x: x["confidence"], reverse=True)
+        results.sort(key=lambda x: cast("float", x["confidence"]), reverse=True)
         return results[:limit]
 
     def invalidate_tag_cache(self) -> None:
@@ -610,7 +613,7 @@ class SearchService:
         pair_data: dict[tuple[int, int], tuple[int, list[str]]] = {}
         for row in rows:
             _union(row.tag_a, row.tag_b)
-            pair_data[(row.tag_a, row.tag_b)] = (
+            pair_data[(row.tag_a, row.tag_b)] = (  # type: ignore[index,assignment]
                 row.co_count,
                 (row.note_ids or "").split(",")[:5],
             )
@@ -644,5 +647,5 @@ class SearchService:
                     },
                 )
 
-        clusters.sort(key=lambda c: c["count"], reverse=True)
+        clusters.sort(key=lambda c: cast("int", c["count"]), reverse=True)
         return {"clusters": clusters, "total_tag_pairs_analysed": total_pairs}

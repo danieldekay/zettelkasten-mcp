@@ -47,7 +47,7 @@ class TestNoteModel:
             Note(title="   ", content="Content")
         # Without content - should fail
         with pytest.raises(ValidationError):
-            Note(title="Title")
+            Note(title="Title")  # type: ignore[call-arg]
 
     def test_note_tag_operations(self):
         """Test adding and removing tags."""
@@ -145,10 +145,10 @@ class TestLinkModel:
         """Test link validation for required fields."""
         # Missing source_id
         with pytest.raises(ValidationError):
-            Link(target_id="target456")
+            Link(target_id="target456")  # type: ignore[call-arg]
         # Missing target_id
         with pytest.raises(ValidationError):
-            Link(source_id="source123")
+            Link(source_id="source123")  # type: ignore[call-arg]
         # Invalid link_type
         with pytest.raises(ValidationError):
             Link(source_id="source123", target_id="target456", link_type="invalid")
@@ -160,7 +160,7 @@ class TestLinkModel:
             target_id="target456",
         )
         # Attempt to modify link should fail
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             link.source_id = "newsource"
 
 
@@ -177,7 +177,7 @@ class TestTagModel:
         """Test that Tag objects are immutable."""
         tag = Tag(name="test")
         # Attempt to modify tag should fail
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             tag.name = "newname"
 
 
@@ -185,7 +185,8 @@ class TestHelperFunctions:
     """Tests for helper functions in the schema module."""
 
     def test_iso8601_id_format(self):
-        """Test that generated IDs follow the correct ISO 8601 format with nanosecond precision."""
+        """Test that generated IDs follow the correct ISO 8601 format
+        with nanosecond precision."""
         # Generate an ID
         id_str = generate_id()
 
@@ -208,7 +209,8 @@ class TestHelperFunctions:
         assert len(ns_part) == 9, "Nanosecond part should be 9 digits"
 
     def test_iso8601_uniqueness(self):
-        """Test that ISO 8601 IDs with nanosecond precision are unique even in rapid succession."""
+        """Test that ISO 8601 IDs with nanosecond precision are unique
+        even in rapid succession."""
         # Generate multiple IDs as quickly as possible
         ids = [generate_id() for _ in range(1000)]
 

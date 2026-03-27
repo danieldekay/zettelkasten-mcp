@@ -350,8 +350,10 @@ class ZettelService:
             msg = "Link type name cannot be empty"
             raise ValueError(msg)
 
-        inv = name if symmetric else (
-            inverse.strip().lower() if inverse else f"{name}_by"
+        inv = (
+            name
+            if symmetric
+            else (inverse.strip().lower() if inverse else f"{name}_by")
         )
 
         # Registers in module-level registry (raises on duplicate)

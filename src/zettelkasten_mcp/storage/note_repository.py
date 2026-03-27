@@ -267,7 +267,7 @@ class NoteRepository(Repository[Note]):
                             link_type_str = LinkType.REFERENCE.value
                         links.append(
                             Link(
-                                source_id=note_id,
+                                source_id=str(note_id),
                                 target_id=target_id,
                                 link_type=link_type_str,
                                 description=description,
@@ -282,19 +282,21 @@ class NoteRepository(Repository[Note]):
         # Extract timestamps
         created_str = metadata.get("created")
         created_at = (
-            datetime.datetime.fromisoformat(created_str)
+            datetime.datetime.fromisoformat(str(created_str))
             if created_str
             else datetime.datetime.now(tz=datetime.timezone.utc)
         )
         updated_str = metadata.get("updated")
         updated_at = (
-            datetime.datetime.fromisoformat(updated_str) if updated_str else created_at
+            datetime.datetime.fromisoformat(str(updated_str))
+            if updated_str
+            else created_at
         )
 
         # Create note object
         return Note(
-            id=note_id,
-            title=title,
+            id=str(note_id),
+            title=str(title),
             content=post.content,
             note_type=note_type,
             tags=tags,
@@ -465,7 +467,7 @@ class NoteRepository(Repository[Note]):
 
         # Create markdown with frontmatter
         post = frontmatter.Post(content, **metadata)
-        return frontmatter.dumps(post)
+        return str(frontmatter.dumps(post))
 
     def create(self, note: Note) -> Note:
         """Create a new note."""
@@ -1026,11 +1028,12 @@ class NoteRepository(Repository[Note]):
 
         def _naive(dt: datetime.datetime | None) -> datetime.datetime:
             if dt is None:
-                return datetime.datetime.min
+                return datetime.datetime.min  # noqa: DTZ901
             return dt.replace(tzinfo=None) if dt.tzinfo is not None else dt
 
         sort_key = (
-            (lambda n: _naive(n.created_at)) if date_field == "created_at"
+            (lambda n: _naive(n.created_at))
+            if date_field == "created_at"
             else (lambda n: _naive(n.updated_at))
         )
         notes.sort(key=sort_key, reverse=True)

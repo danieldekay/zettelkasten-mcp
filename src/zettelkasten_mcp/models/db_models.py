@@ -14,6 +14,7 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
 )
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from zettelkasten_mcp.config import config
@@ -45,10 +46,16 @@ class DBNote(Base):
         index=True,
     )
     created_at = Column(
-        DateTime, default=datetime.datetime.now, nullable=False, index=True,
+        DateTime,
+        default=datetime.datetime.now,
+        nullable=False,
+        index=True,
     )
     updated_at = Column(
-        DateTime, default=datetime.datetime.now, nullable=False, index=True,
+        DateTime,
+        default=datetime.datetime.now,
+        nullable=False,
+        index=True,
     )
 
     # Relationships
@@ -120,7 +127,10 @@ class DBLink(Base):
     # Add a unique constraint to prevent duplicate links of the same type
     __table_args__ = (
         UniqueConstraint(
-            "source_id", "target_id", "link_type", name="unique_link_type",
+            "source_id",
+            "target_id",
+            "link_type",
+            name="unique_link_type",
         ),
     )
 
@@ -132,11 +142,11 @@ class DBLink(Base):
         )
 
 
-def init_db() -> None:
+def init_db() -> Engine:
     """Initialize the database."""
-    # Create engine based on configuration
     engine = create_engine(config.get_db_url())
     Base.metadata.create_all(engine)
+    return engine
 
 
 def get_session_factory(engine: Any = None) -> sessionmaker:

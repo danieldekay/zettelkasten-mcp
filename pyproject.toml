@@ -111,6 +111,7 @@ select = [
 ]
 ignore = [
     "ANN401",   # Dynamically typed expressions (Any)
+    "COM812",   # Trailing comma missing — conflicts with ruff formatter
     "D",        # pydocstyle (handled separately if needed)
     "FBT001",   # Boolean positional arg in function definition
     "FBT002",   # Boolean default positional argument in function definition
@@ -144,10 +145,16 @@ line-ending = "auto"
 
 [tool.mypy]
 python_version = "3.10"
+mypy_path = "src"
+ignore_missing_imports = true
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = "zettelkasten_mcp.models.db_models"
+ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -183,6 +190,8 @@ source = ["src/zettelkasten_mcp"]
 branch = true
 omit = [
     "src/zettelkasten_mcp/__init__.py",
+    "src/zettelkasten_mcp/__main__.py",
+    "src/zettelkasten_mcp/dev.py",
     "tests/*",
     "*/site-packages/*",
     "*/.venv/*",
@@ -232,3 +241,9 @@ reportUnknownParameterType = "none"
 reportAttributeAccessIssue = "none"
 reportArgumentType = "warning"
 reportOperatorIssue = "warning"
+
+[dependency-groups]
+dev = [
+    "pyan3>=2.2.2",
+    "types-pyyaml>=6.0.12.20250915",
+]

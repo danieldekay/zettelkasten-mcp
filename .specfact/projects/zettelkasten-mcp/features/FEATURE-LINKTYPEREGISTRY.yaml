@@ -1,0 +1,254 @@
+key: FEATURE-LINKTYPEREGISTRY
+title: Link Type Registry
+outcomes:
+- Registry of all valid link types (built-in + project-local custom).
+acceptance:
+- The system link type registry must provide link type registry functionality
+constraints:
+- The system must meet reliability requirements (error handling, retry logic, 
+  resilience)
+- The system must meet maintainability requirements (documentation, type hints, 
+  testing)
+- The system must use type hints for improved code maintainability and IDE 
+  support
+stories:
+- key: STORY-LINKTYPEREGISTRY-001
+  title: As a developer, I can configure Link Type Registry
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - __init__()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - __init__ executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns None'
+    error_contracts: []
+  source_functions: []
+  test_functions: []
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-LINKTYPEREGISTRY-002
+  title: As a developer, I can validate Link Type Registry data
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Return True if `name` is a registered link type.
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - is_valid()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - is_valid executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: name
+      type: str
+      required: true
+      default:
+    return_type:
+      type: bool
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns bool'
+    error_contracts: []
+  source_functions: []
+  test_functions: []
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-LINKTYPEREGISTRY-003
+  title: As a user, I can use Link Type Registry features
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Register a custom link type.
+  - Return all registered type names.
+  - Return only the custom (non-built-in) type definitions.
+  - Load custom link types from a YAML config file.
+  tags: []
+  story_points: 5
+  value_points: 5
+  tasks:
+  - register()
+  - all_types()
+  - custom_types()
+  - load_from_yaml()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - 'register called with name is in self._built_in: sets msg to value'
+    - 'register called with name is in self._custom: sets msg to value'
+    - 'register called with condition is met: sets value to LinkTypeDef()'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: name
+      type: str
+      required: true
+      default:
+    - name: inverse
+      type: str
+      required: true
+      default:
+    - name: symmetric
+      type: bool
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts:
+    - exception_type: ValueError
+      condition: Error condition
+    - exception_type: ValueError
+      condition: Error condition
+  source_functions: []
+  test_functions: []
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-LINKTYPEREGISTRY-004
+  title: As a user, I can view Link Type Registry data
+  acceptance:
+  - register symmetric works correctly (see contract examples)
+  - register asymmetric works correctly (see contract examples)
+  - duplicate rejected works correctly (see contract examples)
+  - Return the inverse type name for `name`.
+  tags: []
+  story_points: 2
+  value_points: 8
+  tasks:
+  - get_inverse()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - get_inverse executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: name
+      type: str
+      required: true
+      default:
+    return_type:
+      type: str
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns str'
+    error_contracts: []
+  source_functions: []
+  test_functions: []
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+confidence: 1.0
+draft: false
+source_tracking:
+  implementation_files: []
+  test_files: []
+  file_hashes: {}
+  last_synced: '2026-03-27T10:26:23.370800+00:00'
+  source_functions: []
+  test_functions: []
+  tool:
+  source_metadata: {}
+  refined_from_backlog_item_id:
+  refined_from_provider:
+  template_id:
+  refinement_confidence:
+  refinement_timestamp:
+  refinement_ai_model:
+contract:
+protocol:
+priority:
+rank:
+business_value_score:
+depends_on_features: []
+blocks_features: []
+business_value_description:
+target_users: []
+success_metrics: []
+target_release:
+estimated_story_points:
+extensions: {}

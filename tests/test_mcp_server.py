@@ -1,5 +1,6 @@
 # tests/test_mcp_server.py
 """Tests for the MCP server implementation."""
+
 from unittest.mock import MagicMock, patch
 
 from zettelkasten_mcp.models.schema import LinkType, NoteType
@@ -18,13 +19,15 @@ class TestMcpServer:
         self.mock_mcp = MagicMock()
 
         # Mock the tool decorator to capture registered functions BEFORE server creation
-        def mock_tool_decorator(*args, **kwargs):
+        def mock_tool_decorator(*args, **kwargs):  # noqa: ARG001
             def tool_wrapper(func):
                 # Store the function with its name
                 name = kwargs.get("name")
                 self.registered_tools[name] = func
                 return func
+
             return tool_wrapper
+
         self.mock_mcp.tool = mock_tool_decorator
 
         # Mock the ZettelService and SearchService
@@ -32,9 +35,18 @@ class TestMcpServer:
         self.mock_search_service = MagicMock()
 
         # Create patchers for FastMCP, ZettelService, and SearchService
-        self.mcp_patcher = patch("zettelkasten_mcp.server.mcp_server.FastMCP", return_value=self.mock_mcp)
-        self.zettel_patcher = patch("zettelkasten_mcp.server.mcp_server.ZettelService", return_value=self.mock_zettel_service)
-        self.search_patcher = patch("zettelkasten_mcp.server.mcp_server.SearchService", return_value=self.mock_search_service)
+        self.mcp_patcher = patch(
+            "zettelkasten_mcp.server.mcp_server.FastMCP",
+            return_value=self.mock_mcp,
+        )
+        self.zettel_patcher = patch(
+            "zettelkasten_mcp.server.mcp_server.ZettelService",
+            return_value=self.mock_zettel_service,
+        )
+        self.search_patcher = patch(
+            "zettelkasten_mcp.server.mcp_server.SearchService",
+            return_value=self.mock_search_service,
+        )
 
         # Start the patchers
         self.mcp_patcher.start()
@@ -207,7 +219,10 @@ class TestMcpServer:
         mock_result2 = MagicMock()
         mock_result2.note = mock_note2
 
-        self.mock_search_service.search_combined.return_value = [mock_result1, mock_result2]
+        self.mock_search_service.search_combined.return_value = [
+            mock_result1,
+            mock_result2,
+        ]
 
         # Call the tool function directly
         search_notes_func = self.registered_tools["zk_search_notes"]
@@ -882,11 +897,12 @@ class TestMcpServer:
 
     def test_create_link_duplicate_raises_integrity_error(self):
         """Test zk_create_link returns conflict error for duplicate link."""
-        from sqlalchemy import exc as sqlalchemy_exc
+        from sqlalchemy import exc as sqlalchemy_exc  # noqa: PLC0415
 
-        self.mock_zettel_service.create_link.side_effect = sqlalchemy_exc.IntegrityError(
-            "UNIQUE constraint failed", None, None,
+        err = sqlalchemy_exc.IntegrityError(
+            "UNIQUE constraint failed", None, Exception("UNIQUE constraint failed")
         )
+        self.mock_zettel_service.create_link.side_effect = err
 
         create_link_func = self.registered_tools["zk_create_link"]
         result = create_link_func(source_id="s1", target_id="t1", link_type="reference")
