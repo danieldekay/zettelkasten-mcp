@@ -1,3 +1,18 @@
+================================================================
+Start of Project Knowledge File
+================================================================
+
+Purpose:
+--------
+This file is designed to be consumed by AI systems for analysis, review,
+or other automated processes. It solely serves the purpose of background
+information and should NOT under any circumstances leak into the user's
+interaction with the AI when actually USING the Zettelkasten MCP tools to
+process, explore or synthesize user-supplied information.
+
+Content:
+--------
+
 # Zettelkasten-MCP Debug Report - January 30, 2026
 
 ## Issues Found and Fixed
@@ -99,3 +114,6 @@ The zettelkasten-mcp package is now fully functional:
 
 ---
 *Debug session completed: 2026-01-30 16:50 UTC*
+================================================================
+End of Project Knowledge File
+================================================================

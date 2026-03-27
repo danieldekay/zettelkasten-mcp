@@ -1,3 +1,18 @@
+================================================================
+Start of Project Knowledge File
+================================================================
+
+Purpose:
+--------
+This file is designed to be consumed by AI systems for analysis, review,
+or other automated processes. It solely serves the purpose of background
+information and should NOT under any circumstances leak into the user's
+interaction with the AI when actually USING the Zettelkasten MCP tools to
+process, explore or synthesize user-supplied information.
+
+Content:
+--------
+
 # Zettelkasten MCP Improvement Specification
 
 **Document Status**: TODO Specification
@@ -622,3 +637,6 @@ def get_note(note_id: str) -> Optional[Note]:
 **Last Updated**: 2026-01-30
 **Document Maintainer**: Development Team
 **Status**: 📋 DRAFT - Ready for Review
+================================================================
+End of Project Knowledge File
+================================================================

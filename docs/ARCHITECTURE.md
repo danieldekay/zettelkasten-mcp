@@ -1,3 +1,18 @@
+================================================================
+Start of Project Knowledge File
+================================================================
+
+Purpose:
+--------
+This file is designed to be consumed by AI systems for analysis, review,
+or other automated processes. It solely serves the purpose of background
+information and should NOT under any circumstances leak into the user's
+interaction with the AI when actually USING the Zettelkasten MCP tools to
+process, explore or synthesize user-supplied information.
+
+Content:
+--------
+
 # Architecture — Zettelkasten MCP Server
 
 > **Version**: 2.0 (Phase 5 — `feat/api-foundation`)
@@ -547,3 +562,6 @@ main.py
 
 All service dependencies are injected via constructor parameters, making
 every layer independently testable with mocks or temp-dir fixtures.
+================================================================
+End of Project Knowledge File
+================================================================

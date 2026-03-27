@@ -1,3 +1,18 @@
+================================================================
+Start of Project Knowledge File
+================================================================
+
+Purpose:
+--------
+This file is designed to be consumed by AI systems for analysis, review,
+or other automated processes. It solely serves the purpose of background
+information and should NOT under any circumstances leak into the user's
+interaction with the AI when actually USING the Zettelkasten MCP tools to
+process, explore or synthesize user-supplied information.
+
+Content:
+--------
+
 # VS Code Development Environment Setup - 2026 Best Practices
 
 This document outlines the modern VS Code workspace configuration implemented for the Zettelkasten MCP Server project, following 2026 development best practices.
@@ -263,4 +278,6 @@ If migrating from older configurations:
 ---
 
 *This setup follows 2026 Python development best practices with a focus on performance, security, and developer experience.*
-
+================================================================
+End of Project Knowledge File
+================================================================

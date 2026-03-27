@@ -1,3 +1,18 @@
+================================================================
+Start of Project Knowledge File
+================================================================
+
+Purpose:
+--------
+This file is designed to be consumed by AI systems for analysis, review,
+or other automated processes. It solely serves the purpose of background
+information and should NOT under any circumstances leak into the user's
+interaction with the AI when actually USING the Zettelkasten MCP tools to
+process, explore or synthesize user-supplied information.
+
+Content:
+--------
+
 # Zettelkasten MCP — Top 10 MoSCoW Features
 
 > **Date**: 2026-03-26
@@ -1649,3 +1664,6 @@ internal `Session` directly (only via the public service layer).
 | 28 | Vector / Embedding Similarity Search | Could | Backlog | ⬜ Unspecced |
 | 29 | Multi-User / Collaborative Support | Could | Backlog | ⬜ Unspecced |
 | 30 | Plugin / Extension System | Could | Backlog | ⬜ Unspecced |
+================================================================
+End of Project Knowledge File
+================================================================
