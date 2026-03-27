@@ -1,0 +1,19 @@
+title: Zettelkasten Mcp
+narrative: Zettelkasten MCP Server — a Model Context Protocol server that 
+  integrates the Zettelkasten knowledge management method with AI assistants, 
+  enabling researchers and knowledge workers to build, link, and explore atomic 
+  notes through natural language conversations with AI tools like Claude 
+  Desktop, VS Code Copilot, and Cursor.
+target_users:
+- Researchers and knowledge workers who use AI assistants and need a second 
+  brain / PKM system for literature notes
+- hypotheses
+- and ideas
+value_hypothesis: Bridges the Zettelkasten PKM method with AI-native tooling so 
+  knowledge workers can build their second brain through natural language 
+  conversations
+constraints:
+- Python >=3.10
+- SQLAlchemy ORM
+- Pydantic for data validation
+metrics:

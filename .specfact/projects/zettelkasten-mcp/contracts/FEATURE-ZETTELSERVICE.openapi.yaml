@@ -1,0 +1,431 @@
+openapi: 3.0.3
+info:
+  title: Zettel Service
+  version: 1.0.0
+  description: API contract extracted from code for Zettel Service
+paths:
+  /zettel-service/initialize:
+    get:
+      operationId: initialize
+      summary: Initialize
+      description: Initialize the service and dependencies.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - ZettelService
+  /zettel-service/create-note:
+    post:
+      operationId: create_note
+      summary: Create Note
+      description: Create a new note.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: note_type
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/NoteType'
+        description: 'Query parameter: note_type'
+      - name: tags
+        in: query
+        required: false
+        schema:
+          type: object
+        description: 'Query parameter: tags'
+      - name: metadata
+        in: query
+        required: false
+        schema:
+          type: object
+        description: 'Query parameter: metadata'
+      tags:
+      - ZettelService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+  /zettel-service/update-note:
+    put:
+      operationId: update_note
+      summary: Update Note
+      description: Update an existing note.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: title
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Query parameter: title'
+      - name: content
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Query parameter: content'
+      - name: note_type
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/NoteType'
+        description: 'Query parameter: note_type'
+      - name: tags
+        in: query
+        required: false
+        schema:
+          type: object
+        description: 'Query parameter: tags'
+      - name: metadata
+        in: query
+        required: false
+        schema:
+          type: object
+        description: 'Query parameter: metadata'
+      tags:
+      - ZettelService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+  /zettel-service/delete-note:
+    delete:
+      operationId: delete_note
+      summary: Delete Note
+      description: Delete a note.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      tags:
+      - ZettelService
+  /zettel-service/search-notes:
+    get:
+      operationId: search_notes
+      summary: Search Notes
+      description: Search for notes based on criteria.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - ZettelService
+  /zettel-service/add-tag-to-note:
+    post:
+      operationId: add_tag_to_note
+      summary: Add Tag To Note
+      description: Add a tag to a note.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      tags:
+      - ZettelService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+  /zettel-service/remove-tag-from-note:
+    delete:
+      operationId: remove_tag_from_note
+      summary: Remove Tag From Note
+      description: Remove a tag from a note.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      tags:
+      - ZettelService
+  /zettel-service/create-link:
+    post:
+      operationId: create_link
+      summary: Create Link
+      description: "Create a link between notes with proper bidirectional semantics.\n\
+        \nArgs:\n    source_id: ID of the source note\n    target_id: ID of the target\
+        \ note\n    link_type: Type of link from source to target\n    description:\
+        \ Optional description of the link\n    bidirectional: Whether to create a\
+        \ link in both directions\n    bidirectional_type: Optional custom link type\
+        \ for the reverse direction\n        If not provided, an appropriate inverse\
+        \ relation will be used\n\nReturns:\n    Tuple of (source_note, target_note\
+        \ or None)"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: link_type
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/LinkType'
+        description: 'Query parameter: link_type'
+      - name: description
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Query parameter: description'
+      - name: bidirectional
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: 'Query parameter: bidirectional'
+      - name: bidirectional_type
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/LinkType'
+        description: 'Query parameter: bidirectional_type'
+      tags:
+      - ZettelService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+  /zettel-service/remove-link:
+    delete:
+      operationId: remove_link
+      summary: Remove Link
+      description: Remove a link between notes.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: link_type
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/LinkType'
+        description: 'Query parameter: link_type'
+      - name: bidirectional
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: 'Query parameter: bidirectional'
+      tags:
+      - ZettelService
+  /zettel-service/rebuild-index:
+    get:
+      operationId: rebuild_index
+      summary: Rebuild Index
+      description: Rebuild the database index from files.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - ZettelService
+  /zettel-service/export-note:
+    get:
+      operationId: export_note
+      summary: Export Note
+      description: Export a note in the specified format.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+        '404':
+          description: Not Found
+      parameters:
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Query parameter: format'
+      tags:
+      - ZettelService
+  /search-service/initialize:
+    get:
+      operationId: initialize
+      summary: Initialize
+      description: Initialize the service and dependencies.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - SearchService
+  /search-service/search-combined:
+    get:
+      operationId: search_combined
+      summary: Search Combined
+      description: "Perform a combined search with multiple criteria.\n\nUses FTS5\
+        \ full-text search if enabled and text query provided,\notherwise falls back\
+        \ to legacy in-memory search.\n\nArgs:\n    text: Text query (FTS5 syntax\
+        \ supported if enabled)\n    tags: Filter by tags\n    note_type: Filter by\
+        \ note type\n    start_date: Filter by creation date (start)\n    end_date:\
+        \ Filter by creation date (end)\n    \nReturns:\n    List of SearchResult\
+        \ objects sorted by relevance"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      parameters:
+      - name: text
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Query parameter: text'
+      - name: tags
+        in: query
+        required: false
+        schema:
+          type: object
+        description: 'Query parameter: tags'
+      - name: note_type
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/NoteType'
+        description: 'Query parameter: note_type'
+      - name: start_date
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/datetime'
+        description: 'Query parameter: start_date'
+      - name: end_date
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/datetime'
+        description: 'Query parameter: end_date'
+      tags:
+      - SearchService
+components:
+  schemas: {}

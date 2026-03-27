@@ -23,7 +23,7 @@ build/
 
 # IDE specific files
 .idea/
-.vscode/
+# .vscode/ - commented out to include workspace settings in repo
 *.swp
 *.swo
 .DS_Store
@@ -40,6 +40,7 @@ logs/
 .coverage
 htmlcov/
 .pytest_cache/
+fts5_testing/
 
 # Local configuration
 config.local.json

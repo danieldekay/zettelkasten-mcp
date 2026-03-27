@@ -1,0 +1,48 @@
+total_duration: 0.8954010009765625
+total_checks: 3
+passed_checks: 0
+failed_checks: 3
+timeout_checks: 0
+skipped_checks: 0
+budget_exceeded: false
+checks:
+- name: Linting (ruff)
+  tool: ruff
+  status: failed
+  duration: 0.7048985958099365
+  exit_code: 2
+  timeout: false
+  output_length: 0
+  error_length: 316
+  findings:
+    violations: []
+    total_violations: 0
+    files_checked: 0
+- name: Type checking (basedpyright)
+  tool: basedpyright
+  status: failed
+  duration: 0.06655597686767578
+  exit_code: 2
+  timeout: false
+  output_length: 0
+  error_length: 91
+  findings:
+    errors: []
+    warnings: []
+    total_errors: 0
+    total_warnings: 0
+- name: Contract exploration (CrossHair)
+  tool: crosshair
+  status: failed
+  duration: 0.03392195701599121
+  exit_code: 1
+  timeout: false
+  output_length: 0
+  error_length: 94
+  findings:
+    counterexamples: []
+    total_counterexamples: 0
+metadata:
+  timestamp: '2026-03-20T14:28:12.192443'
+  repo_path: /home/kaesmad/projects/external/zettelkasten-mcp
+  budget: 120

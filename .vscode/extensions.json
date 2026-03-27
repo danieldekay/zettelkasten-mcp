@@ -1,0 +1,32 @@
+{
+    "recommendations": [
+        // Python Development
+        "ms-python.python",
+        "ms-python.pylance",
+        "charliermarsh.ruff",
+        "ms-python.debugpy",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-pull-request-github",
+        "eamodio.gitlens",
+        // File Format Support
+        "tamasfe.even-better-toml",
+        "yzhang.markdown-all-in-one",
+        "mikestead.dotenv",
+        // Testing & Development
+        "ms-vscode.test-adapter-converter",
+        "ms-toolsai.jupyter-renderers",
+        // Remote Development
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode-remote.remote-wsl",
+        // Productivity
+        "gruntfuggly.todo-tree",
+        "vscode-icons-team.vscode-icons",
+        "ms-vscode.vscode-json"
+    ],
+    "unwantedRecommendations": [
+        "ms-python.flake8",
+        "ms-python.isort",
+        "ms-python.black-formatter"
+    ]
+}

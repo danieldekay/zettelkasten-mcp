@@ -1,0 +1,5 @@
+preset: minimal
+high_action: WARN
+medium_action: WARN
+low_action: LOG
+enabled: true

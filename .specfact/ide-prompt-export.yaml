@@ -1,0 +1,4 @@
+version: 1
+ide: vscode
+prompt_sources:
+- core
