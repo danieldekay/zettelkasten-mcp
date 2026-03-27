@@ -1,0 +1,21 @@
+deviations:
+- type: coverage_threshold
+  severity: MEDIUM
+  description: 'Contracts per story below threshold: 0.33 < 1.0'
+  location: .specfact/projects/<bundle>/sdd.yaml
+  fix_hint: Add 0.7 more contract(s) or update threshold
+- type: coverage_threshold
+  severity: MEDIUM
+  description: 'Invariants per feature below threshold: 0.00 < 1.0'
+  location: .specfact/projects/<bundle>/sdd.yaml
+  fix_hint: Add 1.0 more invariant(s) or update threshold
+- type: coverage_threshold
+  severity: MEDIUM
+  description: 'OpenAPI contract coverage below threshold: 0.0% < 80.0%'
+  location: .specfact/projects/<bundle>/sdd.yaml
+  fix_hint: Add OpenAPI contracts for 5 more feature(s) or update threshold. Use
+    'specfact contract init --feature <key>' to create contracts.
+high_count: 0
+medium_count: 3
+low_count: 0
+passed: true

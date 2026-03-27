@@ -1,0 +1,147 @@
+total_duration: 4.606284856796265
+total_checks: 3
+passed_checks: 1
+failed_checks: 2
+timeout_checks: 0
+skipped_checks: 0
+budget_exceeded: false
+checks:
+- name: Linting (ruff)
+  tool: ruff
+  status: failed
+  duration: 0.04611921310424805
+  exit_code: 1
+  timeout: false
+  output_length: 149137
+  error_length: 0
+  findings:
+    violations: []
+    total_violations: 0
+    files_checked: 0
+- name: Type checking (basedpyright)
+  tool: basedpyright
+  status: failed
+  duration: 2.927065849304199
+  exit_code: 1
+  timeout: false
+  output_length: 4647
+  error_length: 0
+  findings:
+    errors:
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_integration.py
+      line: 222
+      column: 72
+      message: '"content" is not a known attribute of "None" (reportOptionalMemberAccess)'
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_integration.py
+      line: 230
+      column: 86
+      message: '"content" is not a known attribute of "None" (reportOptionalMemberAccess)'
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_models.py
+      line: 48
+      column: 13
+      message: Argument missing for parameter "content" (reportCallIssue)
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_models.py
+      line: 145
+      column: 13
+      message: Argument missing for parameter "source_id" (reportCallIssue)
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_models.py
+      line: 148
+      column: 13
+      message: Argument missing for parameter "target_id" (reportCallIssue)
+    warnings:
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/services/search_service.py
+      line: 152
+      column: 53
+      message: Argument of type "Column[str]" cannot be assigned to parameter 
+        "note_id" of type "str" in function "get_note"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 257
+      column: 43
+      message: Argument of type "object" cannot be assigned to parameter 
+        "source_id" of type "str" in function "__init__"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 270
+      column: 45
+      message: Argument of type "object" cannot be assigned to parameter 
+        "date_string" of type "str" in function "fromisoformat"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 276
+      column: 45
+      message: Argument of type "object" cannot be assigned to parameter 
+        "date_string" of type "str" in function "fromisoformat"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 281
+      column: 16
+      message: Argument of type "object" cannot be assigned to parameter "id" of
+        type "str" in function "__init__"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 282
+      column: 19
+      message: Argument of type "str | object" cannot be assigned to parameter 
+        "title" of type "str" in function "__init__"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 504
+      column: 29
+      message: Argument of type "Column[str]" cannot be assigned to parameter 
+        "id" of type "str" in function "get"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 530
+      column: 41
+      message: Argument of type "Column[str]" cannot be assigned to parameter 
+        "id" of type "str" in function "get"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 781
+      column: 29
+      message: Argument of type "Column[str]" cannot be assigned to parameter 
+        "id" of type "str" in function "get"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 855
+      column: 33
+      message: Argument of type "Column[str]" cannot be assigned to parameter 
+        "id" of type "str" in function "get"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/src/zettelkasten_mcp/storage/note_repository.py
+      line: 865
+      column: 26
+      message: Argument of type "Column[str]" cannot be assigned to parameter 
+        "name" of type "str" in function "__init__"
+    - file: 
+        /home/kaesmad/projects/external/zettelkasten-mcp/tests/test_models.py
+      line: 151
+      column: 74
+      message: Argument of type "Literal['invalid']" cannot be assigned to 
+        parameter "link_type" of type "LinkType" in function "__init__"
+    total_errors: 5
+    total_warnings: 12
+- name: Contract exploration (CrossHair)
+  tool: crosshair
+  status: passed
+  duration: 1.5832312107086182
+  exit_code: 0
+  timeout: false
+  output_length: 0
+  error_length: 546
+  findings:
+    counterexamples: []
+    total_counterexamples: 0
+metadata:
+  timestamp: '2026-03-20T14:36:07.564635'
+  repo_path: /home/kaesmad/projects/external/zettelkasten-mcp
+  budget: 120
+  enforcement_config_path: .specfact/gates/config/enforcement.yaml
+  enforcement_preset: minimal

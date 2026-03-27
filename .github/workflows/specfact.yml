@@ -1,0 +1,78 @@
+name: SpecFact Contract Validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: "Time budget in seconds"
+        required: false
+        default: "90"
+        type: string
+      mode:
+        description: "Enforcement mode (block, warn, log)"
+        required: false
+        default: "warn"
+        type: choice
+        options:
+          - block
+          - warn
+          - log
+
+jobs:
+  specfact-validation:
+    name: Contract Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install project dependencies (including dev extras for tools)
+        run: uv sync --extra dev
+
+      - name: Install SpecFact CLI
+        run: pip install specfact-cli
+
+      - name: Bootstrap SpecFact bundles
+        run: specfact init --profile solo-developer
+
+      - name: Set up CrossHair Configuration
+        run: specfact code repro setup
+
+      - name: Run Contract Validation
+        run: |
+          specfact code repro --verbose --budget ${{ github.event.inputs.budget || '90' }}
+
+      - name: Generate PR Comment
+        if: github.event_name == 'pull_request'
+        run: python -m specfact_cli.utils.github_annotations
+        env:
+          SPECFACT_REPORT_PATH: .specfact/reports/enforcement/report-*.yaml
+        continue-on-error: true
+
+      - name: Upload enforcement report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: specfact-report-${{ github.run_number }}
+          path: .specfact/reports/enforcement/
+          retention-days: 7

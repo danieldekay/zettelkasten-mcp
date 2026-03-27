@@ -1,0 +1,101 @@
+versions:
+  schema_version: '1.0'
+  project: 0.1.0
+bundle:
+  created_at: '2026-03-26T12:56:04.602225+00:00'
+  last_modified: '2026-03-26T12:57:22.027042+00:00'
+  format: directory-based
+schema_metadata:
+project_metadata:
+checksums:
+  algorithm: sha256
+  files:
+    idea.yaml: aae4041f030a6621e26a1a2b7bcf93f8dadb1ccf28fa3bc13155cf9695ba1109
+    features/FEATURE-SEARCHSERVICE.yaml: 
+      6bba85e1e184e0bbecb9f4db42688759126fa43deb2aaa25d0a2ec7e5686bce2
+    product.yaml: 
+      e38b12cae77a6bbe2372101c2bfbe7e2ad816be35ad41a5222ce0ed4a46109f7
+    features/FEATURE-REPOSITORY.yaml: 
+      5269cdaf2651dd17b33fcdc07feced7d5fa37deb828aa53cedfd95c5af0e7be5
+    features/FEATURE-ZETTELKASTENMCPSERVER.yaml: 
+      0af8623467d7ba899fb4a8c119fb94f5cd445e1030f7ff8e09e9b2dbe088fcee
+    features/FEATURE-ZETTELKASTENCONFIG.yaml: 
+      698887552d4cf66cb938111680e8cbc06b1e08acdd0d695a9194c18a194ec06e
+    features/FEATURE-ZETTELSERVICE.yaml: 
+      c358371dcc6bb0d7e8071a2281d3398458a2d4b683d51594ecee6095677572c7
+    features/FEATURE-NOTEREPOSITORY.yaml: 
+      862443911a15c54a5492983336284381462c31391f3bebf23e5b983d8a890e22
+    features/FEATURE-NOTE.yaml: 
+      74f57237ea0ac7839bdb6a2a7154a7580600e165d476de2bfff8788de93c0ea6
+    clarifications.yaml: 
+      ae16ec736ee7124db8479f8ad4fc8479eec278aee8d826c383d2bc8989c4cb61
+locks: []
+personas: {}
+features:
+- key: FEATURE-ZETTELKASTENCONFIG
+  title: Zettelkasten Config
+  file: FEATURE-ZETTELKASTENCONFIG.yaml
+  status: active
+  stories_count: 1
+  created_at: '2026-03-26T12:57:22.027042+00:00'
+  updated_at: '2026-03-26T12:57:22.027042+00:00'
+  contract:
+  checksum: 698887552d4cf66cb938111680e8cbc06b1e08acdd0d695a9194c18a194ec06e
+- key: FEATURE-NOTE
+  title: Note
+  file: FEATURE-NOTE.yaml
+  status: active
+  stories_count: 5
+  created_at: '2026-03-26T12:57:22.027042+00:00'
+  updated_at: '2026-03-26T12:57:22.027042+00:00'
+  contract:
+  checksum: 74f57237ea0ac7839bdb6a2a7154a7580600e165d476de2bfff8788de93c0ea6
+- key: FEATURE-ZETTELSERVICE
+  title: Zettel Service
+  file: FEATURE-ZETTELSERVICE.yaml
+  status: active
+  stories_count: 7
+  created_at: '2026-03-26T12:57:22.027042+00:00'
+  updated_at: '2026-03-26T12:57:22.027042+00:00'
+  contract:
+  checksum: c358371dcc6bb0d7e8071a2281d3398458a2d4b683d51594ecee6095677572c7
+- key: FEATURE-ZETTELKASTENMCPSERVER
+  title: Zettelkasten Mcp Server
+  file: FEATURE-ZETTELKASTENMCPSERVER.yaml
+  status: active
+  stories_count: 2
+  created_at: '2026-03-26T12:57:22.027042+00:00'
+  updated_at: '2026-03-26T12:57:22.027042+00:00'
+  contract:
+  checksum: 0af8623467d7ba899fb4a8c119fb94f5cd445e1030f7ff8e09e9b2dbe088fcee
+- key: FEATURE-SEARCHSERVICE
+  title: Search Service
+  file: FEATURE-SEARCHSERVICE.yaml
+  status: active
+  stories_count: 3
+  created_at: '2026-03-26T12:57:22.027042+00:00'
+  updated_at: '2026-03-26T12:57:22.027042+00:00'
+  contract:
+  checksum: 6bba85e1e184e0bbecb9f4db42688759126fa43deb2aaa25d0a2ec7e5686bce2
+- key: FEATURE-REPOSITORY
+  title: Repository
+  file: FEATURE-REPOSITORY.yaml
+  status: active
+  stories_count: 5
+  created_at: '2026-03-26T12:57:22.027042+00:00'
+  updated_at: '2026-03-26T12:57:22.027042+00:00'
+  contract:
+  checksum: 5269cdaf2651dd17b33fcdc07feced7d5fa37deb828aa53cedfd95c5af0e7be5
+- key: FEATURE-NOTEREPOSITORY
+  title: Note Repository
+  file: FEATURE-NOTEREPOSITORY.yaml
+  status: active
+  stories_count: 7
+  created_at: '2026-03-26T12:57:22.027042+00:00'
+  updated_at: '2026-03-26T12:57:22.027042+00:00'
+  contract:
+  checksum: 862443911a15c54a5492983336284381462c31391f3bebf23e5b983d8a890e22
+protocols: []
+contracts: []
+change_tracking:
+change_archive: []

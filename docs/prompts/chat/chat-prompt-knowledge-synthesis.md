@@ -1,3 +1,18 @@
+================================================================
+Start of Project Knowledge File
+================================================================
+
+Purpose:
+--------
+This file is designed to be consumed by AI systems for analysis, review,
+or other automated processes. It solely serves the purpose of background
+information and should NOT under any circumstances leak into the user's
+interaction with the AI when actually USING the Zettelkasten MCP tools to
+process, explore or synthesize user-supplied information.
+
+Content:
+--------
+
 I've attached information that might help synthesize ideas in my Zettelkasten. Please:
 
 1. Find opportunities for synthesis by identifying:
@@ -18,3 +33,6 @@ I've attached information that might help synthesize ideas in my Zettelkasten. P
    - Potential applications of the new understanding
 
 Provide a summary of the insights discovered, notes created, and connections established through this synthesis process.
+================================================================
+End of Project Knowledge File
+================================================================

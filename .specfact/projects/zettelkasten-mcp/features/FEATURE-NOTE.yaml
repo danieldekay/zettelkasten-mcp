@@ -1,0 +1,452 @@
+key: FEATURE-NOTE
+title: Note
+outcomes:
+- A Zettelkasten note.
+acceptance:
+- The system note must provide note functionality
+constraints:
+- The system must meet reliability requirements (error handling, retry logic, 
+  resilience)
+- The system must meet maintainability requirements (documentation, type hints, 
+  testing)
+- The system must use type hints for improved code maintainability and IDE 
+  support
+stories:
+- key: STORY-NOTE-001
+  title: As a developer, I can validate Note data
+  acceptance:
+  - note creation works correctly (see contract examples)
+  - note validation works correctly (see contract examples)
+  - note tag operations works correctly (see contract examples)
+  - Validate that the title is not empty.
+  - 'Yes, be more specific. BDD-style acceptance for STORY-ZETTELKASTENMCPSERVER-002:
+    (1) Given a valid search query, when zk_search_notes is called, then results are
+    returned as a JSON list ordered by FTS5 BM25 relevance score descending; if no
+    matches, an empty list is returned. (2) Given a valid source note_id, when zk_get_linked_notes
+    is called, then all linked notes are returned with link_type and description;
+    if note not found, a JSON error object {"error": true, "code": "NOT_FOUND", "message":
+    "..."} is returned. (3) All MCP tool error states return structured JSON: {"error":
+    true, "code": "NOT_FOUND|VALIDATION_ERROR|INTERNAL_ERROR", "message": "<human-readable
+    description>"}.'
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - validate_title()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - 'validate_title called with condition is met: operation completes'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: cls
+      type: Any
+      required: true
+      default:
+    - name: v
+      type: str
+      required: true
+      default:
+    return_type:
+      type: str
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns str'
+    error_contracts:
+    - exception_type: ValueError
+      condition: Error condition
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  test_functions:
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_search_notes
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTE-002
+  title: As a user, I can create new Note records
+  acceptance:
+  - note creation works correctly (see contract examples)
+  - note validation works correctly (see contract examples)
+  - note tag operations works correctly (see contract examples)
+  - Add a tag to the note.
+  - Add a link to another note.
+  - 'Yes, be more specific. Acceptance for STORY-SEARCHSERVICE-001: (1) SearchService
+    initializes with FTS5 support enabled by default; falls back to legacy keyword
+    scoring if FTS5 unavailable. (2) initialize() accepts an optional ZettelService
+    dependency via constructor injection. (3) The service can be initialized standalone
+    (no ZettelService) for unit testing. (4) Initialization is idempotent — calling
+    initialize() multiple times does not cause errors.'
+  tags: []
+  story_points: 2
+  value_points: 8
+  tasks:
+  - add_tag()
+  - add_link()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - 'add_tag called with isinstance is called: sets tag to Tag()'
+    - 'add_tag called with tag.name is not in tag_names: calls self.tags.append and
+      sets self.updated_at to datetime.datetime.now()'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: tag
+      type: str | Tag
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions:
+    - 'Requires: isinstance(tag, str)'
+    postconditions: []
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  test_functions:
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_search_notes
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTE-003
+  title: As a user, I can delete Note records
+  acceptance:
+  - note creation works correctly (see contract examples)
+  - note validation works correctly (see contract examples)
+  - note tag operations works correctly (see contract examples)
+  - Remove a tag from the note.
+  - Remove a link to another note.
+  - 'Yes, be more specific. Acceptance for STORY-SEARCHSERVICE-002: (1) Search results
+    are ordered by FTS5 BM25 relevance score descending when FTS5 is available. (2)
+    When FTS5 is unavailable, results are ordered by keyword match count as a fallback.
+    (3) An empty or whitespace-only query returns an empty result list. (4) Search
+    is case-insensitive. (5) Results include note_id, title, and a relevance_score
+    field.'
+  tags: []
+  story_points: 2
+  value_points: 8
+  tasks:
+  - remove_tag()
+  - remove_link()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - remove_tag executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: tag
+      type: str | Tag
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  test_functions:
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_search_notes
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTE-004
+  title: As a user, I can view Note data
+  acceptance:
+  - note creation works correctly (see contract examples)
+  - note validation works correctly (see contract examples)
+  - note tag operations works correctly (see contract examples)
+  - Get all note IDs that this note links to.
+  - 'Yes, be more specific. Acceptance for STORY-SEARCHSERVICE-003: (1) Search result
+    items expose: note_id, title, note_type, tags, relevance_score, and created_at.
+    (2) When searching by linked notes (search_by_link), results include the link_type
+    connecting the source note to each result. (3) Results from find_similar_notes
+    are ranked by semantic similarity score and include the similarity metric. (4)
+    All search methods return an empty list (not null/error) when no matching notes
+    are found.'
+  tags: []
+  story_points: 2
+  value_points: 8
+  tasks:
+  - get_linked_note_ids()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - get_linked_note_ids executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    return_type:
+      type: set[str]
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns set[str]'
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  test_functions:
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_search_notes
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTE-005
+  title: As a user, I can use Note features
+  acceptance:
+  - note creation works correctly (see contract examples)
+  - note validation works correctly (see contract examples)
+  - note tag operations works correctly (see contract examples)
+  - Convert the note to a markdown formatted string.
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - to_markdown()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - "to_markdown called with condition is met: sets links_str to '\\n'.join()"
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    return_type:
+      type: str
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns str'
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  test_functions:
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_search_notes
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+confidence: 1.0
+draft: false
+source_tracking:
+  implementation_files:
+  - src/zettelkasten_mcp/storage/note_repository.py
+  test_files:
+  - tests/test_note_repository.py
+  file_hashes:
+    src/zettelkasten_mcp/storage/note_repository.py: 
+      4525346e05d0a2e59c9383e8cbafc8bf7522e53b22bc978da1f30f268b9861bc
+    tests/test_note_repository.py: 
+      97644cafca437d32cba55ccc0b7dc4c72d5c56d91dcc95fdf3852f1e22c121c0
+  last_synced: '2026-03-20T13:45:41.105283+00:00'
+  source_functions: []
+  test_functions: []
+  tool:
+  source_metadata: {}
+  refined_from_backlog_item_id:
+  refined_from_provider:
+  template_id:
+  refinement_confidence:
+  refinement_timestamp:
+  refinement_ai_model:
+contract:
+protocol:
+priority:
+rank:
+business_value_score:
+depends_on_features: []
+blocks_features: []
+business_value_description:
+target_users: []
+success_metrics: []
+target_release:
+estimated_story_points:
+extensions: {}
