@@ -323,10 +323,12 @@ class NoteRepository(Repository[Note]):
                 db_note.updated_at = note.updated_at
                 # Clear existing links and tags to rebuild them
                 session.execute(
-                    text(f"DELETE FROM links WHERE source_id = '{note.id}'"),  # noqa: S608
+                    text("DELETE FROM links WHERE source_id = :note_id"),
+                    {"note_id": note.id},
                 )
                 session.execute(
-                    text(f"DELETE FROM note_tags WHERE note_id = '{note.id}'"),  # noqa: S608
+                    text("DELETE FROM note_tags WHERE note_id = :note_id"),
+                    {"note_id": note.id},
                 )
             else:
                 # Create new note
@@ -645,7 +647,8 @@ class NoteRepository(Repository[Note]):
 
                     # For links, we'll delete existing links and add the new ones
                     session.execute(
-                        text(f"DELETE FROM links WHERE source_id = '{note.id}'"),  # noqa: S608
+                        text("DELETE FROM links WHERE source_id = :note_id"),
+                        {"note_id": note.id},
                     )
 
                     # Add new links
