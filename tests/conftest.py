@@ -1,4 +1,5 @@
 """Common test fixtures for the Zettelkasten MCP server."""
+
 import tempfile
 from pathlib import Path
 
@@ -18,6 +19,7 @@ def temp_dirs():
         with tempfile.TemporaryDirectory() as db_dir:
             yield Path(notes_dir), Path(db_dir)
 
+
 @pytest.fixture
 def test_config(temp_dirs):
     """Configure with test paths."""
@@ -34,6 +36,7 @@ def test_config(temp_dirs):
     config.notes_dir = original_notes_dir
     config.database_path = original_database_path
 
+
 @pytest.fixture
 def note_repository(test_config):
     """Create a test note repository."""
@@ -49,6 +52,7 @@ def note_repository(test_config):
     )
     # Initialize is handled in constructor
     return repository
+
 
 @pytest.fixture
 def zettel_service(note_repository):

@@ -1,5 +1,6 @@
 # tests/test_models.py
 """Tests for the data models used in the Zettelkasten MCP server."""
+
 import datetime
 import re
 
@@ -18,6 +19,7 @@ from zettelkasten_mcp.models.schema import (
 
 class TestNoteModel:
     """Tests for the Note model."""
+
     def test_note_creation(self):
         """Test creating a note with valid values."""
         note = Note(
@@ -124,6 +126,7 @@ class TestNoteModel:
 
 class TestLinkModel:
     """Tests for the Link model."""
+
     def test_link_creation(self):
         """Test creating a link with valid values."""
         link = Link(
@@ -163,6 +166,7 @@ class TestLinkModel:
 
 class TestTagModel:
     """Tests for the Tag model."""
+
     def test_tag_creation(self):
         """Test creating a tag with valid values."""
         tag = Tag(name="test")
@@ -188,7 +192,9 @@ class TestHelperFunctions:
         # Verify it matches the expected format: YYYYMMDDTHHMMSSsssssssss
         # Where sssssssss is a 9-digit nanosecond component
         pattern = r"^\d{8}T\d{6}\d{9}$"
-        assert re.match(pattern, id_str), f"ID {id_str} does not match expected ISO 8601 basic format"
+        assert re.match(pattern, id_str), (
+            f"ID {id_str} does not match expected ISO 8601 basic format"
+        )
 
         # Verify the parts make sense
         date_part = id_str[:8]

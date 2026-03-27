@@ -1,4 +1,5 @@
 """Comprehensive test suite for semantic link types in the Zettelkasten MCP implementation."""
+
 import datetime
 from unittest.mock import patch
 
@@ -56,8 +57,8 @@ class TestSemanticLinks:
         target_notes = []
         for i in range(len(link_types)):
             t_note = zettel_service.create_note(
-                title=f"Target Note {i+1}",
-                content=f"Target note {i+1} content",
+                title=f"Target Note {i + 1}",
+                content=f"Target note {i + 1} content",
                 note_type=NoteType.PERMANENT,
                 tags=["test", "target"],
             )
@@ -74,14 +75,20 @@ class TestSemanticLinks:
             )
 
             # Verify source note's links
-            matching_links = [link for link in source.links if link.target_id == target_notes[i].id]
+            matching_links = [
+                link for link in source.links if link.target_id == target_notes[i].id
+            ]
             assert len(matching_links) == 1
             assert matching_links[0].link_type == link_type
             assert matching_links[0].description == description
 
             # Verify link retrieval through repository
             updated_source = zettel_service.get_note(source_note.id)
-            matching_links = [link for link in updated_source.links if link.target_id == target_notes[i].id]
+            matching_links = [
+                link
+                for link in updated_source.links
+                if link.target_id == target_notes[i].id
+            ]
             assert len(matching_links) == 1
             assert matching_links[0].link_type == link_type
             assert matching_links[0].description == description
@@ -118,8 +125,8 @@ class TestSemanticLinks:
         target_notes = []
         for i in range(len(inverse_pairs)):
             t_note = zettel_service.create_note(
-                title=f"Bidirectional Target {i+1}",
-                content=f"Target note {i+1} for bidirectional testing",
+                title=f"Bidirectional Target {i + 1}",
+                content=f"Target note {i + 1} for bidirectional testing",
                 note_type=NoteType.PERMANENT,
                 tags=["test", "bidirectional"],
             )
@@ -137,26 +144,28 @@ class TestSemanticLinks:
             )
 
             # Verify outgoing link from source
-            source_links = [link for link in source.links if link.target_id == target_notes[i].id]
+            source_links = [
+                link for link in source.links if link.target_id == target_notes[i].id
+            ]
             assert len(source_links) == 1
             assert source_links[0].link_type == source_type
 
             # Verify incoming link to target (inverse relationship)
-            target_links = [link for link in target.links if link.target_id == source_note.id]
+            target_links = [
+                link for link in target.links if link.target_id == source_note.id
+            ]
             assert len(target_links) == 1
             assert target_links[0].link_type == expected_inverse
 
             # Verify through get_linked_notes (outgoing)
             outgoing_links = zettel_service.get_linked_notes(source_note.id, "outgoing")
-            assert any(
-                note.id == target_notes[i].id for note in outgoing_links
-            )
+            assert any(note.id == target_notes[i].id for note in outgoing_links)
 
             # Verify through get_linked_notes (incoming)
-            incoming_links = zettel_service.get_linked_notes(target_notes[i].id, "incoming")
-            assert any(
-                note.id == source_note.id for note in incoming_links
+            incoming_links = zettel_service.get_linked_notes(
+                target_notes[i].id, "incoming"
             )
+            assert any(note.id == source_note.id for note in incoming_links)
 
     def test_custom_bidirectional_link_types(self, zettel_service):
         """Test bidirectional links with custom inverse types."""
@@ -199,12 +208,16 @@ class TestSemanticLinks:
         target_note = zettel_service.get_note(target_note.id)
 
         # Check outgoing link from source
-        source_links = [link for link in source_note.links if link.target_id == target_note.id]
+        source_links = [
+            link for link in source_note.links if link.target_id == target_note.id
+        ]
         assert len(source_links) == 1
         assert source_links[0].link_type == LinkType.EXTENDS
 
         # Check outgoing link from target (custom inverse)
-        target_links = [link for link in target_note.links if link.target_id == source_note.id]
+        target_links = [
+            link for link in target_note.links if link.target_id == source_note.id
+        ]
         assert len(target_links) == 1
         assert target_links[0].link_type == LinkType.QUESTIONS  # Custom inverse type
 
@@ -249,7 +262,9 @@ class TestSemanticLinks:
         loaded_note = zettel_service.get_note(source_note.id)
 
         # Verify link is present with correct type after load
-        matching_links = [link for link in loaded_note.links if link.target_id == target_note.id]
+        matching_links = [
+            link for link in loaded_note.links if link.target_id == target_note.id
+        ]
         assert len(matching_links) == 1
         assert matching_links[0].link_type == LinkType.REFINES
         assert matching_links[0].description == "Testing persistence of semantic links"
@@ -282,14 +297,16 @@ class TestSemanticLinks:
                 source_id=source_note.id,
                 target_id=target_note.id,
                 link_type=link_type,
-                description=f"Link {i+1}: {link_type.value}",
+                description=f"Link {i + 1}: {link_type.value}",
             )
 
         # Refresh the note from repository
         updated_source = zettel_service.get_note(source_note.id)
 
         # Verify all link types are present
-        target_links = [link for link in updated_source.links if link.target_id == target_note.id]
+        target_links = [
+            link for link in updated_source.links if link.target_id == target_note.id
+        ]
         assert len(target_links) == len(link_types)
 
         # Verify each link type is present
@@ -328,9 +345,7 @@ class TestSemanticLinks:
         )
 
         # Verify link was removed
-        assert not any(
-            link.target_id == target_note.id for link in source.links
-        )
+        assert not any(link.target_id == target_note.id for link in source.links)
 
         # Create new link with different type
         source, _ = zettel_service.create_link(
@@ -341,14 +356,18 @@ class TestSemanticLinks:
         )
 
         # Verify link was updated
-        matching_links = [link for link in source.links if link.target_id == target_note.id]
+        matching_links = [
+            link for link in source.links if link.target_id == target_note.id
+        ]
         assert len(matching_links) == 1
         assert matching_links[0].link_type == LinkType.EXTENDS
         assert matching_links[0].description == "Updated link description"
 
         # Load the note from repository to verify persistence
         loaded_note = zettel_service.get_note(source_note.id)
-        matching_links = [link for link in loaded_note.links if link.target_id == target_note.id]
+        matching_links = [
+            link for link in loaded_note.links if link.target_id == target_note.id
+        ]
         assert len(matching_links) == 1
         assert matching_links[0].link_type == LinkType.EXTENDS
         assert matching_links[0].description == "Updated link description"
@@ -388,7 +407,9 @@ class TestSemanticLinks:
         source_note = zettel_service.get_note(source_note.id)
 
         # Verify all links were created
-        target_links = [link for link in source_note.links if link.target_id == target_note.id]
+        target_links = [
+            link for link in source_note.links if link.target_id == target_note.id
+        ]
         assert len(target_links) == len(link_types)
 
         # Remove specific link type
@@ -402,7 +423,9 @@ class TestSemanticLinks:
         source_note = zettel_service.get_note(source_note.id)
 
         # Verify only the specified link was removed
-        target_links = [link for link in source_note.links if link.target_id == target_note.id]
+        target_links = [
+            link for link in source_note.links if link.target_id == target_note.id
+        ]
         assert len(target_links) == len(link_types) - 1
         assert not any(link.link_type == LinkType.SUPPORTS for link in target_links)
         assert any(link.link_type == LinkType.EXTENDS for link in target_links)
@@ -418,7 +441,9 @@ class TestSemanticLinks:
         source_note = zettel_service.get_note(source_note.id)
 
         # Verify all links to target were removed
-        target_links = [link for link in source_note.links if link.target_id == target_note.id]
+        target_links = [
+            link for link in source_note.links if link.target_id == target_note.id
+        ]
         assert len(target_links) == 0
 
     def test_bidirectional_link_removal(self, zettel_service):
@@ -464,12 +489,8 @@ class TestSemanticLinks:
         )
 
         # Verify bidirectional link was removed
-        assert not any(
-            link.target_id == target_note.id for link in source.links
-        )
-        assert not any(
-            link.target_id == source_note.id for link in target.links
-        )
+        assert not any(link.target_id == target_note.id for link in source.links)
+        assert not any(link.target_id == source_note.id for link in target.links)
 
     def test_parsing_link_types_from_markdown(self, note_repository):
         """Test that link types are correctly parsed from markdown content."""
@@ -564,7 +585,8 @@ Test content for parsing links from markdown.
 
         # Verify only one link of this type exists
         matching_links = [
-            link for link in source.links
+            link
+            for link in source.links
             if link.target_id == target_note.id and link.link_type == LinkType.EXTENDS
         ]
         assert len(matching_links) == 1
@@ -591,8 +613,8 @@ Test content for parsing links from markdown.
 
         for i, link_type in enumerate(link_types):
             note = zettel_service.create_note(
-                title=f"Target Note {i+1}",
-                content=f"Target {i+1} content",
+                title=f"Target Note {i + 1}",
+                content=f"Target {i + 1} content",
                 note_type=NoteType.PERMANENT,
                 tags=["test", "target"],
             )
@@ -705,13 +727,19 @@ Test content for parsing links from markdown.
         updated_target = zettel_service.get_note(target_note.id)
 
         # Check source note's links
-        source_links = [link for link in updated_source.links if link.target_id == target_note.id]
+        source_links = [
+            link for link in updated_source.links if link.target_id == target_note.id
+        ]
         assert len(source_links) == 1
         assert source_links[0].link_type == LinkType.SUPPORTS
-        assert source_links[0].description == "Testing supports relationship via MCP tool"
+        assert (
+            source_links[0].description == "Testing supports relationship via MCP tool"
+        )
 
         # Check target note's links (inverse relationship)
-        target_links = [link for link in updated_target.links if link.target_id == source_note.id]
+        target_links = [
+            link for link in updated_target.links if link.target_id == source_note.id
+        ]
         assert len(target_links) == 1
         assert target_links[0].link_type == LinkType.SUPPORTED_BY
 
@@ -818,6 +846,7 @@ Test content for parsing links from markdown.
 
         # Create search service
         from zettelkasten_mcp.services.search_service import SearchService
+
         search_service = SearchService(zettel_service)
 
         # Search for linked notes
@@ -895,6 +924,7 @@ Test content for parsing links from markdown.
     def test_central_notes_with_semantic_links(self, zettel_service):
         """Test the find_central_notes function with semantic links."""
         from zettelkasten_mcp.services.search_service import SearchService
+
         search_service = SearchService(zettel_service)
 
         # Create a network of notes with semantic links

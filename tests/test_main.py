@@ -1,7 +1,7 @@
 # tests/test_main.py
 """Tests for the main module entry point."""
+
 import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 
@@ -25,9 +25,12 @@ class TestParseArgs:
             "argv",
             [
                 "prog",
-                "--notes-dir", notes_path,
-                "--database-path", db_path,
-                "--log-level", "DEBUG",
+                "--notes-dir",
+                notes_path,
+                "--database-path",
+                db_path,
+                "--log-level",
+                "DEBUG",
             ],
         ):
             args = parse_args()
@@ -73,9 +76,12 @@ class TestMain:
                 "argv",
                 [
                     "prog",
-                    "--notes-dir", str(notes_dir),
-                    "--database-path", str(db_path),
-                    "--log-level", "WARNING",
+                    "--notes-dir",
+                    str(notes_dir),
+                    "--database-path",
+                    str(db_path),
+                    "--log-level",
+                    "WARNING",
                 ],
             ),
             patch("zettelkasten_mcp.main.init_db"),
@@ -99,7 +105,13 @@ class TestMain:
             patch.object(
                 sys,
                 "argv",
-                ["prog", "--notes-dir", str(notes_dir), "--database-path", str(db_path)],
+                [
+                    "prog",
+                    "--notes-dir",
+                    str(notes_dir),
+                    "--database-path",
+                    str(db_path),
+                ],
             ),
             patch("zettelkasten_mcp.main.init_db", side_effect=Exception("DB error")),
             patch("sys.exit") as mock_exit,
@@ -120,7 +132,13 @@ class TestMain:
             patch.object(
                 sys,
                 "argv",
-                ["prog", "--notes-dir", str(notes_dir), "--database-path", str(db_path)],
+                [
+                    "prog",
+                    "--notes-dir",
+                    str(notes_dir),
+                    "--database-path",
+                    str(db_path),
+                ],
             ),
             patch("zettelkasten_mcp.main.init_db"),
             patch(

@@ -1,5 +1,6 @@
 # tests/test_integration.py
 """Integration tests for the Zettelkasten MCP system."""
+
 import tempfile
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from zettelkasten_mcp.services.zettel_service import ZettelService
 
 class TestIntegration:
     """Integration tests for the entire Zettelkasten MCP system."""
+
     @pytest.fixture(autouse=True)
     def setup_test_environment(self):
         """Set up test environment using temporary directories."""
@@ -227,4 +229,7 @@ class TestIntegration:
 
         # Verify the note now has the updated content
         note1_after = self.zettel_service.get_note(note1.id)
-        assert "This content was manually edited outside the system." in note1_after.content
+        assert (
+            "This content was manually edited outside the system."
+            in note1_after.content
+        )

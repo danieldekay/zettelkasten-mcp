@@ -1,5 +1,6 @@
 # tests/test_search_service.py
 """Tests for the search service in the Zettelkasten MCP server."""
+
 from unittest.mock import patch
 
 from zettelkasten_mcp.models.schema import LinkType, NoteType
@@ -94,7 +95,9 @@ class TestSearchService:
         # Create links with different link types to avoid uniqueness constraint
         zettel_service.create_link(note1.id, note2.id, LinkType.REFERENCE)
         zettel_service.create_link(note1.id, note3.id, LinkType.EXTENDS)
-        zettel_service.create_link(note2.id, note3.id, LinkType.SUPPORTS)  # Changed link type
+        zettel_service.create_link(
+            note2.id, note3.id, LinkType.SUPPORTS
+        )  # Changed link type
 
         # Create search service
         search_service = SearchService(zettel_service)

@@ -1,6 +1,6 @@
 # tests/test_utils.py
 """Tests for the utility functions."""
-import logging
+
 import re
 import tempfile
 from datetime import datetime
@@ -86,7 +86,7 @@ class TestFormatNoteForDisplay:
 
     def test_with_links_no_description(self):
         mock_link = MagicMock()
-        mock_link.link_type.value = "extends"
+        mock_link.link_type = "extends"
         mock_link.target_id = "target1"
         mock_link.description = None
 
@@ -104,7 +104,7 @@ class TestFormatNoteForDisplay:
 
     def test_with_links_with_description(self):
         mock_link = MagicMock()
-        mock_link.link_type.value = "supports"
+        mock_link.link_type = "supports"
         mock_link.target_id = "target2"
         mock_link.description = "see also"
 

@@ -1,4 +1,5 @@
 """Tests for the ZettelService class."""
+
 from zettelkasten_mcp.models.schema import LinkType, NoteType
 
 
@@ -18,6 +19,7 @@ def test_create_note(zettel_service):
     assert note.note_type == NoteType.PERMANENT
     assert len(note.tags) == 2
     assert {tag.name for tag in note.tags} == {"service", "test"}
+
 
 def test_get_note(zettel_service):
     """Test retrieving a note through the service."""
@@ -42,6 +44,7 @@ def test_get_note(zettel_service):
     assert retrieved_note.note_type == NoteType.PERMANENT
     assert {tag.name for tag in retrieved_note.tags} == {"service", "get"}
 
+
 def test_update_note(zettel_service):
     """Test updating a note through the service."""
     # Create a test note
@@ -64,6 +67,7 @@ def test_update_note(zettel_service):
     assert "This note has been updated through the service." in updated_note.content
     assert {tag.name for tag in updated_note.tags} == {"service", "updated"}
 
+
 def test_delete_note(zettel_service):
     """Test deleting a note through the service."""
     # Create a test note
@@ -81,6 +85,7 @@ def test_delete_note(zettel_service):
     # Verify note no longer exists
     deleted_note = zettel_service.get_note(note.id)
     assert deleted_note is None
+
 
 def test_create_link(zettel_service):
     """Test creating a link between notes through the service."""
@@ -125,6 +130,7 @@ def test_create_link(zettel_service):
     assert len(both_links) == 1
     assert both_links[0].id == target_note.id
 
+
 def test_search_notes(zettel_service):
     """Test searching for notes through the service."""
     # Create test notes
@@ -160,6 +166,7 @@ def test_search_notes(zettel_service):
     zettel_service.remove_tag_from_note(first_note.id, "newTag")
     updated_note = zettel_service.get_note(first_note.id)
     assert "newTag" not in {tag.name for tag in updated_note.tags}
+
 
 def test_find_similar_notes(zettel_service):
     """Test finding similar notes."""

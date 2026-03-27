@@ -280,6 +280,25 @@ class TestMcpServer:
         assert result["error"] is True
         assert result["error_type"] == "invalid_metadata"
 
+    def test_create_note_metadata_as_dict(self):
+        """Test zk_create_note accepts a pre-parsed dict for metadata."""
+        mock_note = MagicMock()
+        mock_note.id = "dictmeta1"
+        mock_note.title = "Dict Meta Note"
+        self.mock_zettel_service.create_note.return_value = mock_note
+
+        create_note_func = self.registered_tools["zk_create_note"]
+        result = create_note_func(
+            title="Dict Meta Note",
+            content="Content",
+            metadata={"source": "test", "year": 2026},
+        )
+
+        assert isinstance(result, dict)
+        assert result["note_id"] == mock_note.id
+        call_kwargs = self.mock_zettel_service.create_note.call_args.kwargs
+        assert call_kwargs["metadata"] == {"source": "test", "year": 2026}
+
     def test_update_note_with_metadata(self):
         """Test zk_update_note passes parsed metadata to the service."""
         assert "zk_update_note" in self.registered_tools
@@ -299,6 +318,25 @@ class TestMcpServer:
         assert "note_id" in result
         call_kwargs = self.mock_zettel_service.update_note.call_args.kwargs
         assert call_kwargs["metadata"] == {"key": "value"}
+
+    def test_update_note_metadata_as_dict(self):
+        """Test zk_update_note accepts a pre-parsed dict for metadata."""
+        mock_note = MagicMock()
+        mock_note.id = "upd456"
+        mock_note.title = "Updated"
+        self.mock_zettel_service.get_note.return_value = mock_note
+        self.mock_zettel_service.update_note.return_value = mock_note
+
+        update_note_func = self.registered_tools["zk_update_note"]
+        result = update_note_func(
+            note_id="upd456",
+            metadata={"key": "value", "count": 3},
+        )
+
+        assert isinstance(result, dict)
+        assert "note_id" in result
+        call_kwargs = self.mock_zettel_service.update_note.call_args.kwargs
+        assert call_kwargs["metadata"] == {"key": "value", "count": 3}
 
     def test_get_note_not_found_returns_structured_error(self):
         """Test zk_get_note returns structured error dict when note not found."""
@@ -847,7 +885,7 @@ class TestMcpServer:
         from sqlalchemy import exc as sqlalchemy_exc
 
         self.mock_zettel_service.create_link.side_effect = sqlalchemy_exc.IntegrityError(
-            "UNIQUE constraint failed", None, None
+            "UNIQUE constraint failed", None, None,
         )
 
         create_link_func = self.registered_tools["zk_create_link"]
