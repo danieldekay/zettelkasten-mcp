@@ -12,15 +12,6 @@ on:
         required: false
         default: "90"
         type: string
-      mode:
-        description: "Enforcement mode (block, warn, log)"
-        required: false
-        default: "warn"
-        type: choice
-        options:
-          - block
-          - warn
-          - log
 
 jobs:
   specfact-validation:
