@@ -1,4 +1,7 @@
 """Service for searching and discovering notes in the Zettelkasten."""
+
+import math
+import re
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -6,7 +9,7 @@ from sqlalchemy import or_, select, text
 from sqlalchemy.orm import joinedload
 
 from zettelkasten_mcp.config import config
-from zettelkasten_mcp.models.db_models import DBLink, DBNote
+from zettelkasten_mcp.models.db_models import DBLink, DBNote, DBTag
 from zettelkasten_mcp.models.schema import Note, NoteType
 from zettelkasten_mcp.services.zettel_service import ZettelService
 
@@ -14,10 +17,12 @@ from zettelkasten_mcp.services.zettel_service import ZettelService
 @dataclass
 class SearchResult:
     """A search result with a note and its relevance score."""
+
     note: Note
     score: float
     matched_terms: set[str]
     matched_context: str
+
 
 class SearchService:
     """Service for searching notes in the Zettelkasten."""
@@ -25,6 +30,8 @@ class SearchService:
     def __init__(self, zettel_service: ZettelService | None = None) -> None:
         """Initialize the search service."""
         self.zettel_service = zettel_service or ZettelService()
+        # TF-IDF tag suggestion cache
+        self._tag_cache: dict[str, dict[str, float]] | None = None
 
     def initialize(self) -> None:
         """Initialize the service and dependencies."""
@@ -32,7 +39,10 @@ class SearchService:
         self.zettel_service.initialize()
 
     def search_by_text(
-        self, query: str, include_content: bool = True, include_title: bool = True,
+        self,
+        query: str,
+        include_content: bool = True,
+        include_title: bool = True,
     ) -> list[SearchResult]:
         """Search for notes by text content."""
         if not query:
@@ -122,14 +132,19 @@ class SearchService:
             # Subquery for notes with links
             notes_with_links = (
                 select(DBNote.id)
-                .outerjoin(DBLink, or_(
-                    DBNote.id == DBLink.source_id,
-                    DBNote.id == DBLink.target_id,
-                ))
-                .where(or_(
-                    DBLink.source_id is not None,
-                    DBLink.target_id is not None,
-                ))
+                .outerjoin(
+                    DBLink,
+                    or_(
+                        DBNote.id == DBLink.source_id,
+                        DBNote.id == DBLink.target_id,
+                    ),
+                )
+                .where(
+                    or_(
+                        DBLink.source_id is not None,
+                        DBLink.target_id is not None,
+                    ),
+                )
                 .subquery()
             )
 
@@ -260,7 +275,11 @@ class SearchService:
         # Choose search strategy based on feature flag
         if config.use_fts5_search and text:
             return self._search_combined_fts5(
-                text, tags, note_type, start_date, end_date,
+                text,
+                tags,
+                note_type,
+                start_date,
+                end_date,
             )
         return self._search_combined_legacy(text, tags, note_type, start_date, end_date)
 
@@ -406,7 +425,10 @@ class SearchService:
             # If no text query, just add all filtered notes with a default score
             results = [
                 SearchResult(
-                    note=note, score=1.0, matched_terms=set(), matched_context="",
+                    note=note,
+                    score=1.0,
+                    matched_terms=set(),
+                    matched_context="",
                 )
                 for note in filtered_notes
             ]
@@ -414,3 +436,213 @@ class SearchService:
         # Sort by score (descending)
         results.sort(key=lambda x: x.score, reverse=True)
         return results
+
+    # ------------------------------------------------------------------
+    # TF-IDF tag suggestions
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _tokenize(text: str) -> list[str]:
+        """Return lowercased word tokens from *text*."""
+        return re.findall(r"[a-z]+", text.lower())
+
+    def _build_tag_cache(self) -> dict[str, dict[str, float]]:
+        """Build a TF-IDF vector for each tag from all tagged notes.
+
+        Returns a mapping of {tag_name: {term: tfidf_weight}}.
+        """
+        all_notes = self.zettel_service.get_all_notes()
+        n_docs = len(all_notes) or 1
+
+        # Collect term frequencies per tag and document frequencies per term
+        tag_tf: dict[str, dict[str, int]] = {}
+        df: dict[str, int] = {}
+
+        for note in all_notes:
+            tokens = self._tokenize(f"{note.title} {note.content}")
+            note_terms = set(tokens)
+            for term in note_terms:
+                df[term] = df.get(term, 0) + 1
+
+            for tag in note.tags:
+                if tag.name not in tag_tf:
+                    tag_tf[tag.name] = {}
+                for term in tokens:
+                    tag_tf[tag.name][term] = tag_tf[tag.name].get(term, 0) + 1
+
+        # Convert to TF-IDF
+        tag_vectors: dict[str, dict[str, float]] = {}
+        for tag_name, tf_map in tag_tf.items():
+            total = sum(tf_map.values()) or 1
+            vec: dict[str, float] = {}
+            for term, cnt in tf_map.items():
+                tfidf = (cnt / total) * math.log(n_docs / df.get(term, 1) + 1)
+                if tfidf > 0:
+                    vec[term] = tfidf
+            tag_vectors[tag_name] = vec
+
+        return tag_vectors
+
+    def _cosine_similarity(
+        self, vec_a: dict[str, float], vec_b: dict[str, float],
+    ) -> float:
+        """Compute cosine similarity between two sparse TF-IDF vectors."""
+        shared = set(vec_a) & set(vec_b)
+        dot = sum(vec_a[t] * vec_b[t] for t in shared)
+        mag_a = math.sqrt(sum(v * v for v in vec_a.values()))
+        mag_b = math.sqrt(sum(v * v for v in vec_b.values()))
+        denom = mag_a * mag_b
+        return dot / denom if denom > 0 else 0.0
+
+    def suggest_tags(self, content: str, limit: int = 10) -> list[dict]:
+        """Suggest tags for *content* using TF-IDF cosine similarity.
+
+        Args:
+            content: Text content to match against existing tag taxonomy.
+            limit: Maximum number of suggestions to return.
+
+        Returns:
+            List of ``{"tag": str, "confidence": float}`` dicts sorted by
+            confidence descending. Returns an empty list if no relevant
+            matches are found.
+        """
+        if self._tag_cache is None:
+            self._tag_cache = self._build_tag_cache()
+
+        if not self._tag_cache:
+            return []
+
+        tokens = self._tokenize(content)
+        if not tokens:
+            return []
+
+        # Build query TF vector
+        query_tf: dict[str, float] = {}
+        for term in tokens:
+            query_tf[term] = query_tf.get(term, 0) + 1
+        total = len(tokens)
+        query_vec = {t: cnt / total for t, cnt in query_tf.items()}
+
+        results = []
+        for tag_name, tag_vec in self._tag_cache.items():
+            sim = self._cosine_similarity(query_vec, tag_vec)
+            if sim > 0:
+                results.append({"tag": tag_name, "confidence": round(sim, 4)})
+
+        results.sort(key=lambda x: x["confidence"], reverse=True)
+        return results[:limit]
+
+    def invalidate_tag_cache(self) -> None:
+        """Invalidate the TF-IDF tag cache (call after rebuild_index)."""
+        self._tag_cache = None
+
+    # ------------------------------------------------------------------
+    # Analytics
+    # ------------------------------------------------------------------
+
+    def analyze_tag_clusters(self, min_co_occurrence: int = 2) -> dict:
+        """Identify clusters of tags that frequently appear together.
+
+        Uses a SQL co-occurrence self-join limited to the top-1000 most-used
+        tags, then groups overlapping pairs with union-find in Python.
+
+        Args:
+            min_co_occurrence: Minimum shared-note count for a pair to be
+                included (default 2).
+
+        Returns:
+            Dict with:
+            - ``clusters``: list of ``{"tags": [...], "count": int,
+              "representative_notes": [...]}``
+            - ``total_tag_pairs_analysed``: int
+        """
+        repo = self.zettel_service.repository
+
+        with repo.session_factory() as session:
+            rows = session.execute(
+                text("""
+                    SELECT a.tag_id AS tag_a, b.tag_id AS tag_b,
+                           COUNT(*) AS co_count,
+                           GROUP_CONCAT(a.note_id) AS note_ids
+                    FROM note_tags a
+                    JOIN note_tags b
+                      ON a.note_id = b.note_id AND a.tag_id < b.tag_id
+                    WHERE a.tag_id IN (
+                        SELECT tag_id FROM note_tags
+                        GROUP BY tag_id ORDER BY COUNT(*) DESC LIMIT 1000
+                    )
+                    GROUP BY a.tag_id, b.tag_id
+                    HAVING co_count >= :min_co
+                    ORDER BY co_count DESC
+                """),
+                {"min_co": min_co_occurrence},
+            ).fetchall()
+
+            # Fetch tag id->name mapping for all involved tag IDs
+            involved = {r.tag_a for r in rows} | {r.tag_b for r in rows}
+            if involved:
+                id_name_rows = session.execute(
+                    select(DBTag.id, DBTag.name).where(DBTag.id.in_(involved)),
+                ).fetchall()
+            else:
+                id_name_rows = []
+
+        if not rows:
+            return {"clusters": [], "total_tag_pairs_analysed": 0}
+
+        id_to_name = {r.id: r.name for r in id_name_rows}
+        total_pairs = len(rows)
+
+        # Union-Find implementation
+        parent: dict[int, int] = {}
+
+        def _find(x: int) -> int:
+            while x in parent and parent[x] != x:
+                x = parent[x]
+            return x
+
+        def _union(x: int, y: int) -> None:
+            px, py = _find(x), _find(y)
+            if px != py:
+                parent[py] = px
+
+        # Build clusters from pairs
+        pair_data: dict[tuple[int, int], tuple[int, list[str]]] = {}
+        for row in rows:
+            _union(row.tag_a, row.tag_b)
+            pair_data[(row.tag_a, row.tag_b)] = (
+                row.co_count,
+                (row.note_ids or "").split(",")[:5],
+            )
+
+        # Group tags by cluster root
+        cluster_map: dict[int, set[int]] = {}
+        all_tag_ids = {tid for pair in pair_data for tid in pair}
+        for tid in all_tag_ids:
+            root = _find(tid)
+            cluster_map.setdefault(root, set()).add(tid)
+
+        # For each cluster find the highest-count pair for representative notes
+        clusters = []
+        for tag_ids in cluster_map.values():
+            best_count = 0
+            best_notes: list[str] = []
+            for (ta, tb), (co_count, note_ids) in pair_data.items():
+                if (ta in tag_ids or tb in tag_ids) and co_count > best_count:
+                    best_count = co_count
+                    best_notes = note_ids
+
+            tag_names = [
+                id_to_name[tid] for tid in sorted(tag_ids) if tid in id_to_name
+            ]
+            if tag_names:
+                clusters.append(
+                    {
+                        "tags": tag_names,
+                        "count": best_count,
+                        "representative_notes": best_notes,
+                    },
+                )
+
+        clusters.sort(key=lambda c: c["count"], reverse=True)
+        return {"clusters": clusters, "total_tag_pairs_analysed": total_pairs}
