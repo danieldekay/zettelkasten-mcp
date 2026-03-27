@@ -1,4 +1,5 @@
 """Configuration module for the Zettelkasten MCP server."""
+
 import os
 from pathlib import Path
 
@@ -8,8 +9,10 @@ from pydantic import BaseModel, Field
 # Load environment variables
 load_dotenv()
 
+
 class ZettelkastenConfig(BaseModel):
     """Configuration for the Zettelkasten server."""
+
     # Base directory for the project
     base_dir: Path = Field(
         default_factory=lambda: Path(os.getenv("ZETTELKASTEN_BASE_DIR", ".")),
@@ -50,6 +53,19 @@ class ZettelkastenConfig(BaseModel):
     use_fts5_search: bool = Field(
         default=os.getenv("USE_FTS5_SEARCH", "true").lower() == "true",
     )
+    # Self-healing index: auto-rebuild when drift exceeds this percent (0 = disabled)
+    auto_rebuild_threshold: int = Field(
+        default=int(os.getenv("ZETTELKASTEN_AUTO_REBUILD_THRESHOLD", "5")),
+    )
+    # Project-scoped custom link types config
+    custom_link_types_path: Path = Field(
+        default_factory=lambda: Path(
+            os.getenv(
+                "ZETTELKASTEN_CUSTOM_LINK_TYPES_PATH",
+                "openspec/config.yaml",
+            ),
+        ),
+    )
 
     def get_absolute_path(self, path: Path) -> Path:
         """Convert a relative path to an absolute path based on base_dir."""
@@ -62,6 +78,7 @@ class ZettelkastenConfig(BaseModel):
         db_path = self.get_absolute_path(self.database_path)
         db_path.parent.mkdir(parents=True, exist_ok=True)
         return f"sqlite:///{db_path}"
+
 
 # Create a global config instance
 config = ZettelkastenConfig()
