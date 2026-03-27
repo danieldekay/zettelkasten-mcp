@@ -30,7 +30,7 @@ class TestSemanticLinks:
             note_type=NoteType.PERMANENT,
             tags=["test", "source"],
         )
-        target_note = zettel_service.create_note(
+        zettel_service.create_note(
             title="Target Note",
             content="Target note content",
             note_type=NoteType.PERMANENT,
@@ -67,7 +67,7 @@ class TestSemanticLinks:
         # Create links with each link type
         for i, (link_type, description) in enumerate(link_types):
             # Create link
-            source, target = zettel_service.create_link(
+            source, _target = zettel_service.create_link(
                 source_id=source_note.id,
                 target_id=target_notes[i].id,
                 link_type=link_type,
@@ -163,7 +163,7 @@ class TestSemanticLinks:
 
             # Verify through get_linked_notes (incoming)
             incoming_links = zettel_service.get_linked_notes(
-                target_notes[i].id, "incoming"
+                target_notes[i].id, "incoming",
             )
             assert any(note.id == source_note.id for note in incoming_links)
 
@@ -189,14 +189,14 @@ class TestSemanticLinks:
         # we'll need to modify the test or mock the lower-level function
 
         # For now, we'll test this using two separate directional links
-        source, _ = zettel_service.create_link(
+        _source, _ = zettel_service.create_link(
             source_id=source_note.id,
             target_id=target_note.id,
             link_type=LinkType.EXTENDS,
             description="Forward direction",
         )
 
-        target, _ = zettel_service.create_link(
+        _target, _ = zettel_service.create_link(
             source_id=target_note.id,
             target_id=source_note.id,
             link_type=LinkType.QUESTIONS,  # Custom inverse type (not the expected EXTENDED_BY)
@@ -238,7 +238,7 @@ class TestSemanticLinks:
         )
 
         # Create link with a semantic type
-        source, _ = zettel_service.create_link(
+        _source, _ = zettel_service.create_link(
             source_id=source_note.id,
             target_id=target_note.id,
             link_type=LinkType.REFINES,
@@ -293,7 +293,7 @@ class TestSemanticLinks:
         ]
 
         for i, link_type in enumerate(link_types):
-            source, _ = zettel_service.create_link(
+            _source, _ = zettel_service.create_link(
                 source_id=source_note.id,
                 target_id=target_note.id,
                 link_type=link_type,
@@ -829,7 +829,7 @@ Test content for parsing links from markdown.
             tags=["test", "search", "linked"],
         )
 
-        unlinked_note = zettel_service.create_note(
+        zettel_service.create_note(
             title="Unlinked Search Note",
             content="Note for testing search with semantic links",
             note_type=NoteType.PERMANENT,
@@ -847,7 +847,7 @@ Test content for parsing links from markdown.
         # Create search service
         from zettelkasten_mcp.services.search_service import SearchService
 
-        search_service = SearchService(zettel_service)
+        SearchService(zettel_service)
 
         # Search for linked notes
         linked_notes = zettel_service.get_linked_notes(hub_note.id, "outgoing")
@@ -883,7 +883,7 @@ Test content for parsing links from markdown.
             tags=["test", "similarity", "contradicts-target"],
         )
 
-        target3 = zettel_service.create_note(
+        zettel_service.create_note(
             title="Similar Target 3",
             content="Third target for similarity testing",
             note_type=NoteType.PERMANENT,

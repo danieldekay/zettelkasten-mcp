@@ -47,16 +47,14 @@ def note_repository(test_config):
     Base.metadata.create_all(engine)
     engine.dispose()
     # Create repository
-    repository = NoteRepository(
+    return NoteRepository(
         notes_dir=test_config.notes_dir,
     )
     # Initialize is handled in constructor
-    return repository
 
 
 @pytest.fixture
 def zettel_service(note_repository):
     """Create a test ZettelService."""
-    service = ZettelService(repository=note_repository)
+    return ZettelService(repository=note_repository)
     # Initialize is handled in constructor
-    return service

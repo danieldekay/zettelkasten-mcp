@@ -201,7 +201,7 @@ def test_metadata_round_trip(note_repository):
 def test_metadata_empty_on_plain_note(note_repository):
     """Notes created without metadata return an empty dict on retrieval."""
     note = Note(
-        title="Plain Note", content="No metadata.", note_type=NoteType.PERMANENT
+        title="Plain Note", content="No metadata.", note_type=NoteType.PERMANENT,
     )
     saved = note_repository.create(note)
     retrieved = note_repository.get(saved.id)

@@ -23,14 +23,14 @@ class TestSearchService:
             content="Data analysis often uses Python libraries.",
             tags=["data", "analysis", "python"],
         )
-        note3 = zettel_service.create_note(
+        zettel_service.create_note(
             title="JavaScript",
             content="JavaScript is used for web development.",
             tags=["javascript", "web"],
         )
 
         # Create search service
-        search_service = SearchService(zettel_service)
+        SearchService(zettel_service)
 
         # Test tag search instead which is more reliable
         python_results = zettel_service.get_notes_by_tag("python")
@@ -52,14 +52,14 @@ class TestSearchService:
             content="Introduction to Python.",
             tags=["python", "programming", "basics"],
         )
-        note3 = zettel_service.create_note(
+        zettel_service.create_note(
             title="Advanced JavaScript",
             content="Advanced JavaScript concepts.",
             tags=["javascript", "advanced"],
         )
 
         # Create search service
-        search_service = SearchService(zettel_service)
+        SearchService(zettel_service)
 
         # Search by a single tag directly through zettel_service
         programming_notes = zettel_service.get_notes_by_tag("programming")
@@ -86,7 +86,7 @@ class TestSearchService:
             content="This is also linked from the source.",
             tags=["target"],
         )
-        note4 = zettel_service.create_note(
+        zettel_service.create_note(
             title="Unrelated Note",
             content="This isn't linked to anything.",
             tags=["unrelated"],
@@ -96,11 +96,11 @@ class TestSearchService:
         zettel_service.create_link(note1.id, note2.id, LinkType.REFERENCE)
         zettel_service.create_link(note1.id, note3.id, LinkType.EXTENDS)
         zettel_service.create_link(
-            note2.id, note3.id, LinkType.SUPPORTS
+            note2.id, note3.id, LinkType.SUPPORTS,
         )  # Changed link type
 
         # Create search service
-        search_service = SearchService(zettel_service)
+        SearchService(zettel_service)
 
         # Search outgoing links directly through zettel_service
         outgoing_links = zettel_service.get_linked_notes(note1.id, "outgoing")
@@ -306,7 +306,7 @@ class TestSearchServiceMethods:
         service = SearchService(zettel_service)
         central = service.find_central_notes(limit=5)
         assert len(central) >= 1
-        top_note, count = central[0]
+        _top_note, count = central[0]
         assert count >= 2
 
     def test_find_central_notes_empty_db(self, zettel_service):
@@ -539,7 +539,7 @@ class TestSearchServiceMethods:
         """Test _search_combined_fts5 path when FTS5 table exists after rebuild."""
         from zettelkasten_mcp.config import config
 
-        note = zettel_service.create_note(
+        zettel_service.create_note(
             title="FTS5 Quantum Physics",
             content="Quantum mechanics and entanglement in detail.",
             tags=["physics"],
