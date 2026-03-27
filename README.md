@@ -170,7 +170,9 @@ Add the following configuration to your Claude Desktop:
       "env": {
         "ZETTELKASTEN_NOTES_DIR": "/absolute/path/to/zettelkasten-mcp/data/notes",
         "ZETTELKASTEN_DATABASE_PATH": "/absolute/path/to/zettelkasten-mcp/data/db/zettelkasten.db",
-        "ZETTELKASTEN_LOG_LEVEL": "INFO"
+        "ZETTELKASTEN_LOG_LEVEL": "INFO",
+        "ZETTELKASTEN_AUTO_REBUILD_THRESHOLD": "5",
+        "ZETTELKASTEN_CUSTOM_LINK_TYPES_PATH": "/absolute/path/to/custom_link_types.yaml"
       }
     }
   }
@@ -184,10 +186,14 @@ All tools have been prefixed with `zk_` for better organization:
 | Tool | Description | Response Keys |
 |---|---|---|
 | `zk_create_note` | Create a new note with a title, content, and optional tags | `note_id`, `file_path`, `summary` |
+| `zk_create_notes_batch` | Create multiple notes in one atomic transaction | `created`, `note_ids`, `failed`, `errors`, `summary` |
 | `zk_get_note` | Retrieve a specific note by ID or title | `note_id`, `title`, `note_type`, `tags`, `links`, `created_at`, `updated_at`, `content`, `metadata`, `summary` |
 | `zk_update_note` | Update an existing note's content or metadata | `note_id`, `updated_fields`, `summary` |
 | `zk_delete_note` | Delete a note | `note_id`, `deleted`, `summary` |
 | `zk_create_link` | Create links between notes | `source_id`, `target_id`, `link_type`, `summary` |
+| `zk_create_links_batch` | Create multiple semantic links atomically | `created`, `failed`, `errors`, `summary` |
+| `zk_verify_note` | Verify filesystem/DB consistency for a note | `note_id`, `file_exists`, `db_indexed`, `link_count`, `tag_count`, `summary` |
+| `zk_get_index_status` | Return filesystem vs. DB index health summary | `total_notes_filesystem`, `total_notes_indexed`, `orphaned_files`, `orphaned_db_records`, `database_size_mb`, `summary` |
 | `zk_remove_link` | Remove links between notes | `source_id`, `target_id`, `removed`, `summary` |
 | `zk_search_notes` | Search for notes by content, tags, or links | `notes[]` (each with `score`), `total`, `query`, `summary` |
 | `zk_get_linked_notes` | Find notes linked to a specific note | `note_id`, `direction`, `notes[]`, `total`, `summary` |
@@ -197,6 +203,11 @@ All tools have been prefixed with `zk_` for better organization:
 | `zk_find_orphaned_notes` | Find notes with no connections | `notes[]`, `total`, `summary` |
 | `zk_list_notes_by_date` | List notes by creation/update date | `notes[]`, `total`, `summary` |
 | `zk_rebuild_index` | Rebuild the database index from Markdown files | `notes_indexed`, `errors[]`, `summary` |
+| `zk_register_link_type` | Register a custom link type with optional inverse | `registered`, `inverse`, `symmetric`, `summary` |
+| `zk_suggest_link_type` | Suggest a link type for two notes using heuristics | `suggestions[]` (each with `link_type`, `confidence`), `low_confidence`, `summary` |
+| `zk_suggest_tags` | Suggest tags for note content using TF-IDF similarity | `suggestions[]` (each with `tag`, `score`), `total`, `summary` |
+| `zk_find_notes_in_timerange` | Find notes by `created_at` or `updated_at` date range (ISO 8601) | `count`, `notes[]`, `date_field`, `summary` |
+| `zk_analyze_tag_clusters` | Identify tag clusters by co-occurrence frequency | `clusters[]` (each with `tags`, `count`, `representative_notes`), `total_tag_pairs_analysed`, `summary` |
 
 All tools return `error: true`, `error_type`, `message`, and `summary` on failure.
 

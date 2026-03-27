@@ -2,20 +2,20 @@
 
 > **Last Updated**: 2026-03-26
 > **Source**: Research sprint 20260325 · 90 sources · 4 research tracks
-> **OpenSpec changes**: `api-foundation`, `core-enhancements`, `advanced-features`, `analytics-discovery`
+> **OpenSpec changes**: `advanced-features`, `analytics-discovery` (active) · `api-foundation`, `core-enhancements` (archived)
 
 ---
 
 ## Overview
 
 ```
-Phase 1 (DONE)     Phase 2 (api-foundation)     Phase 3 (core-enhancements)
+Phase 1 (DONE)     Phase 2 (DONE)               Phase 3 (DONE)
   Bug fixes    ──▶   Critical API surface    ──▶   Batch ops & verification
-                     (P0 — pre-condition)            (P1 — production-ready)
+               ✅ archived 2026-03-26        ✅ archived 2026-03-26
 
 Phase 4 (advanced-features)          Phase 5 (analytics-discovery)
   Flexible links & AI suggestions  ──▶  Temporal queries & tag clustering
-  (P2 — differentiation)                (P2 — scale)
+  (P2 — differentiation) ← NEXT           (P2 — scale) QUEUED
 ```
 
 ---
@@ -26,9 +26,9 @@ Bug fixes and initial stability work (archived). No outstanding items.
 
 ---
 
-## Phase 2 — API Foundation · `openspec/changes/api-foundation` 🟡 Next
+## Phase 2 — API Foundation · `openspec/changes/archive/2026-03-26-api-foundation` ✅ Shipped
 
-**Priority**: P0 · **Prerequisite for**: all subsequent phases
+**Priority**: P0 · **Archived**: 2026-03-26
 **Research basis**: 13 confirmed claims across 90 sources; single highest-impact set of changes
 
 ### Problem
@@ -59,13 +59,13 @@ model but is invisible through the API.
 - `metadata` round-trips cleanly through create → get
 - All 80+ existing tests pass (assertions updated)
 
-### Task Count: 40 tasks across 4 groups
+### Task Count: 40 tasks across 4 groups — All complete
 
 ---
 
-## Phase 3 — Core Enhancements · `openspec/changes/core-enhancements` 🔵 Queued
+## Phase 3 — Core Enhancements · `openspec/changes/archive/2026-03-26-core-enhancements` ✅ Shipped
 
-**Priority**: P1 · **Depends on**: Phase 2
+**Priority**: P1 · **Archived**: 2026-03-26
 **GitHub Issues**: #5, #6, #9, #14
 
 ### Problem
@@ -90,13 +90,13 @@ exposes DB vs. filesystem health.
 - `zk_get_index_status` count matches `ls notes/ | wc -l`
 - All existing + new tests pass (target: ≥ 80 tests)
 
-### Task Count: 16 tasks across 5 groups
+### Task Count: 16 tasks across 5 groups — All complete
 
 ---
 
-## Phase 4 — Advanced Features · `openspec/changes/advanced-features` ⚪ Planned
+## Phase 4 — Advanced Features · `openspec/changes/advanced-features` 🟡 Next
 
-**Priority**: P2 · **Depends on**: Phase 3
+**Priority**: P2 · **Depends on**: Phase 3 (complete)
 **GitHub Issues**: #10, #11, #12, #16, #17
 
 ### Problem
@@ -127,9 +127,9 @@ makes the server completely unusable even for reads.
 
 ---
 
-## Phase 5 — Analytics & Discovery · `openspec/changes/analytics-discovery` ⚪ Planned
+## Phase 5 — Analytics & Discovery · `openspec/changes/analytics-discovery` 🔵 Queued
 
-**Priority**: P2 · **Depends on**: Phase 3
+**Priority**: P2 · **Depends on**: Phase 3 (complete) · **Parallel to**: Phase 4
 **GitHub Issues**: #13, #15
 
 ### Problem
@@ -168,6 +168,8 @@ Each requires a separate `openspec propose` before implementation.
 | Graph visualization export | C4 | `zk_export_graph(format="json"|"dot"|"cytoscape")` | D3.js / Gephi integration |
 | AI link inference | C1 | `zk_suggest_links(note_id)` — embedding similarity + LLM link type suggestion | LiCoMemory 2025 |
 | Daily notes | C6 | `zk_get_or_create_daily_note(date)` — temporal capture entry point | Logseq/Roam pattern |
+| **N-hop link traversal** | S-new | Add `depth: int` param to `zk_get_linked_notes`; BFS via recursive CTE or Python loop; currently single-hop only | Gap confirmed 2026-03-26 |
+| **Link type ontology hierarchy** | C-new | Cardinality rules, allowed-source/target note-type constraints, and parent–child relationships between link types; YAML-extendable; currently flat with no hierarchy | Gap confirmed 2026-03-26 |
 
 ---
 
@@ -180,41 +182,43 @@ Each requires a separate `openspec propose` before implementation.
 | Full CRUD for atomic notes | Existing | ✅ Done |
 | Five canonical note types | Existing | ✅ Done |
 | Typed bidirectional semantic links (12 types) | Existing | ✅ Done |
-| **Structured JSON API responses** | 2 | 🟡 Next |
-| **FTS5 full-text search** | 2 | 🟡 Next |
-| Graph traversal (N-hop linked notes) | Existing + 3 | ✅ / 🔵 |
-| Orphan note detection | Existing + 3 | ✅ / 🔵 |
+| **Structured JSON API responses** | 2 | ✅ Done |
+| **FTS5 full-text search** | 2 | ✅ Done |
+| Graph traversal (N-hop linked notes) | Backlog | ⚠️ Single-hop only |
+| Orphan note detection | Existing + 3 | ✅ Done |
 | Data portability (Markdown source of truth) | Existing | ✅ Done |
-| Tag management + usage counts | 2 + 5 | 🟡 / ⚪ |
-| **Note metadata exposure** | 2 | 🟡 Next |
+| Tag management + usage counts | 2 + 5 | ✅ / 🔵 |
+| **Note metadata exposure** | 2 | ✅ Done |
 
 ### Should-Have
 
 | Feature | Phase | Status |
 |---------|-------|--------|
-| Batch note + link operations | 3 | 🔵 Queued |
-| Health dashboard | 3 | 🔵 Queued |
-| Semantic similarity (content-based) | 4 | ⚪ Planned |
+| Batch note + link operations | 3 | ✅ Done |
+| Health dashboard | 3 | ✅ Done |
+| Semantic similarity (content-based) | 4 | 🟡 Next |
 | Multi-filter search | Backlog | ⬜ Unspecced |
 | Import / export | Backlog | ⬜ Unspecced |
-| Backlinks optimization | Existing + 2 | ✅ / 🟡 |
-| Hub / centrality detection (PageRank) | Existing + 4 | ✅ / ⚪ |
+| Backlinks optimization | Existing + 2 | ✅ Done |
+| Hub / centrality detection (PageRank) | Existing + 4 | ✅ / 🟡 |
 | Note templates | Backlog | ⬜ Unspecced |
-| Tag analytics (co-occurrence) | 5 | ⚪ Planned |
-| Health dashboard / index verification | 3 | 🔵 Queued |
+| Tag analytics (co-occurrence) | 5 | 🔵 Queued |
+| Health dashboard / index verification | 3 | ✅ Done |
 
 ### Could-Have
 
 | Feature | Phase | Status |
 |---------|-------|--------|
 | AI link inference | Backlog | ⬜ Unspecced |
-| AI tag suggestions | 4 | ⚪ Planned |
+| AI tag suggestions | 4 | 🟡 Next |
 | Natural language queries | Backlog | ⬜ Unspecced |
 | Graph visualization export | Backlog | ⬜ Unspecced |
 | Webhook / event system | Backlog | ⬜ Unspecced |
 | Daily notes | Backlog | ⬜ Unspecced |
 | Spaced repetition review queue | Backlog | ⬜ Unspecced |
 | Tag hierarchy / ontology | Backlog | ⬜ Unspecced |
+| **N-hop link traversal** | Backlog | ⬜ Unspecced |
+| **Link type ontology hierarchy** | Backlog | ⬜ Unspecced |
 | Multi-user / collaborative support | Backlog | ⬜ Unspecced |
 | Plugin / extension system | Backlog | ⬜ Unspecced |
 
@@ -225,10 +229,10 @@ Each requires a separate `openspec propose` before implementation.
 | Phase | Change | Tasks | Status |
 |-------|--------|-------|--------|
 | Phase 1 | (archived) | — | ✅ Done |
-| Phase 2 | `api-foundation` | 40 | 🟡 Ready |
-| Phase 3 | `core-enhancements` | 16 | 🔵 Queued |
-| Phase 4 | `advanced-features` | 26 | ⚪ Planned |
-| Phase 5 | `analytics-discovery` | 11 | ⚪ Planned |
+| Phase 2 | `api-foundation` (archived) | 40 | ✅ Done |
+| Phase 3 | `core-enhancements` (archived) | 16 | ✅ Done |
+| Phase 4 | `advanced-features` | 26 | 🟡 Next |
+| Phase 5 | `analytics-discovery` | 11 | 🔵 Queued |
 | **Total** | | **93 tasks** | |
 
 ---
@@ -236,33 +240,28 @@ Each requires a separate `openspec propose` before implementation.
 ## Implementation Order
 
 ```
-START
-  │
-  ▼
-Phase 2: api-foundation         ← START HERE
-  • JSON responses (1.1–1.16)
-  • FTS5 search fix (2.1–2.11)
-  • Metadata access (3.1–3.11)
-  • Tests + housekeeping (4.1–4.5)
-  │
-  ▼
-Phase 3: core-enhancements
-  • Batch create notes (1.1–1.5)
-  • Batch create links (2.1–2.5)
-  • Note verification (3.1–3.3)
-  • Index health (4.1–4.3)
-  │
-  ├──▶ Phase 4: advanced-features   (can start after Phase 3)
+Phase 2: api-foundation         ✅ ARCHIVED 2026-03-26
+  • JSON responses
+  • FTS5 search fix
+  • Metadata access
+
+Phase 3: core-enhancements      ✅ ARCHIVED 2026-03-26
+  • Batch create notes
+  • Batch create links
+  • Note verification
+  • Index health
+
+  ├──▶ Phase 4: advanced-features   ← START HERE
   │      • Custom link types
   │      • Link + tag AI suggestions
   │      • Resilience / self-healing
   │
-  └──▶ Phase 5: analytics-discovery (can start after Phase 3, parallel to Phase 4)
+  └──▶ Phase 5: analytics-discovery (parallel to Phase 4)
          • Temporal queries
          • Tag co-occurrence
 ```
 
-To start implementing Phase 2, run:
+To start implementing Phase 4, run:
 ```
-/opsx:apply   (or ask Copilot to implement api-foundation)
+/opsx:apply   (or ask Copilot to implement advanced-features)
 ```

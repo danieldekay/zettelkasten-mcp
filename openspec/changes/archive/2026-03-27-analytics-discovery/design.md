@@ -32,9 +32,10 @@ primary result set (one extra `IN` clause, no recursion).
 Date parsing validates ISO 8601 format with `datetime.fromisoformat`; raises
 `ValueError` on failure.
 
-**Index**: `DBNote.created_at` and `DBNote.updated_at` should be indexed
-in SQLAlchemy model — add `Index('ix_notes_created_at', DBNote.created_at)` and
-`Index('ix_notes_updated_at', DBNote.updated_at)` in `db_models.py`.
+**Index**: `DBNote.created_at` and `DBNote.updated_at` are indexed via
+`index=True` on the `Column(...)` declaration in `db_models.py`. SQLAlchemy
+generates equivalent single-column indexes (`ix_notes_created_at`,
+`ix_notes_updated_at`) automatically — no separate `Index(...)` object needed.
 
 ---
 

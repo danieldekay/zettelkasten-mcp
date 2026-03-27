@@ -54,20 +54,25 @@ Implemented in `services/search_service.py` (extend existing class).
 
 ## 4. Graceful Degradation (#16)
 
-**Pattern**: try/except in `NoteRepository` with fallback to
-`_read_from_markdown(note_id)`.
+**Pattern**: `NoteRepository` uses the filesystem (Markdown files) as the
+single source of truth for reads.
 
 ```python
 def get(self, note_id: str) -> Optional[Note]:
-    try:
-        return self._get_from_db(note_id)
-    except Exception as e:
-        logger.warning(f"DB unavailable, falling back to filesystem: {e}")
-        return self._read_from_markdown(note_id)
+    # Always read from filesystem — avoids stale-cache races and keeps reads
+    # consistent with the source of truth even when DB is healthy.
+    return self._read_from_markdown(note_id)
 ```
 
-Write operations log a warning but still write the Markdown file; they append
-to a `data/pending_index.txt` queue for the next successful rebuild.
+`get_all()` first tries the DB for efficient bulk loading; on failure it falls
+back to a filesystem glob and sets `self._db_available = False`.
+
+Write operations (`create`, `update`) always write the Markdown file first.
+If DB indexing fails, they log a warning, set `_db_available = False`, and
+return normally — the client response includes a `"warning"` field when the DB
+was unavailable. Manual `zk_rebuild_index` is used to re-sync the DB on the
+next opportunity (no `pending_index.txt` queue — the full rebuild is
+idempotent and sufficient).
 
 ---
 
