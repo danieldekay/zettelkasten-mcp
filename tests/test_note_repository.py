@@ -1,5 +1,7 @@
 """Tests for the NoteRepository class."""
 
+import pytest
+
 from zettelkasten_mcp.models.schema import LinkType, Note, NoteType, Tag
 
 
@@ -46,6 +48,28 @@ def test_get_note(note_repository):
     assert retrieved_note.note_type == NoteType.PERMANENT
     assert len(retrieved_note.tags) == 2
     assert {tag.name for tag in retrieved_note.tags} == {"test", "get"}
+
+
+def test_get_note_by_title(note_repository):
+    """Test retrieving a note by title."""
+    note = Note(
+        title="Title Lookup Note",
+        content="This is a test note for title lookup.",
+        note_type=NoteType.PERMANENT,
+        tags=[Tag(name="test"), Tag(name="title")],
+    )
+    saved_note = note_repository.create(note)
+
+    retrieved_note = note_repository.get_by_title("Title Lookup Note")
+
+    assert retrieved_note is not None
+    assert retrieved_note.id == saved_note.id
+    assert retrieved_note.title == "Title Lookup Note"
+
+
+def test_get_note_by_title_missing_returns_none(note_repository):
+    """Test get_by_title() returns None when no note matches."""
+    assert note_repository.get_by_title("does-not-exist") is None
 
 
 def test_update_note(note_repository):
@@ -147,6 +171,50 @@ def test_search_notes(note_repository):
     assert {note.id for note in programming_notes} == {saved_note1.id, saved_note2.id}
 
 
+def test_get_all_falls_back_to_filesystem(note_repository):
+    """Test get_all() when the database index is unavailable."""
+    note_repository._db_available = False
+
+    note = Note(
+        title="Filesystem Fallback Note",
+        content="This note is loaded from the filesystem fallback.",
+        note_type=NoteType.PERMANENT,
+        tags=[Tag(name="fallback")],
+    )
+    saved_note = note_repository.create(note)
+
+    all_notes = note_repository.get_all()
+
+    assert any(found.id == saved_note.id for found in all_notes)
+
+
+def test_get_all_tags_and_counts(note_repository):
+    """Test retrieving tags and tag usage counts."""
+    note_repository.create(
+        Note(
+            title="Tag Count One",
+            content="First tagged note.",
+            note_type=NoteType.PERMANENT,
+            tags=[Tag(name="alpha"), Tag(name="beta")],
+        ),
+    )
+    note_repository.create(
+        Note(
+            title="Tag Count Two",
+            content="Second tagged note.",
+            note_type=NoteType.PERMANENT,
+            tags=[Tag(name="alpha")],
+        ),
+    )
+
+    all_tags = note_repository.get_all_tags()
+    tag_counts = dict(note_repository.get_tags_with_counts())
+
+    assert {tag.name for tag in all_tags} >= {"alpha", "beta"}
+    assert tag_counts["alpha"] == 2
+    assert tag_counts["beta"] == 1
+
+
 def test_note_linking(note_repository):
     """Test creating links between notes."""
     # Create test notes
@@ -182,6 +250,19 @@ def test_note_linking(note_repository):
     linked_notes = note_repository.find_linked_notes(source_note.id, "outgoing")
     assert len(linked_notes) == 1
     assert linked_notes[0].id == target_note.id
+
+
+def test_find_linked_notes_invalid_direction(note_repository):
+    """Test find_linked_notes() rejects invalid directions."""
+    note = Note(
+        title="Direction Test Note",
+        content="Testing invalid directions.",
+        note_type=NoteType.PERMANENT,
+    )
+    saved = note_repository.create(note)
+
+    with pytest.raises(ValueError, match="Invalid direction"):
+        note_repository.find_linked_notes(saved.id, "sideways")
 
 
 def test_metadata_round_trip(note_repository):

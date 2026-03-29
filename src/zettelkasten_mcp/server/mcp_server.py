@@ -1,4 +1,5 @@
 """MCP server implementation for the Zettelkasten."""
+
 import json
 import logging
 import uuid
@@ -22,16 +23,17 @@ _CONTENT_PREVIEW_LEN = 100
 
 class ToolResponse(TypedDict, total=False):
     """Base type for all MCP tool responses. Every response MUST include `summary`."""
+
     summary: str
 
 
 class ZettelkastenMcpServer:
     """MCP server for Zettelkasten."""
+
     def __init__(self) -> None:
         """Initialize the MCP server."""
         self.mcp = FastMCP(
             config.server_name,
-            version=config.server_version,
         )
         # Services
         self.zettel_service = ZettelService()
@@ -47,6 +49,25 @@ class ZettelkastenMcpServer:
         """Initialize services."""
         self.zettel_service.initialize()
         self.search_service.initialize()
+
+        notes_dir = config.get_absolute_path(config.notes_dir)
+        logger.info("Notes directory: %s", notes_dir)
+
+        if notes_dir.exists():
+            items = list(notes_dir.iterdir())
+            logger.info(
+                "Found %d items in notes directory: %s",
+                len(items),
+                [item.name for item in items],
+            )
+            md_files = [f for f in notes_dir.glob("**/*.md")]
+            logger.info("Markdown files found (recursive): %d", len(md_files))
+
+            db_count = self.zettel_service.repository.get_note_count()
+            logger.info("Notes in database: %d", db_count)
+        else:
+            logger.warning("Notes directory does not exist: %s", notes_dir)
+
         logger.info("Zettelkasten MCP server initialized")
 
     def format_error_response(self, error: Exception) -> dict:
@@ -87,6 +108,11 @@ class ZettelkastenMcpServer:
     def _note_to_dict(self, note: Any) -> dict:
         """Convert a Note to a full detail dict."""
         notes_dir = config.get_absolute_path(config.notes_dir)
+        file_path = (
+            note.source_path
+            if note.is_readonly and note.source_path
+            else str(notes_dir / f"{note.id}.md")
+        )
         return {
             "note_id": note.id,
             "title": note.title,
@@ -96,7 +122,7 @@ class ZettelkastenMcpServer:
                 {
                     "source_id": lnk.source_id,
                     "target_id": lnk.target_id,
-                    "link_type": lnk.link_type.value,
+                    "link_type": lnk.link_type,
                     "description": lnk.description,
                 }
                 for lnk in note.links
@@ -105,7 +131,9 @@ class ZettelkastenMcpServer:
             "updated_at": note.updated_at.isoformat(),
             "content": note.content,
             "metadata": note.metadata if note.metadata else {},
-            "file_path": str(notes_dir / f"{note.id}.md"),
+            "file_path": file_path,
+            "is_readonly": note.is_readonly,
+            "source_path": note.source_path,
         }
 
     def _note_summary_dict(self, note: Any) -> dict:
@@ -114,6 +142,11 @@ class ZettelkastenMcpServer:
         preview = note.content[:_CONTENT_PREVIEW_LEN].replace("\n", " ")
         if len(note.content) > _CONTENT_PREVIEW_LEN:
             preview += "..."
+        file_path = (
+            note.source_path
+            if note.is_readonly and note.source_path
+            else str(notes_dir / f"{note.id}.md")
+        )
         return {
             "note_id": note.id,
             "title": note.title,
@@ -122,11 +155,14 @@ class ZettelkastenMcpServer:
             "created_at": note.created_at.isoformat(),
             "updated_at": note.updated_at.isoformat(),
             "preview": preview,
-            "file_path": str(notes_dir / f"{note.id}.md"),
+            "file_path": file_path,
+            "is_readonly": note.is_readonly,
+            "source_path": note.source_path,
         }
 
     def _register_tools(self) -> None:  # noqa: PLR0915
         """Register MCP tools."""
+
         # Create a new note
         @self.mcp.tool(name="zk_create_note")
         def zk_create_note(
@@ -452,6 +488,7 @@ class ZettelkastenMcpServer:
                         f"{source_id} → {target_id} ({link_type})"
                     ),
                 }
+
         self.zk_create_link = zk_create_link
 
         # Remove a link between notes
@@ -582,7 +619,8 @@ class ZettelkastenMcpServer:
                     }
                 # Get linked notes
                 linked_notes = self.zettel_service.get_linked_notes(
-                    str(note_id), direction,
+                    str(note_id),
+                    direction,
                 )
                 # Fetch source note once for link type lookup
                 source_note = (
@@ -625,6 +663,7 @@ class ZettelkastenMcpServer:
                         else f"No {direction} links found for note {note_id}"
                     ),
                 }
+
         self.zk_get_linked_notes = zk_get_linked_notes
 
         # Get all tags
@@ -637,16 +676,13 @@ class ZettelkastenMcpServer:
                 return self.format_error_response(e)
             else:
                 tag_list = [
-                    {"name": name, "count": count}
-                    for name, count in tags_with_counts
+                    {"name": name, "count": count} for name, count in tags_with_counts
                 ]
                 return {
                     "tags": tag_list,
                     "total": len(tag_list),
                     "summary": (
-                        f"Found {len(tag_list)} tags"
-                        if tag_list
-                        else "No tags found"
+                        f"Found {len(tag_list)} tags" if tag_list else "No tags found"
                     ),
                 }
 
@@ -669,7 +705,8 @@ class ZettelkastenMcpServer:
             try:
                 # Get similar notes
                 similar_notes = self.zettel_service.find_similar_notes(
-                    str(note_id), threshold,
+                    str(note_id),
+                    threshold,
                 )
                 similar_notes = similar_notes[:limit]
                 note_list = []
@@ -929,9 +966,8 @@ class ZettelkastenMcpServer:
                     if result["suggestions"]
                     else "reference"
                 )
-                result["summary"] = (
-                    f"Top suggestion: '{top}'"
-                    + (" (low confidence)" if result["low_confidence"] else "")
+                result["summary"] = f"Top suggestion: '{top}'" + (
+                    " (low confidence)" if result["low_confidence"] else ""
                 )
                 return result
 
@@ -1012,6 +1048,110 @@ class ZettelkastenMcpServer:
                     else "No tag clusters found at this threshold"
                 )
                 return result
+
+        # Sync watch folders (re-index external Markdown directories)
+        @self.mcp.tool(name="zk_sync_watch_folders")
+        def zk_sync_watch_folders() -> dict:
+            """Re-index all configured watch-folder directories.
+
+            Drops the current read-only external note index, re-scans each
+            directory in ZETTELKASTEN_WATCH_DIRS, and re-indexes discovered
+            Markdown files as read-only reference notes.
+
+            Returns:
+                Summary with scanned, added, removed, and error counts.
+            """
+            if not config.watch_dirs:
+                return {
+                    "summary": "No watch directories configured.",
+                    "scanned": 0,
+                    "added": 0,
+                    "removed": 0,
+                    "errors": [],
+                }
+            try:
+                from zettelkasten_mcp.services.watch_folder_service import (
+                    WatchFolderService,
+                )
+
+                wfs = WatchFolderService(
+                    watch_dirs=config.watch_dirs,
+                    repository=self.zettel_service.repository,
+                )
+                result = wfs.sync_all()
+            except Exception as e:  # noqa: BLE001
+                return self.format_error_response(e)
+            else:
+                error_count = len(result.get("errors", []))
+                result["summary"] = (
+                    f"Watch folder sync complete: {result['scanned']} scanned, "
+                    f"{result['added']} added, {result['removed']} removed, "
+                    f"{error_count} error(s)."
+                )
+                return result
+
+        # List all notes with optional external filter
+        @self.mcp.tool(name="zk_list_notes")
+        def zk_list_notes(
+            note_type: str | None = None,
+            tags: str | None = None,
+            include_external: bool = True,
+            limit: int = 50,
+        ) -> dict:
+            """List all notes, with optional type/tag filtering.
+
+            Args:
+                note_type: Filter by note type (fleeting, literature, permanent,
+                    structure, hub). Optional.
+                tags: Comma-separated list of tags to filter by. Optional.
+                include_external: When False, watch-folder (read-only) notes are
+                    excluded. Default True.
+                limit: Maximum number of results to return. Default 50.
+            """
+            try:
+                tag_list = None
+                if tags:
+                    tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+
+                note_type_enum = None
+                if note_type:
+                    try:
+                        note_type_enum = NoteType(note_type.lower())
+                    except ValueError:
+                        return {
+                            "error": True,
+                            "error_type": "validation_error",
+                            "message": (
+                                f"Invalid note type: {note_type}. Valid types are: "
+                                f"{', '.join(t.value for t in NoteType)}"
+                            ),
+                            "summary": f"Invalid note type: {note_type}",
+                        }
+
+                notes = self.zettel_service.search_notes(
+                    tags=tag_list,
+                    note_type=note_type_enum,
+                )
+
+                if not include_external:
+                    notes = [n for n in notes if not n.is_readonly]
+
+                notes = notes[:limit]
+                note_dicts = [self._note_summary_dict(n) for n in notes]
+            except Exception as e:  # noqa: BLE001
+                return self.format_error_response(e)
+            else:
+                total = len(note_dicts)
+                return {
+                    "notes": note_dicts,
+                    "total": total,
+                    "include_external": include_external,
+                    "summary": (
+                        f"Found {total} note(s)"
+                        if total
+                        else "No notes found"
+                    ),
+                }
 
     def _register_resources(self) -> None:
         """Register MCP resources."""

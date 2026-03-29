@@ -1,0 +1,22 @@
+{
+    "servers": {
+        "zettelkasten": {
+            "command": "uv",
+            "args": [
+                "--directory",
+                "/Users/danieldekay/Documents/external-tools/zettelkasten-mcp",
+                "run",
+                "python",
+                "-m",
+                "zettelkasten_mcp"
+            ],
+            "cwd": "/Users/danieldekay/Documents/external-tools/zettelkasten-mcp",
+            "env": {
+                "ZETTELKASTEN_NOTES_DIR": "/Users/danieldekay/Dokumente/2ndBrain/notes/zettelkasten/notes",
+                "ZETTELKASTEN_DATABASE_PATH": "/Users/danieldekay/Dokumente/2ndBrain/notes/zettelkasten/db/zettelkasten.db",
+                "ZETTELKASTEN_LOG_LEVEL": "INFO",
+                "ZETTELKASTEN_WATCH_DIRS": "/Users/danieldekay/Dokumente/2ndBrain/notes/"
+            }
+        },
+    }
+}
