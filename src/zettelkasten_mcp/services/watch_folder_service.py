@@ -32,7 +32,7 @@ def _generate_external_id(absolute_path: Path) -> str:
     return f"ext-{digest[:12]}"
 
 
-def _parse_external_note(file_path: Path) -> Note:
+def _parse_external_note(file_path: Path) -> Note:  # noqa: PLR0912, PLR0915
     """Parse a single Markdown file from a watch folder into a ``Note``.
 
     Files with compatible YAML frontmatter (containing at least ``id`` or
@@ -271,7 +271,7 @@ class WatchFolderService:
                     )
 
         logger.info(
-            "WatchFolderService sync complete: scanned=%d added=%d removed=%d errors=%d",
+            "WatchFolderService sync: scanned=%d added=%d removed=%d errors=%d",
             scanned,
             added,
             removed,

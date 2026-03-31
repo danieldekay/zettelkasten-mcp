@@ -59,7 +59,7 @@ class DBNote(Base):
         nullable=False,
         index=True,
     )
-    # Watch-folder fields: is_readonly marks external notes; source_path is their filepath
+    # Watch-folder fields: is_readonly marks external notes; source_path is their path
     is_readonly = Column(Boolean, default=False, nullable=False, index=True)
     source_path = Column(Text, nullable=True)
 
@@ -164,7 +164,7 @@ def _migrate_schema(engine: Any) -> None:
             try:
                 conn.execute(text(stmt))
                 conn.commit()
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001, PERF203
                 # Column already exists — safe to ignore
                 conn.rollback()
 

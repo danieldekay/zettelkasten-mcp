@@ -358,27 +358,27 @@ def test_fts5_query_with_dot_sanitized_still_matches(note_repository):
 
 def test_sanitize_fts5_query_removes_dot():
     """_sanitize_fts5_query strips '.' and collapses whitespace."""
-    assert NoteRepository._sanitize_fts5_query("python3.10") == "python3 10"  # noqa: SLF001
-    assert NoteRepository._sanitize_fts5_query("example.com") == "example com"  # noqa: SLF001
-    assert NoteRepository._sanitize_fts5_query("v1.2.3") == "v1 2 3"  # noqa: SLF001
+    assert NoteRepository._sanitize_fts5_query("python3.10") == "python3 10"
+    assert NoteRepository._sanitize_fts5_query("example.com") == "example com"
+    assert NoteRepository._sanitize_fts5_query("v1.2.3") == "v1 2 3"
 
 
 def test_sanitize_fts5_query_removes_hyphen():
     """Strips '-' so 'word-word' doesn't hit FTS5 column-filter syntax."""
-    assert NoteRepository._sanitize_fts5_query("managed-settings") == "managed settings"  # noqa: SLF001
+    assert NoteRepository._sanitize_fts5_query("managed-settings") == "managed settings"
     assert (
-        NoteRepository._sanitize_fts5_query(  # noqa: SLF001
+        NoteRepository._sanitize_fts5_query(
             "managed-settings governance allowlist override"
         )
         == "managed settings governance allowlist override"
     )
-    assert NoteRepository._sanitize_fts5_query("non-breaking") == "non breaking"  # noqa: SLF001
+    assert NoteRepository._sanitize_fts5_query("non-breaking") == "non breaking"
 
 
 def test_sanitize_fts5_query_empty_after_strip():
     """_sanitize_fts5_query returns empty string when only special chars are present."""
-    assert NoteRepository._sanitize_fts5_query("...") == ""  # noqa: SLF001
-    assert NoteRepository._sanitize_fts5_query("@#$%") == ""  # noqa: SLF001
+    assert NoteRepository._sanitize_fts5_query("...") == ""
+    assert NoteRepository._sanitize_fts5_query("@#$%") == ""
 
 
 def test_fts5_empty_query_after_sanitize_returns_empty_list(note_repository):

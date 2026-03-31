@@ -3,8 +3,7 @@
 import pytest
 
 from zettelkasten_mcp.config import config
-from zettelkasten_mcp.models.schema import LinkType, NoteType
-from zettelkasten_mcp.models.schema import link_type_registry
+from zettelkasten_mcp.models.schema import LinkType, NoteType, link_type_registry
 
 
 def test_create_note(zettel_service):

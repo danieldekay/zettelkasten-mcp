@@ -124,8 +124,12 @@ def main() -> None:
 
     # Index watch folders (external read-only Markdown directories)
     if config.watch_dirs:
-        from zettelkasten_mcp.services.watch_folder_service import WatchFolderService  # noqa: PLC0415
-        from zettelkasten_mcp.storage.note_repository import NoteRepository  # noqa: PLC0415
+        from zettelkasten_mcp.services.watch_folder_service import (  # noqa: PLC0415
+            WatchFolderService,
+        )
+        from zettelkasten_mcp.storage.note_repository import (  # noqa: PLC0415
+            NoteRepository,
+        )
         try:
             repo = NoteRepository()
             wfs = WatchFolderService(watch_dirs=config.watch_dirs, repository=repo)

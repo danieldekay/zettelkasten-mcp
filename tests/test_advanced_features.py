@@ -223,7 +223,7 @@ def _make_zettel_service_with_notes():
     )
     svc.create_note(
         title="Deep Learning Architectures",
-        content="convolutional networks recurrent neural networks transformers attention",  # noqa: E501
+        content="convolutional networks recurrent neural networks transformers attention",
         tags=["machine-learning", "ai"],
     )
     svc.create_note(

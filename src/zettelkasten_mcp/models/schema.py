@@ -274,7 +274,7 @@ class Note(BaseModel):
     )
     is_readonly: bool = Field(
         default=False,
-        description="True if this note is an external watch-folder reference (read-only)",
+        description="True if this note is a read-only external watch-folder reference",
     )
     source_path: str | None = Field(
         default=None,

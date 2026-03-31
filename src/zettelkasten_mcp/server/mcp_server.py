@@ -60,7 +60,7 @@ class ZettelkastenMcpServer:
                 len(items),
                 [item.name for item in items],
             )
-            md_files = [f for f in notes_dir.glob("**/*.md")]
+            md_files = list(notes_dir.glob("**/*.md"))
             logger.info("Markdown files found (recursive): %d", len(md_files))
 
             db_count = self.zettel_service.repository.get_note_count()
@@ -1075,7 +1075,7 @@ class ZettelkastenMcpServer:
                     "errors": [],
                 }
             try:
-                from zettelkasten_mcp.services.watch_folder_service import (
+                from zettelkasten_mcp.services.watch_folder_service import (  # noqa: PLC0415
                     WatchFolderService,
                 )
 

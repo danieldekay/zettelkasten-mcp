@@ -187,7 +187,7 @@ class TestCreateNotesBatch:
 
 
 class TestCreateLinksBatch:
-    """Tests for ZettelService.create_links_batch and NoteRepository.create_links_batch."""  # noqa: E501
+    """Tests for ZettelService.create_links_batch and NoteRepository.create_links_batch."""
 
     def _make_notes(self, zettel_service, count: int) -> list[str]:
         """Helper: create `count` notes and return their IDs."""

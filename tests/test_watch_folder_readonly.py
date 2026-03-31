@@ -2,7 +2,7 @@
 
 import pytest
 
-from zettelkasten_mcp.models.schema import Note, NoteType, Tag, generate_id
+from zettelkasten_mcp.models.schema import Note, NoteType, generate_id
 
 
 def _make_readonly_note(**kwargs) -> Note:
@@ -78,7 +78,7 @@ class TestDeleteNoteGuard:
 
     def test_delete_nonexistent_note_raises_value_error(self, zettel_service):
         """Deleting an ID that doesn't exist raises ValueError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="does not exist"):
             zettel_service.delete_note(note_id="nonexistent-id")
 
 
@@ -103,7 +103,7 @@ class TestCreateLinkToReadonly:
             return original_get(note_id)
 
         with patch.object(zettel_service.repository, "get", side_effect=patched_get):
-            result_source, result_target = zettel_service.create_link(
+            result_source, _ = zettel_service.create_link(
                 source_id=source.id,
                 target_id=target.id,
                 link_type="reference",

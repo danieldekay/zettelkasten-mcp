@@ -5,8 +5,6 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from zettelkasten_mcp.config import _parse_watch_dirs
 
 

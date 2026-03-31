@@ -1,19 +1,15 @@
 """Tests for WatchFolderService — scan, ID generation, and sync."""
 
 import hashlib
-import tempfile
 from pathlib import Path
 from textwrap import dedent
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from zettelkasten_mcp.services.watch_folder_service import (
     WatchFolderService,
     _generate_external_id,
     _parse_external_note,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
