@@ -4,6 +4,7 @@ import datetime
 from typing import Any
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     ForeignKey,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
+    text,
 )
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
@@ -57,6 +59,9 @@ class DBNote(Base):
         nullable=False,
         index=True,
     )
+    # Watch-folder fields: is_readonly marks external notes; source_path is their filepath
+    is_readonly = Column(Boolean, default=False, nullable=False, index=True)
+    source_path = Column(Text, nullable=True)
 
     # Relationships
     tags = relationship(
@@ -142,10 +147,33 @@ class DBLink(Base):
         )
 
 
+def _migrate_schema(engine: Any) -> None:
+    """Apply additive schema migrations for new columns.
+
+    Uses ALTER TABLE … ADD COLUMN which is a no-op-safe pattern: SQLite
+    raises OperationalError when a column already exists, which we catch and
+    ignore. This keeps the function idempotent so it can always be called at
+    startup without harm.
+    """
+    migrations = [
+        "ALTER TABLE notes ADD COLUMN is_readonly BOOLEAN NOT NULL DEFAULT 0",
+        "ALTER TABLE notes ADD COLUMN source_path TEXT",
+    ]
+    with engine.connect() as conn:
+        for stmt in migrations:
+            try:
+                conn.execute(text(stmt))
+                conn.commit()
+            except Exception:  # noqa: BLE001
+                # Column already exists — safe to ignore
+                conn.rollback()
+
+
 def init_db() -> Engine:
     """Initialize the database."""
     engine = create_engine(config.get_db_url())
     Base.metadata.create_all(engine)
+    _migrate_schema(engine)
     return engine
 
 
