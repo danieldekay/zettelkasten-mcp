@@ -272,6 +272,14 @@ class Note(BaseModel):
         default_factory=dict,
         description="Additional metadata for the note",
     )
+    is_readonly: bool = Field(
+        default=False,
+        description="True if this note is an external watch-folder reference (read-only)",
+    )
+    source_path: str | None = Field(
+        default=None,
+        description="Absolute path to the source file for read-only external notes",
+    )
 
     model_config = {
         "validate_assignment": True,

@@ -298,6 +298,42 @@ class TestAnalyzeTagClusters:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# 3. Database schema — date column indexes exist
+# ---------------------------------------------------------------------------
+
+
+class TestDateColumnIndexes:
+    """Verify that date column indexes are present in the SQLite schema."""
+
+    def test_ix_notes_created_at_exists(self, note_repository):
+        """ix_notes_created_at index is present after schema creation."""
+        with note_repository.session_factory() as session:
+            result = session.execute(
+                text(
+                    "SELECT name FROM sqlite_master "
+                    "WHERE type='index' AND name='ix_notes_created_at'",
+                ),
+            ).fetchone()
+        assert result is not None, "ix_notes_created_at index not found in schema"
+
+    def test_ix_notes_updated_at_exists(self, note_repository):
+        """ix_notes_updated_at index is present after schema creation."""
+        with note_repository.session_factory() as session:
+            result = session.execute(
+                text(
+                    "SELECT name FROM sqlite_master "
+                    "WHERE type='index' AND name='ix_notes_updated_at'",
+                ),
+            ).fetchone()
+        assert result is not None, "ix_notes_updated_at index not found in schema"
+
+
+# ---------------------------------------------------------------------------
+# 2.5  Performance test: < 2 s for 100 tags / 1 000 notes
+# ---------------------------------------------------------------------------
+
+
 class TestAnalyzeTagClustersPerformance:
     """Performance test for tag cluster analysis over a large dataset."""
 

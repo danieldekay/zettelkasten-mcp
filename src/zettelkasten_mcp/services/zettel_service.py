@@ -79,6 +79,14 @@ class ZettelService:
             msg = f"Note with ID {note_id} not found"
             raise ValueError(msg)
 
+        if note.is_readonly:
+            msg = (
+                f"Cannot modify read-only external note '{note_id}' "
+                f"(source: {note.source_path}). "
+                "Edit the source file directly or use zk_sync_watch_folders to refresh."
+            )
+            raise PermissionError(msg)
+
         # Update fields
         if title is not None:
             note.title = title
@@ -98,6 +106,14 @@ class ZettelService:
 
     def delete_note(self, note_id: str) -> None:
         """Delete a note."""
+        note = self.repository.get(note_id)
+        if note and note.is_readonly:
+            msg = (
+                f"Cannot delete read-only external note '{note_id}' "
+                f"(source: {note.source_path}). "
+                "Remove the source file and run zk_sync_watch_folders to deindex it."
+            )
+            raise PermissionError(msg)
         self.repository.delete(note_id)
 
     def get_all_notes(self) -> list[Note]:
@@ -175,6 +191,16 @@ class ZettelService:
         # If bidirectional, add link from target to source with appropriate semantics
         reverse_note = None
         if bidirectional:
+            # Cannot write a reverse link back to a read-only (watch-folder) note
+            if target_note.is_readonly:
+                logger.warning(
+                    "Skipping reverse link: target '%s' is a read-only external note "
+                    "(source: %s). Only the forward link was created.",
+                    target_id,
+                    target_note.source_path,
+                )
+                return source_note, None
+
             if bidirectional_type is None:
                 bd_str = link_type_registry.get_inverse(lt)
             else:

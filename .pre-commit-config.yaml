@@ -65,7 +65,7 @@ repos:
 
       - id: security-audit
         name: security-audit
-        entry: uv run safety check
+        entry: uv run safety scan --output text
         language: system
         pass_filenames: false
         always_run: true

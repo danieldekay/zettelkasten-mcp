@@ -12,15 +12,6 @@ on:
         required: false
         default: "90"
         type: string
-      mode:
-        description: "Enforcement mode (block, warn, log)"
-        required: false
-        default: "warn"
-        type: choice
-        options:
-          - block
-          - warn
-          - log
 
 jobs:
   specfact-validation:
@@ -50,17 +41,17 @@ jobs:
         run: uv sync --extra dev
 
       - name: Install SpecFact CLI
-        run: pip install specfact-cli
+        run: pip install specfact-cli==0.4.0
 
       - name: Bootstrap SpecFact bundles
-        run: specfact init --profile solo-developer
+        run: specfact init --profile solo-developer --no-interactive
 
       - name: Set up CrossHair Configuration
-        run: specfact code repro setup
+        run: specfact code repro setup --no-interactive
 
       - name: Run Contract Validation
         run: |
-          specfact code repro --verbose --budget ${{ github.event.inputs.budget || '90' }}
+          specfact code repro --verbose --no-interactive --budget ${{ github.event.inputs.budget || '90' }}
 
       - name: Generate PR Comment
         if: github.event_name == 'pull_request'

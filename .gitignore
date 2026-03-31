@@ -56,6 +56,9 @@ temp/
 repomix-output.txt
 repomix-output.xml
 
+# SpecFact run reports (generated artifacts — retained via CI artifact uploads)
+.specfact/reports/
+
 # Data files
 data/db/*.db
 data/notes/*.md

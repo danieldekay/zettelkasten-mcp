@@ -8,7 +8,7 @@ All functionality exposed via CLI; CLI is the primary interface; No direct code 
 ### II. Command Structure
 Commands follow consistent structure; Help text is comprehensive; Output formats are standardized
 
-### I. Code Quality
+### III. Code Quality
 All code must pass linting, formatting, and type checking before commit
 
 ## Development Workflow

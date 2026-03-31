@@ -9,6 +9,19 @@ Versions correspond to phases in the OpenSpec change pipeline.
 
 ## [Unreleased]
 
+### External Folder Indexing (Watch Folders)
+
+Index any external Markdown directory as **read-only reference notes** alongside your primary Zettelkasten notes.
+
+#### New features
+
+- **`ZETTELKASTEN_WATCH_DIRS`** — comma-separated list of directories to index at startup. Files with YAML frontmatter are parsed fully; files without frontmatter receive a deterministic `ext-<sha256[:12]>` ID and use the filename stem as title.
+- **`zk_sync_watch_folders`** — MCP tool to re-index all watch directories on demand without restarting the server.
+- **`zk_list_notes`** — new MCP tool to list all notes with optional `note_type`, `tags`, and `include_external` filters.
+- **Read-only guards** — `zk_update_note` and `zk_delete_note` refuse to modify watch-folder notes with a clear `PermissionError`.
+- **Safe linking** — unidirectional links from primary notes to watch-folder notes are fully supported. Bidirectional links silently create only the forward link.
+- **`is_readonly` / `source_path`** fields added to all note responses from `zk_get_note`, `zk_list_notes`, `zk_search_notes`, and related tools.
+
 ---
 
 ## [1.3.0] — 2026-03-27
@@ -60,7 +73,7 @@ beyond the built-in seven.
 
 - Fix duplicate tag associations causing `IntegrityError` on note update
   (`if db_tag not in db_note.tags` guard added)
-- Comprehensive debug and fix documentation in `docs/DEBUG-FIXES-2026-01-30.md`
+- Comprehensive debug and fix documentation in `docs/archive/debug-fixes-2026-01-30.md`
 
 ---
 
@@ -88,7 +101,7 @@ beyond the built-in seven.
 
 ---
 
-[Unreleased]: https://github.com/basf-global/zettelkasten-mcp/compare/HEAD...HEAD
-[1.3.0]: https://github.com/basf-global/zettelkasten-mcp/compare/v1.2.1...feat/api-foundation
+[Unreleased]: https://github.com/basf-global/zettelkasten-mcp/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/basf-global/zettelkasten-mcp/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/basf-global/zettelkasten-mcp/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/basf-global/zettelkasten-mcp/releases/tag/v1.2.0
