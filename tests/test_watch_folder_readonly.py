@@ -44,6 +44,7 @@ class TestUpdateNoteGuard:
 
         # Patch get() to return the readonly note
         from unittest.mock import patch
+
         with patch.object(zettel_service.repository, "get", return_value=note):
             with pytest.raises(PermissionError, match="read-only"):
                 zettel_service.update_note(
@@ -72,6 +73,7 @@ class TestDeleteNoteGuard:
         zettel_service.repository._index_note(note)
 
         from unittest.mock import patch
+
         with patch.object(zettel_service.repository, "get", return_value=note):
             with pytest.raises(PermissionError, match="read-only"):
                 zettel_service.delete_note(note_id=note.id)
@@ -94,6 +96,7 @@ class TestCreateLinkToReadonly:
         zettel_service.repository._index_note(target)
 
         from unittest.mock import patch
+
         # Return the readonly note when target is looked up
         original_get = zettel_service.repository.get
 
@@ -116,6 +119,7 @@ class TestCreateLinkToReadonly:
     def test_bidirectional_link_to_readonly_skips_reverse(self, zettel_service):
         """Bidirectional link to a read-only note creates only the forward link."""
         from unittest.mock import patch
+
         source = zettel_service.create_note(
             title="Source",
             content="Content.",

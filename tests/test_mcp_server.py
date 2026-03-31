@@ -644,13 +644,16 @@ class TestMcpServer:
             "errors": [(str(watch_dir / "bad.md"), "invalid yaml")],
         }
 
-        with patch(
-            "zettelkasten_mcp.server.mcp_server.config.watch_dirs",
-            [watch_dir],
-        ), patch(
-            "zettelkasten_mcp.services.watch_folder_service.WatchFolderService",
-            return_value=mock_service,
-        ) as mock_watch_service:
+        with (
+            patch(
+                "zettelkasten_mcp.server.mcp_server.config.watch_dirs",
+                [watch_dir],
+            ),
+            patch(
+                "zettelkasten_mcp.services.watch_folder_service.WatchFolderService",
+                return_value=mock_service,
+            ) as mock_watch_service,
+        ):
             result = self.registered_tools["zk_sync_watch_folders"]()
 
         assert isinstance(result, dict)

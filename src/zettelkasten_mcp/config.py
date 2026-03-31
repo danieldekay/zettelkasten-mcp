@@ -29,16 +29,33 @@ def _parse_watch_dirs() -> list[Path]:
         if not entry:
             continue
         path = Path(entry)
-        if not path.exists():
+        if not path.is_absolute():
             logger.warning(
-                "ZETTELKASTEN_WATCH_DIRS: path does not exist, skipping: %s", path,
+                "ZETTELKASTEN_WATCH_DIRS: relative path given, resolving to "
+                "absolute: %s",
+                path,
             )
-        elif not path.is_dir():
+        try:
+            resolved = path.resolve()
+        except OSError as exc:  # pragma: no cover - extremely rare filesystem error
             logger.warning(
-                "ZETTELKASTEN_WATCH_DIRS: path is not a directory, skipping: %s", path,
+                "ZETTELKASTEN_WATCH_DIRS: failed to resolve path, skipping: %s (%s)",
+                path,
+                exc,
+            )
+            continue
+        if not resolved.exists():
+            logger.warning(
+                "ZETTELKASTEN_WATCH_DIRS: path does not exist, skipping: %s",
+                resolved,
+            )
+        elif not resolved.is_dir():
+            logger.warning(
+                "ZETTELKASTEN_WATCH_DIRS: path is not a directory, skipping: %s",
+                resolved,
             )
         else:
-            valid.append(path)
+            valid.append(resolved)
     return valid
 
 

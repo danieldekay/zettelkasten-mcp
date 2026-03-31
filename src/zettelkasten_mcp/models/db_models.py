@@ -1,6 +1,7 @@
 """SQLAlchemy database models for the Zettelkasten MCP server."""
 
 import datetime
+import logging
 from typing import Any
 
 from sqlalchemy import (
@@ -17,10 +18,13 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from zettelkasten_mcp.config import config
 from zettelkasten_mcp.models.schema import LinkType, NoteType
+
+logger = logging.getLogger(__name__)
 
 # Create base class for SQLAlchemy models
 Base = declarative_base()
@@ -164,9 +168,17 @@ def _migrate_schema(engine: Any) -> None:
             try:
                 conn.execute(text(stmt))
                 conn.commit()
-            except Exception:  # noqa: BLE001, PERF203
-                # Column already exists — safe to ignore
-                conn.rollback()
+            except OperationalError as exc:  # noqa: PERF203
+                # "duplicate column name" is the expected SQLite error when the
+                # column already exists — treat it as a no-op.
+                if "duplicate column name" in str(exc).lower():
+                    conn.rollback()
+                else:
+                    conn.rollback()
+                    logger.exception(
+                        "Unexpected OperationalError during schema migration",
+                    )
+                    raise
 
 
 def init_db() -> Engine:

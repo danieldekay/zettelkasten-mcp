@@ -130,6 +130,7 @@ def main() -> None:
         from zettelkasten_mcp.storage.note_repository import (  # noqa: PLC0415
             NoteRepository,
         )
+
         try:
             repo = NoteRepository()
             wfs = WatchFolderService(watch_dirs=config.watch_dirs, repository=repo)

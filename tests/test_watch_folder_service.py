@@ -15,6 +15,7 @@ from zettelkasten_mcp.services.watch_folder_service import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _write_md(path: Path, content: str) -> Path:
     path.write_text(dedent(content).strip())
     return path
@@ -23,6 +24,7 @@ def _write_md(path: Path, content: str) -> Path:
 # ---------------------------------------------------------------------------
 # _generate_external_id
 # ---------------------------------------------------------------------------
+
 
 class TestGenerateExternalId:
     def test_returns_ext_prefix(self, tmp_path):
@@ -55,10 +57,13 @@ class TestGenerateExternalId:
 # _parse_external_note
 # ---------------------------------------------------------------------------
 
+
 class TestParseExternalNote:
     def test_note_with_full_frontmatter(self, tmp_path):
         md = tmp_path / "my-note.md"
-        _write_md(md, """\
+        _write_md(
+            md,
+            """\
             ---
             title: My External Note
             tags: [foo, bar]
@@ -66,7 +71,8 @@ class TestParseExternalNote:
             # My External Note
 
             Content here.
-        """)
+        """,
+        )
         note = _parse_external_note(md)
         assert note.title == "My External Note"
         assert {t.name for t in note.tags} == {"foo", "bar"}
@@ -75,7 +81,9 @@ class TestParseExternalNote:
 
     def test_note_with_frontmatter_and_links_metadata(self, tmp_path):
         md = tmp_path / "rich-note.md"
-        _write_md(md, """\
+        _write_md(
+            md,
+            """\
             ---
             id: ext-123
             title: Rich External Note
@@ -95,7 +103,8 @@ class TestParseExternalNote:
 
             ## Other
             More content.
-        """)
+        """,
+        )
 
         note = _parse_external_note(md)
 
@@ -126,13 +135,16 @@ class TestParseExternalNote:
 
     def test_note_with_frontmatter_id_preserved(self, tmp_path):
         md = tmp_path / "has-id.md"
-        _write_md(md, """\
+        _write_md(
+            md,
+            """\
             ---
             id: 20251109T120530123456789
             title: ID-bearing note
             ---
             Content.
-        """)
+        """,
+        )
         note = _parse_external_note(md)
         assert note.id == "20251109T120530123456789"
 
@@ -152,6 +164,7 @@ class TestParseExternalNote:
 # ---------------------------------------------------------------------------
 # WatchFolderService.scan_directory
 # ---------------------------------------------------------------------------
+
 
 class TestScanDirectory:
     def test_empty_directory_returns_empty_list(self, tmp_path):
@@ -203,6 +216,7 @@ class TestScanDirectory:
 # ---------------------------------------------------------------------------
 # WatchFolderService.sync_all
 # ---------------------------------------------------------------------------
+
 
 class TestSyncAll:
     def test_sync_all_returns_summary_dict(self, tmp_path):

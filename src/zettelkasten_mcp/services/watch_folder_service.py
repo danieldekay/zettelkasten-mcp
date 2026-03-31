@@ -8,7 +8,14 @@ from typing import TYPE_CHECKING, Any
 
 import frontmatter
 
-from zettelkasten_mcp.models.schema import Link, LinkType, Note, NoteType, Tag
+from zettelkasten_mcp.models.schema import (
+    Link,
+    LinkType,
+    Note,
+    NoteType,
+    Tag,
+    link_type_registry,
+)
 
 if TYPE_CHECKING:
     from zettelkasten_mcp.storage.note_repository import NoteRepository
@@ -28,7 +35,7 @@ def _generate_external_id(absolute_path: Path) -> str:
     Returns:
         ID string of the form ``ext-<first 12 hex chars of sha256>``.
     """
-    digest = hashlib.sha256(str(absolute_path).encode()).hexdigest()
+    digest = hashlib.sha256(str(absolute_path.resolve()).encode()).hexdigest()
     return f"ext-{digest[:12]}"
 
 
@@ -105,9 +112,8 @@ def _parse_external_note(file_path: Path) -> Note:  # noqa: PLR0912, PLR0915
                     id_and_desc[1].strip() if len(id_and_desc) > 1 else None
                 ) or None
                 # Fall back to reference for unknown link types
-                try:
-                    LinkType(link_type_str)
-                except ValueError:
+                # (check registry which includes custom types)
+                if not link_type_registry.is_valid(link_type_str):
                     link_type_str = LinkType.REFERENCE.value
                 links.append(
                     Link(
@@ -120,7 +126,9 @@ def _parse_external_note(file_path: Path) -> Note:  # noqa: PLR0912, PLR0915
                 )
             except Exception:  # noqa: BLE001
                 logger.debug(
-                    "Could not parse link line in %s: %s", file_path, line,
+                    "Could not parse link line in %s: %s",
+                    file_path,
+                    line,
                 )
 
     # --- Timestamps ---
@@ -135,7 +143,8 @@ def _parse_external_note(file_path: Path) -> Note:  # noqa: PLR0912, PLR0915
     else:
         stat = file_path.stat()
         created_at = datetime.datetime.fromtimestamp(
-            stat.st_ctime, tz=datetime.timezone.utc,
+            stat.st_ctime,
+            tz=datetime.timezone.utc,
         )
 
     updated_str = meta.get("updated")
@@ -149,7 +158,8 @@ def _parse_external_note(file_path: Path) -> Note:  # noqa: PLR0912, PLR0915
     else:
         stat = file_path.stat()
         updated_at = datetime.datetime.fromtimestamp(
-            stat.st_mtime, tz=datetime.timezone.utc,
+            stat.st_mtime,
+            tz=datetime.timezone.utc,
         )
 
     return Note(
@@ -216,7 +226,9 @@ class WatchFolderService:
                 notes.append(note)
             except Exception as exc:  # noqa: BLE001
                 logger.warning(
-                    "Watch folder: failed to parse %s — %s", md_file, exc,
+                    "Watch folder: failed to parse %s — %s",
+                    md_file,
+                    exc,
                 )
         return notes
 
@@ -237,12 +249,16 @@ class WatchFolderService:
             logger.debug("WatchFolderService.sync_all: no watch dirs configured")
             return {"scanned": 0, "added": 0, "removed": 0, "errors": []}
 
+        # --- Collect the IDs currently in the DB before dropping ---
+        previous_ids = self._get_readonly_ids()
+
         # --- Drop all existing watch-folder rows from the DB ---
-        removed = self._drop_readonly_entries()
+        self._drop_readonly_entries()
 
         # --- Re-scan and ingest ---
         scanned = 0
         added = 0
+        new_ids: set[str] = set()
         errors: list[tuple[str, str]] = []
 
         for watch_dir in self.watch_dirs:
@@ -259,16 +275,26 @@ class WatchFolderService:
                 try:
                     note = _parse_external_note(md_file)
                     self.repository._index_note(note)  # noqa: SLF001
+                    new_ids.add(note.id)
                     added += 1
                     logger.debug(
-                        "Watch folder indexed: %s → %s", md_file, note.id,
+                        "Watch folder indexed: %s → %s",
+                        md_file,
+                        note.id,
                     )
                 except Exception as exc:  # noqa: BLE001
                     err_msg = str(exc)
                     errors.append((str(md_file), err_msg))
                     logger.warning(
-                        "Watch folder: failed to index %s — %s", md_file, err_msg,
+                        "Watch folder: failed to index %s — %s",
+                        md_file,
+                        err_msg,
                     )
+
+        # Stale entries are those that existed before but are no longer present
+        # in the watch directories (deleted or moved files). This count helps
+        # users understand how many external notes were removed from the index.
+        removed = len(previous_ids - new_ids)
 
         logger.info(
             "WatchFolderService sync: scanned=%d added=%d removed=%d errors=%d",
@@ -288,8 +314,24 @@ class WatchFolderService:
     # Private helpers
     # ------------------------------------------------------------------
 
+    def _get_readonly_ids(self) -> set[str]:
+        """Return the set of IDs for all current read-only notes in the DB."""
+        from sqlalchemy import select  # noqa: PLC0415
+
+        from zettelkasten_mcp.models.db_models import DBNote  # noqa: PLC0415
+
+        with self.repository.session_factory() as session:
+            ids = session.scalars(
+                select(DBNote.id).where(DBNote.is_readonly.is_(True)),
+            ).all()
+        return set(ids)
+
     def _drop_readonly_entries(self) -> int:
-        """Delete all is_readonly=True rows and related data from the DB.
+        """Delete all is_readonly=True rows and their outgoing links from the DB.
+
+        Only links *originating* from read-only notes are removed; incoming
+        links from primary notes to external notes are left intact so the
+        graph is not silently broken.
 
         Returns:
             Number of note rows removed.
@@ -305,10 +347,9 @@ class WatchFolderService:
             ).all()
             for db_note in readonly_notes:
                 note_id = db_note.id
+                # Only remove links where this read-only note is the *source*
                 session.execute(
-                    text(
-                        "DELETE FROM links WHERE source_id = :id OR target_id = :id",
-                    ),
+                    text("DELETE FROM links WHERE source_id = :id"),
                     {"id": note_id},
                 )
                 session.execute(

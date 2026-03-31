@@ -9,6 +9,7 @@ from typing import Any
 
 import frontmatter
 from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy.exc import DatabaseError, OperationalError
 from sqlalchemy.orm import joinedload
 
 from zettelkasten_mcp.config import config
@@ -49,11 +50,8 @@ class NoteRepository(Repository[Note]):
         )
 
         if not self.notes_dir.exists():
-            msg = (
-                f"Notes directory does not exist: {self.notes_dir}. "
-                "Please create it or check your ZETTELKASTEN_NOTES_DIR setting."
-            )
-            raise FileNotFoundError(msg)
+            logger.info("Notes directory does not exist, creating: %s", self.notes_dir)
+            self.notes_dir.mkdir(parents=True, exist_ok=True)
         if not self.notes_dir.is_dir():
             msg = f"Notes path is not a directory: {self.notes_dir}"
             raise NotADirectoryError(msg)
@@ -191,8 +189,8 @@ class NoteRepository(Repository[Note]):
                         content = f.read()
                     note = self._parse_note_from_markdown(content)
                     notes.append(note)
-                except Exception:  # noqa: BLE001, PERF203
-                    logger.debug("Skipping unreadable file: %s", file_path)
+                except Exception as exc:  # noqa: BLE001, PERF203
+                    logger.warning("Skipping unreadable file %s: %s", file_path, exc)
 
             # Index notes
             for note in notes:
@@ -548,7 +546,8 @@ class NoteRepository(Repository[Note]):
                 target_id=lnk.target_id,
                 link_type=lnk.link_type,
                 description=lnk.description,
-                created_at=lnk.created_at or datetime.datetime.now(
+                created_at=lnk.created_at
+                or datetime.datetime.now(
                     tz=datetime.timezone.utc,
                 ),
             )
@@ -565,10 +564,12 @@ class NoteRepository(Repository[Note]):
             note_type=note_type,
             tags=tags,
             links=links,
-            created_at=db_note.created_at or datetime.datetime.now(
+            created_at=db_note.created_at
+            or datetime.datetime.now(
                 tz=datetime.timezone.utc,
             ),
-            updated_at=db_note.updated_at or datetime.datetime.now(
+            updated_at=db_note.updated_at
+            or datetime.datetime.now(
                 tz=datetime.timezone.utc,
             ),
             is_readonly=is_readonly,
@@ -604,10 +605,15 @@ class NoteRepository(Repository[Note]):
         Returns:
             Note object if found, None otherwise
         """
-        with self.session_factory() as session:
-            db_note = session.scalar(select(DBNote).where(DBNote.id == id))
-            if db_note:
-                return self._db_note_to_note(db_note, session)
+        if self._db_available:
+            try:
+                with self.session_factory() as session:
+                    db_note = session.scalar(select(DBNote).where(DBNote.id == id))
+                    if db_note:
+                        return self._db_note_to_note(db_note, session)
+            except (OperationalError, DatabaseError):
+                logger.exception("DB error in get(%s); falling back to filesystem", id)
+                self._db_available = False
         return self._read_from_markdown(id)
 
     def get_by_title(self, title: str) -> Note | None:
@@ -630,9 +636,10 @@ class NoteRepository(Repository[Note]):
             notes = []
             for md_file in sorted(self.notes_dir.glob("**/*.md")):
                 try:
-                    note = self._read_from_markdown(md_file.stem)
-                    if note:
-                        notes.append(note)
+                    with md_file.open(encoding="utf-8") as f:
+                        content = f.read()
+                    note = self._parse_note_from_markdown(content)
+                    notes.append(note)
                 except Exception:  # noqa: PERF203
                     logger.exception("Error loading note from %s", md_file)
             return notes

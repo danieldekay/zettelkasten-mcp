@@ -55,9 +55,9 @@ class ZettelkastenMcpServer:
 
         if notes_dir.exists():
             items = list(notes_dir.iterdir())
-            logger.info(
-                "Found %d items in notes directory: %s",
-                len(items),
+            logger.info("Found %d items in notes directory", len(items))
+            logger.debug(
+                "Notes directory contents: %s",
                 [item.name for item in items],
             )
             md_files = list(notes_dir.glob("**/*.md"))
@@ -130,7 +130,7 @@ class ZettelkastenMcpServer:
             "created_at": note.created_at.isoformat(),
             "updated_at": note.updated_at.isoformat(),
             "content": note.content,
-            "metadata": note.metadata if note.metadata else {},
+            "metadata": note.metadata or {},
             "file_path": file_path,
             "vscode_uri": "vscode://file/" + file_path,
             "is_readonly": note.is_readonly,
@@ -1152,9 +1152,7 @@ class ZettelkastenMcpServer:
                     "total": total,
                     "include_external": include_external,
                     "summary": (
-                        f"Found {total} note(s)"
-                        if total
-                        else "No notes found"
+                        f"Found {total} note(s)" if total else "No notes found"
                     ),
                 }
 
