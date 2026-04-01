@@ -101,9 +101,7 @@ def main() -> None:
     setup_logging(args.log_level)
     logger = logging.getLogger(__name__)
 
-    # Ensure directories exist
-    notes_dir = config.get_absolute_path(config.notes_dir)
-    notes_dir.mkdir(parents=True, exist_ok=True)
+    # Ensure database directory exists
     db_dir = config.get_absolute_path(config.database_path).parent
     db_dir.mkdir(parents=True, exist_ok=True)
 
@@ -123,6 +121,29 @@ def main() -> None:
     # Self-healing index drift check
     if config.auto_rebuild_threshold >= 0:
         _run_drift_check(logger)
+
+    # Index watch folders (external read-only Markdown directories)
+    if config.watch_dirs:
+        from zettelkasten_mcp.services.watch_folder_service import (  # noqa: PLC0415
+            WatchFolderService,
+        )
+        from zettelkasten_mcp.storage.note_repository import (  # noqa: PLC0415
+            NoteRepository,
+        )
+
+        try:
+            repo = NoteRepository()
+            wfs = WatchFolderService(watch_dirs=config.watch_dirs, repository=repo)
+            summary = wfs.sync_all()
+            logger.info(
+                "Watch folder indexing: scanned=%d added=%d removed=%d errors=%d",
+                summary["scanned"],
+                summary["added"],
+                summary["removed"],
+                len(summary["errors"]),
+            )
+        except Exception:  # noqa: BLE001
+            logger.warning("Watch folder indexing failed; continuing without it")
 
     # Create and run the MCP server
     try:

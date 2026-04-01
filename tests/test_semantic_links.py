@@ -26,7 +26,7 @@ class TestSemanticLinks:
                 0,
             )
             # Ensure constructor still works correctly
-            mock_dt.side_effect = lambda *args, **kw: datetime.datetime(*args, **kw)  # noqa: DTZ001
+            mock_dt.side_effect = lambda *args, **kw: datetime.datetime(*args, **kw)  # noqa: DTZ001, PLW0108
             yield mock_dt
 
     def test_all_link_types_creation(self, zettel_service):

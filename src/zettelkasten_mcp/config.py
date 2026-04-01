@@ -1,5 +1,6 @@
 """Configuration module for the Zettelkasten MCP server."""
 
+import logging
 import os
 from pathlib import Path
 
@@ -8,6 +9,54 @@ from pydantic import BaseModel, Field
 
 # Load environment variables
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+
+def _parse_watch_dirs() -> list[Path]:
+    """Parse and validate watch directories from ZETTELKASTEN_WATCH_DIRS env var.
+
+    Returns:
+        List of valid, existing directory Paths. Invalid paths are skipped
+        with a WARNING log entry.
+    """
+    raw = os.getenv("ZETTELKASTEN_WATCH_DIRS", "").strip()
+    if not raw:
+        return []
+    valid: list[Path] = []
+    for entry in raw.split(","):
+        entry = entry.strip()  # noqa: PLW2901
+        if not entry:
+            continue
+        path = Path(entry)
+        if not path.is_absolute():
+            logger.warning(
+                "ZETTELKASTEN_WATCH_DIRS: relative path given, resolving to "
+                "absolute: %s",
+                path,
+            )
+        try:
+            resolved = path.resolve()
+        except OSError as exc:  # pragma: no cover - extremely rare filesystem error
+            logger.warning(
+                "ZETTELKASTEN_WATCH_DIRS: failed to resolve path, skipping: %s (%s)",
+                path,
+                exc,
+            )
+            continue
+        if not resolved.exists():
+            logger.warning(
+                "ZETTELKASTEN_WATCH_DIRS: path does not exist, skipping: %s",
+                resolved,
+            )
+        elif not resolved.is_dir():
+            logger.warning(
+                "ZETTELKASTEN_WATCH_DIRS: path is not a directory, skipping: %s",
+                resolved,
+            )
+        else:
+            valid.append(resolved)
+    return valid
 
 
 class ZettelkastenConfig(BaseModel):
@@ -64,6 +113,14 @@ class ZettelkastenConfig(BaseModel):
                 "ZETTELKASTEN_CUSTOM_LINK_TYPES_PATH",
                 "openspec/config.yaml",
             ),
+        ),
+    )
+    # Watch folders: additional read-only Markdown directories to index
+    watch_dirs: list[Path] = Field(
+        default_factory=_parse_watch_dirs,
+        description=(
+            "Extra directories scanned for read-only reference notes. "
+            "Set via ZETTELKASTEN_WATCH_DIRS (comma-separated paths)."
         ),
     )
 

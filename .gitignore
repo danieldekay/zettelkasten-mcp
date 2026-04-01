@@ -24,6 +24,7 @@ build/
 # IDE specific files
 .idea/
 # .vscode/ - commented out to include workspace settings in repo
+# mcp.json is tracked as a template — copy and customize locally
 *.swp
 *.swo
 .DS_Store

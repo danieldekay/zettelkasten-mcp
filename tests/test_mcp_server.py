@@ -631,6 +631,71 @@ class TestMcpServer:
         assert result["error"] is True
         assert result["error_type"] == "validation_error"
 
+    def test_sync_watch_folders_returns_summary(self, tmp_path):
+        """Test zk_sync_watch_folders calls the watch-folder service and returns counts."""
+        watch_dir = tmp_path / "watch"
+        watch_dir.mkdir()
+
+        mock_service = MagicMock()
+        mock_service.sync_all.return_value = {
+            "scanned": 3,
+            "added": 2,
+            "removed": 1,
+            "errors": [(str(watch_dir / "bad.md"), "invalid yaml")],
+        }
+
+        with (
+            patch(
+                "zettelkasten_mcp.server.mcp_server.config.watch_dirs",
+                [watch_dir],
+            ),
+            patch(
+                "zettelkasten_mcp.services.watch_folder_service.WatchFolderService",
+                return_value=mock_service,
+            ) as mock_watch_service,
+        ):
+            result = self.registered_tools["zk_sync_watch_folders"]()
+
+        assert isinstance(result, dict)
+        assert result["scanned"] == 3
+        assert result["added"] == 2
+        assert result["removed"] == 1
+        assert result["errors"] == [(str(watch_dir / "bad.md"), "invalid yaml")]
+        assert "3 scanned" in result["summary"]
+        assert "2 added" in result["summary"]
+        assert "1 removed" in result["summary"]
+        mock_watch_service.assert_called_once_with(
+            watch_dirs=[watch_dir],
+            repository=self.mock_zettel_service.repository,
+        )
+        mock_service.sync_all.assert_called_once()
+
+    def test_list_notes_excludes_external_notes_when_requested(self):
+        """Test zk_list_notes(include_external=False) filters out read-only notes."""
+        internal_note = self._make_mock_note("n1", "Internal Note")
+        internal_note.is_readonly = False
+        external_note = self._make_mock_note("n2", "External Note")
+        external_note.is_readonly = True
+        external_note.source_path = "/tmp/watch/external.md"
+
+        self.mock_zettel_service.search_notes.return_value = [
+            internal_note,
+            external_note,
+        ]
+
+        list_notes_func = self.registered_tools["zk_list_notes"]
+        result = list_notes_func(include_external=False, limit=10)
+
+        assert isinstance(result, dict)
+        assert result["total"] == 1
+        assert len(result["notes"]) == 1
+        assert result["notes"][0]["note_id"] == "n1"
+        assert result["include_external"] is False
+        self.mock_zettel_service.search_notes.assert_called_with(
+            tags=None,
+            note_type=None,
+        )
+
     def _make_mock_note(self, note_id="n1", title="Test"):
         """Helper to create a consistent mock note."""
         note = MagicMock()

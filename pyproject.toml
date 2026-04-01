@@ -124,6 +124,30 @@ ignore = [
     "S101",     # Use of assert
     "PLR2004",  # Magic value used in comparison
     "ANN",      # Type annotations not needed in tests
+    "S108",     # /tmp usage acceptable in tests
+    "E501",     # Long lines acceptable in tests
+]
+"tests/test_watch_folder_readonly.py" = [
+    "SLF001",   # Private member access is intentional in unit tests
+    "PLC0415",  # Inline imports inside patch context managers
+    "SIM117",   # Nested with for patch combos
+    "PT011",    # Too-broad pytest.raises
+    "RUF059",   # Unused unpacked variable
+    "C408",     # dict() literal not needed
+]
+"tests/test_watch_folder_service.py" = [
+    "SLF001",   # Private member access is intentional in unit tests
+    "PLC0415",  # Inline imports inside patch context managers
+    "SIM117",   # Nested with for patch combos
+]
+"tests/test_watch_folder_config.py" = [
+    "SIM117",   # Nested with for tempfile + patch combos
+]
+"tests/test_note_repository.py" = [
+    "SLF001",   # Private member access is intentional in unit tests
+]
+"tests/test_zettel_service.py" = [
+    "SLF001",   # Private member access is intentional in unit tests
 ]
 "src/zettelkasten_mcp/models/*.py" = [
     "A003",     # Class attribute shadows builtin

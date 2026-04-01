@@ -2,7 +2,8 @@
 
 import pytest
 
-from zettelkasten_mcp.models.schema import LinkType, NoteType
+from zettelkasten_mcp.config import config
+from zettelkasten_mcp.models.schema import LinkType, NoteType, link_type_registry
 
 
 def test_create_note(zettel_service):
@@ -21,6 +22,23 @@ def test_create_note(zettel_service):
     assert note.note_type == NoteType.PERMANENT
     assert len(note.tags) == 2
     assert {tag.name for tag in note.tags} == {"service", "test"}
+
+
+def test_create_note_requires_title_and_content(zettel_service):
+    """Test create_note validation errors for missing title and content."""
+    with pytest.raises(ValueError, match="Title is required"):
+        zettel_service.create_note(
+            title="",
+            content="Content",
+            note_type=NoteType.PERMANENT,
+        )
+
+    with pytest.raises(ValueError, match="Content is required"):
+        zettel_service.create_note(
+            title="Title",
+            content="",
+            note_type=NoteType.PERMANENT,
+        )
 
 
 def test_get_note(zettel_service):
@@ -90,6 +108,23 @@ def test_delete_note(zettel_service):
     assert deleted_note is None
 
 
+def test_export_note_and_invalid_format(zettel_service):
+    """Test export_note for markdown output and invalid formats."""
+    note = zettel_service.create_note(
+        title="Exportable Note",
+        content="Testing note export.",
+        note_type=NoteType.PERMANENT,
+        tags=["service", "export"],
+    )
+
+    exported = zettel_service.export_note(note.id)
+    assert "# Exportable Note" in exported
+    assert "Testing note export." in exported
+
+    with pytest.raises(ValueError, match="Unsupported export format"):
+        zettel_service.export_note(note.id, fmt="pdf")
+
+
 def test_create_link(zettel_service):
     """Test creating a link between notes through the service."""
     # Create test notes
@@ -134,6 +169,42 @@ def test_create_link(zettel_service):
     assert both_links[0].id == target_note.id
 
 
+def test_remove_link_bidirectional(zettel_service):
+    """Test removing bidirectional links updates both notes."""
+    source_note = zettel_service.create_note(
+        title="Remove Source Note",
+        content="Testing removal (source).",
+        note_type=NoteType.PERMANENT,
+        tags=["service", "remove", "source"],
+    )
+    target_note = zettel_service.create_note(
+        title="Remove Target Note",
+        content="Testing removal (target).",
+        note_type=NoteType.PERMANENT,
+        tags=["service", "remove", "target"],
+    )
+
+    zettel_service.create_link(
+        source_id=source_note.id,
+        target_id=target_note.id,
+        link_type=LinkType.REFERENCE,
+        bidirectional=True,
+    )
+
+    zettel_service.remove_link(
+        source_id=source_note.id,
+        target_id=target_note.id,
+        bidirectional=True,
+    )
+
+    source_after = zettel_service.get_note(source_note.id)
+    target_after = zettel_service.get_note(target_note.id)
+    assert source_after is not None
+    assert target_after is not None
+    assert source_after.links == []
+    assert target_after.links == []
+
+
 def test_search_notes(zettel_service):
     """Test searching for notes through the service."""
     # Create test notes
@@ -169,6 +240,36 @@ def test_search_notes(zettel_service):
     zettel_service.remove_tag_from_note(first_note.id, "newTag")
     updated_note = zettel_service.get_note(first_note.id)
     assert "newTag" not in {tag.name for tag in updated_note.tags}
+
+
+def test_register_link_type_and_duplicate(zettel_service, tmp_path):
+    """Test custom link type registration and duplicate prevention."""
+    original_custom_types = dict(link_type_registry._custom)
+    original_path = config.custom_link_types_path
+    config.custom_link_types_path = tmp_path / "custom_link_types.yaml"
+
+    try:
+        result = zettel_service.register_link_type(
+            name="implements",
+            inverse="implemented_by",
+            symmetric=False,
+        )
+
+        assert result == {
+            "registered": "implements",
+            "inverse": "implemented_by",
+            "symmetric": False,
+        }
+
+        with pytest.raises(ValueError, match="already registered"):
+            zettel_service.register_link_type(
+                name="implements",
+                inverse="implemented_by",
+                symmetric=False,
+            )
+    finally:
+        link_type_registry._custom = original_custom_types
+        config.custom_link_types_path = original_path
 
 
 def test_find_similar_notes(zettel_service):

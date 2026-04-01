@@ -1,9 +1,11 @@
 """SQLAlchemy database models for the Zettelkasten MCP server."""
 
 import datetime
+import logging
 from typing import Any
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     ForeignKey,
@@ -13,12 +15,16 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
+    text,
 )
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from zettelkasten_mcp.config import config
 from zettelkasten_mcp.models.schema import LinkType, NoteType
+
+logger = logging.getLogger(__name__)
 
 # Create base class for SQLAlchemy models
 Base = declarative_base()
@@ -57,6 +63,9 @@ class DBNote(Base):
         nullable=False,
         index=True,
     )
+    # Watch-folder fields: is_readonly marks external notes; source_path is their path
+    is_readonly = Column(Boolean, default=False, nullable=False, index=True)
+    source_path = Column(Text, nullable=True)
 
     # Relationships
     tags = relationship(
@@ -142,10 +151,41 @@ class DBLink(Base):
         )
 
 
+def _migrate_schema(engine: Any) -> None:
+    """Apply additive schema migrations for new columns.
+
+    Uses ALTER TABLE … ADD COLUMN which is a no-op-safe pattern: SQLite
+    raises OperationalError when a column already exists, which we catch and
+    ignore. This keeps the function idempotent so it can always be called at
+    startup without harm.
+    """
+    migrations = [
+        "ALTER TABLE notes ADD COLUMN is_readonly BOOLEAN NOT NULL DEFAULT 0",
+        "ALTER TABLE notes ADD COLUMN source_path TEXT",
+    ]
+    with engine.connect() as conn:
+        for stmt in migrations:
+            try:
+                conn.execute(text(stmt))
+                conn.commit()
+            except OperationalError as exc:  # noqa: PERF203
+                # "duplicate column name" is the expected SQLite error when the
+                # column already exists — treat it as a no-op.
+                if "duplicate column name" in str(exc).lower():
+                    conn.rollback()
+                else:
+                    conn.rollback()
+                    logger.exception(
+                        "Unexpected OperationalError during schema migration",
+                    )
+                    raise
+
+
 def init_db() -> Engine:
     """Initialize the database."""
     engine = create_engine(config.get_db_url())
     Base.metadata.create_all(engine)
+    _migrate_schema(engine)
     return engine
 
 

@@ -9,6 +9,19 @@ Versions correspond to phases in the OpenSpec change pipeline.
 
 ## [Unreleased]
 
+### External Folder Indexing (Watch Folders)
+
+Index any external Markdown directory as **read-only reference notes** alongside your primary Zettelkasten notes.
+
+#### New features
+
+- **`ZETTELKASTEN_WATCH_DIRS`** — comma-separated list of directories to index at startup. Files with YAML frontmatter are parsed fully; files without frontmatter receive a deterministic `ext-<sha256[:12]>` ID and use the filename stem as title.
+- **`zk_sync_watch_folders`** — MCP tool to re-index all watch directories on demand without restarting the server.
+- **`zk_list_notes`** — new MCP tool to list all notes with optional `note_type`, `tags`, and `include_external` filters.
+- **Read-only guards** — `zk_update_note` and `zk_delete_note` refuse to modify watch-folder notes with a clear `PermissionError`.
+- **Safe linking** — unidirectional links from primary notes to watch-folder notes are fully supported. Bidirectional links silently create only the forward link.
+- **`is_readonly` / `source_path`** fields added to all note responses from `zk_get_note`, `zk_list_notes`, `zk_search_notes`, and related tools.
+
 ---
 
 ## [1.3.0] — 2026-03-27

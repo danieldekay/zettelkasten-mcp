@@ -1,0 +1,22 @@
+{
+    "servers": {
+        "zettelkasten": {
+            "command": "uv",
+            "args": [
+                "--directory",
+                "${workspaceFolder}",
+                "run",
+                "python",
+                "-m",
+                "zettelkasten_mcp"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "ZETTELKASTEN_NOTES_DIR": "/path/to/zettelkasten/notes",
+                "ZETTELKASTEN_DATABASE_PATH": "/path/to/zettelkasten/db/zettelkasten.db",
+                "ZETTELKASTEN_LOG_LEVEL": "INFO",
+                "ZETTELKASTEN_WATCH_DIRS": "/path/to/watch/folder"
+            }
+        }
+    }
+}

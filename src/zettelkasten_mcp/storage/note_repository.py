@@ -9,6 +9,7 @@ from typing import Any
 
 import frontmatter
 from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy.exc import DatabaseError, OperationalError
 from sqlalchemy.orm import joinedload
 
 from zettelkasten_mcp.config import config
@@ -48,8 +49,12 @@ class NoteRepository(Repository[Note]):
             else config.get_absolute_path(config.notes_dir)
         )
 
-        # Ensure directories exist
-        self.notes_dir.mkdir(parents=True, exist_ok=True)
+        if not self.notes_dir.exists():
+            logger.info("Notes directory does not exist, creating: %s", self.notes_dir)
+            self.notes_dir.mkdir(parents=True, exist_ok=True)
+        if not self.notes_dir.is_dir():
+            msg = f"Notes path is not a directory: {self.notes_dir}"
+            raise NotADirectoryError(msg)
 
         # Initialize database
         self.engine = init_db()
@@ -121,14 +126,18 @@ class NoteRepository(Repository[Note]):
             logger.exception("Error creating FTS5 table")
             raise
 
+    def get_note_count(self) -> int:
+        """Get the number of notes in the database."""
+        with self.session_factory() as session:
+            return session.scalar(select(text("COUNT(*)")).select_from(DBNote)) or 0
+
     def rebuild_index_if_needed(self) -> None:
         """Rebuild the database index from files if needed."""
         # Count notes in database
-        with self.session_factory() as session:
-            db_count = session.scalar(select(text("COUNT(*)")).select_from(DBNote))
+        db_count = self.get_note_count()
 
         # Count note files
-        file_count = len(list(self.notes_dir.glob("*.md")))
+        file_count = len(list(self.notes_dir.glob("**/*.md")))
 
         # Rebuild if counts don't match
         if db_count != file_count:
@@ -162,12 +171,13 @@ class NoteRepository(Repository[Note]):
 
         logger.info("Tables cleared and FTS5 table created")
 
-        # Read all markdown files
-        note_files = list(self.notes_dir.glob("*.md"))
+        # Read all markdown files (recursive scan of subdirectories)
+        note_files = list(self.notes_dir.glob("**/*.md"))
         logger.info("Found %s markdown files to index", len(note_files))
 
         # Process files in batches to avoid memory issues
         batch_size = 100
+        indexed_count = 0
         for i in range(0, len(note_files), batch_size):
             batch = note_files[i : i + batch_size]
             notes = []
@@ -179,14 +189,19 @@ class NoteRepository(Repository[Note]):
                         content = f.read()
                     note = self._parse_note_from_markdown(content)
                     notes.append(note)
-                except Exception:  # noqa: PERF203
-                    logger.exception("Error processing file %s", file_path)
+                except Exception as exc:  # noqa: BLE001, PERF203
+                    logger.warning("Skipping unreadable file %s: %s", file_path, exc)
 
             # Index notes
             for note in notes:
                 self._index_note(note)
+                indexed_count += 1
 
-        logger.info("Index rebuild complete: %s notes indexed", len(note_files))
+        logger.info(
+            "Index rebuild complete: found=%d files, indexed=%d notes",
+            len(note_files),
+            indexed_count,
+        )
 
     def _parse_note_from_markdown(self, content: str) -> Note:  # noqa: PLR0912
         """Parse a note from markdown content."""
@@ -322,6 +337,8 @@ class NoteRepository(Repository[Note]):
                 db_note.content = note.content
                 db_note.note_type = note.note_type.value
                 db_note.updated_at = note.updated_at
+                db_note.is_readonly = note.is_readonly
+                db_note.source_path = note.source_path
                 # Clear existing links and tags to rebuild them
                 session.execute(
                     text("DELETE FROM links WHERE source_id = :note_id"),
@@ -340,6 +357,8 @@ class NoteRepository(Repository[Note]):
                     note_type=note.note_type.value,
                     created_at=note.created_at,
                     updated_at=note.updated_at,
+                    is_readonly=note.is_readonly,
+                    source_path=note.source_path,
                 )
                 session.add(db_note)
 
@@ -503,6 +522,60 @@ class NoteRepository(Repository[Note]):
             )
         return note
 
+    def _db_note_to_note(self, db_note: DBNote, _session: Any) -> Note:
+        """Convert a DBNote to a Note.
+
+        For primary (writable) notes, reads the Markdown file to include frontmatter
+        metadata. For read-only external notes (watch-folder), builds from DB fields
+        since their source files may not be in the notes directory.
+        """
+        is_readonly = bool(db_note.is_readonly)
+        source_path = db_note.source_path
+
+        if not is_readonly:
+            # Primary note — read from file to preserve frontmatter metadata
+            file_note = self._read_from_markdown(db_note.id)
+            if file_note:
+                return file_note
+
+        # External (read-only) note or file not found — build from DB
+        tags = [Tag(name=t.name) for t in db_note.tags]
+        links = [
+            Link(
+                source_id=lnk.source_id,
+                target_id=lnk.target_id,
+                link_type=lnk.link_type,
+                description=lnk.description,
+                created_at=lnk.created_at
+                or datetime.datetime.now(
+                    tz=datetime.timezone.utc,
+                ),
+            )
+            for lnk in db_note.outgoing_links
+        ]
+        try:
+            note_type = NoteType(db_note.note_type)
+        except ValueError:
+            note_type = NoteType.PERMANENT
+        return Note(
+            id=db_note.id,
+            title=db_note.title,
+            content=db_note.content,
+            note_type=note_type,
+            tags=tags,
+            links=links,
+            created_at=db_note.created_at
+            or datetime.datetime.now(
+                tz=datetime.timezone.utc,
+            ),
+            updated_at=db_note.updated_at
+            or datetime.datetime.now(
+                tz=datetime.timezone.utc,
+            ),
+            is_readonly=is_readonly,
+            source_path=source_path,
+        )
+
     def _read_from_markdown(self, note_id: str) -> "Note | None":
         """Load a note directly from its Markdown file (bypasses the DB index).
 
@@ -532,6 +605,15 @@ class NoteRepository(Repository[Note]):
         Returns:
             Note object if found, None otherwise
         """
+        if self._db_available:
+            try:
+                with self.session_factory() as session:
+                    db_note = session.scalar(select(DBNote).where(DBNote.id == id))
+                    if db_note:
+                        return self._db_note_to_note(db_note, session)
+            except (OperationalError, DatabaseError):
+                logger.exception("DB error in get(%s); falling back to filesystem", id)
+                self._db_available = False
         return self._read_from_markdown(id)
 
     def get_by_title(self, title: str) -> Note | None:
@@ -552,11 +634,12 @@ class NoteRepository(Repository[Note]):
                 "Database index unavailable; falling back to filesystem glob for get_all()",  # noqa: E501
             )
             notes = []
-            for md_file in sorted(self.notes_dir.glob("*.md")):
+            for md_file in sorted(self.notes_dir.glob("**/*.md")):
                 try:
-                    note = self._read_from_markdown(md_file.stem)
-                    if note:
-                        notes.append(note)
+                    with md_file.open(encoding="utf-8") as f:
+                        content = f.read()
+                    note = self._parse_note_from_markdown(content)
+                    notes.append(note)
                 except Exception:  # noqa: PERF203
                     logger.exception("Error loading note from %s", md_file)
             return notes

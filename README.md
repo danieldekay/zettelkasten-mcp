@@ -172,12 +172,34 @@ Add the following configuration to your Claude Desktop:
         "ZETTELKASTEN_DATABASE_PATH": "/absolute/path/to/zettelkasten-mcp/data/db/zettelkasten.db",
         "ZETTELKASTEN_LOG_LEVEL": "INFO",
         "ZETTELKASTEN_AUTO_REBUILD_THRESHOLD": "5",
-        "ZETTELKASTEN_CUSTOM_LINK_TYPES_PATH": "/absolute/path/to/custom_link_types.yaml"
+        "ZETTELKASTEN_CUSTOM_LINK_TYPES_PATH": "/absolute/path/to/custom_link_types.yaml",
+        "ZETTELKASTEN_WATCH_DIRS": "/path/to/watch-folder1,/path/to/watch-folder2"
       }
     }
   }
 }
 ```
+
+## Watch Folders
+
+Watch folders let you index external Markdown directories as **read-only reference notes** alongside your primary notes. This is useful for referencing existing note archives, documentation, or any collection of Markdown files without copying them into your notes directory.
+
+### Configuration
+
+Set `ZETTELKASTEN_WATCH_DIRS` to a comma-separated list of absolute directory paths:
+
+```bash
+ZETTELKASTEN_WATCH_DIRS=/path/to/folder1,/path/to/folder2
+```
+
+At startup the server indexes all `.md` files found recursively in each watch directory. Files with compatible YAML frontmatter (title, tags, id, etc.) are parsed; files without frontmatter get a deterministic `ext-<hash>` ID and use the filename stem as the title.
+
+### Behaviour
+
+- Watch-folder notes are **read-only**: `zk_update_note` and `zk_delete_note` will refuse to modify them.
+- You can create **links from your primary notes to watch-folder notes** (unidirectional). Bidirectional links to read-only notes are silently downgraded to unidirectional.
+- Watch-folder notes appear in `zk_search_notes`, `zk_get_note`, `zk_get_linked_notes`, and `zk_list_notes` by default. Use `include_external: false` on `zk_list_notes` to exclude them.
+- Run `zk_sync_watch_folders` at any time to re-index the watch directories without restarting the server.
 
 ## Available MCP Tools
 
@@ -202,12 +224,14 @@ All tools have been prefixed with `zk_` for better organization:
 | `zk_find_central_notes` | Find notes with the most connections | `notes[]` (each with `connection_count`), `total`, `summary` |
 | `zk_find_orphaned_notes` | Find notes with no connections | `notes[]`, `total`, `summary` |
 | `zk_list_notes_by_date` | List notes by creation/update date | `notes[]`, `total`, `summary` |
+| `zk_list_notes` | List all notes with optional type/tag/external filters | `notes[]`, `total`, `include_external`, `summary` |
 | `zk_rebuild_index` | Rebuild the database index from Markdown files | `notes_indexed`, `errors[]`, `summary` |
 | `zk_register_link_type` | Register a custom link type with optional inverse | `registered`, `inverse`, `symmetric`, `summary` |
 | `zk_suggest_link_type` | Suggest a link type for two notes using heuristics | `suggestions[]` (each with `link_type`, `confidence`), `low_confidence`, `summary` |
 | `zk_suggest_tags` | Suggest tags for note content using TF-IDF similarity | `suggestions[]` (each with `tag`, `score`), `total`, `summary` |
 | `zk_find_notes_in_timerange` | Find notes by `created_at` or `updated_at` date range (ISO 8601) | `count`, `notes[]`, `date_field`, `summary` |
 | `zk_analyze_tag_clusters` | Identify tag clusters by co-occurrence frequency | `clusters[]` (each with `tags`, `count`, `representative_notes`), `total_tag_pairs_analysed`, `summary` |
+| `zk_sync_watch_folders` | Re-index all configured watch-folder directories | `scanned`, `added`, `removed`, `errors[]`, `summary` |
 
 All tools return `error: true`, `error_type`, `message`, and `summary` on failure.
 
