@@ -624,7 +624,7 @@ def get_note(note_id: str) -> Optional[Note]:
 - Workflow: Meeting transcript processing → atomic note extraction
 - Scale: 3 meetings → 15 atomic notes → 10 semantic links
 - Issue Discovery: January 30, 2026
-- Repository: `basf-global/kaesmad-notes`
+- Test Environment: Private notes repository
 - Branch: `add-skills`
 
 **Related Documentation**:

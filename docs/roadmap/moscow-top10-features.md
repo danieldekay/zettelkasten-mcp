@@ -270,8 +270,8 @@ built-in set.
 ### 6 · Batch Note and Link Creation
 
 **Status**: ✅ Shipped (Phase 3 · `core-enhancements`)
-**GitHub**: [#5](https://github.com/basf-global/zettelkasten-mcp/issues/5),
-[#6](https://github.com/basf-global/zettelkasten-mcp/issues/6)
+**GitHub**: [#5](https://github.com/entanglr/zettelkasten-mcp/issues/5),
+[#6](https://github.com/entanglr/zettelkasten-mcp/issues/6)
 
 #### What
 
@@ -373,8 +373,8 @@ from scratch, including FTS5 entries.
 ### 8 · Health Dashboard and Index Verification
 
 **Status**: ✅ Shipped (Phase 3 · `core-enhancements`)
-**GitHub**: [#9](https://github.com/basf-global/zettelkasten-mcp/issues/9),
-[#14](https://github.com/basf-global/zettelkasten-mcp/issues/14)
+**GitHub**: [#9](https://github.com/entanglr/zettelkasten-mcp/issues/9),
+[#14](https://github.com/entanglr/zettelkasten-mcp/issues/14)
 
 #### What
 
@@ -425,8 +425,8 @@ Status values: `healthy` (0% drift), `degraded` (drift > 0), `critical`
 ### 9 · Custom Link Types and Link Type Inference
 
 **Status**: 🟡 Next (Phase 4 · `advanced-features`)
-**GitHub**: [#10](https://github.com/basf-global/zettelkasten-mcp/issues/10),
-[#11](https://github.com/basf-global/zettelkasten-mcp/issues/11)
+**GitHub**: [#10](https://github.com/entanglr/zettelkasten-mcp/issues/10),
+[#11](https://github.com/entanglr/zettelkasten-mcp/issues/11)
 
 #### What
 
@@ -497,8 +497,8 @@ across the repository layer.
 ### 10 · Temporal Queries and Tag Clustering
 
 **Status**: 🔵 Queued (Phase 5 · `analytics-discovery`)
-**GitHub**: [#13](https://github.com/basf-global/zettelkasten-mcp/issues/13),
-[#15](https://github.com/basf-global/zettelkasten-mcp/issues/15)
+**GitHub**: [#13](https://github.com/entanglr/zettelkasten-mcp/issues/13),
+[#15](https://github.com/entanglr/zettelkasten-mcp/issues/15)
 
 #### What
 

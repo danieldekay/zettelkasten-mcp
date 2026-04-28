@@ -9,11 +9,11 @@ self-healing infrastructure after the core enhancements (Phase 2) are stable.
 
 | Issue                                                            | Title                                                   | Label           |
 | ---------------------------------------------------------------- | ------------------------------------------------------- | --------------- |
-| [#10](https://github.com/basf-global/zettelkasten-mcp/issues/10) | Support flexible/custom link types                      | p2              |
-| [#11](https://github.com/basf-global/zettelkasten-mcp/issues/11) | Implement link type inference (`zk_suggest_link_type`)  | p2, ai-assisted |
-| [#12](https://github.com/basf-global/zettelkasten-mcp/issues/12) | Implement auto-tagging suggestions (`zk_suggest_tags`)  | p2, ai-assisted |
-| [#16](https://github.com/basf-global/zettelkasten-mcp/issues/16) | Implement graceful degradation with filesystem fallback | p2, reliability |
-| [#17](https://github.com/basf-global/zettelkasten-mcp/issues/17) | Implement self-healing index with auto-rebuild          | p2              |
+| [#10](https://github.com/entanglr/zettelkasten-mcp/issues/10) | Support flexible/custom link types                      | p2              |
+| [#11](https://github.com/entanglr/zettelkasten-mcp/issues/11) | Implement link type inference (`zk_suggest_link_type`)  | p2, ai-assisted |
+| [#12](https://github.com/entanglr/zettelkasten-mcp/issues/12) | Implement auto-tagging suggestions (`zk_suggest_tags`)  | p2, ai-assisted |
+| [#16](https://github.com/entanglr/zettelkasten-mcp/issues/16) | Implement graceful degradation with filesystem fallback | p2, reliability |
+| [#17](https://github.com/entanglr/zettelkasten-mcp/issues/17) | Implement self-healing index with auto-rebuild          | p2              |
 
 ## Problem
 
