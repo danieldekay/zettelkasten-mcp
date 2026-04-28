@@ -1,6 +1,5 @@
 # tests/test_integration.py
 """Integration tests for the Zettelkasten MCP system."""
-import os
 import tempfile
 from pathlib import Path
 import pytest

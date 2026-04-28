@@ -1,9 +1,7 @@
 # tests/test_search_service.py
 """Tests for the search service in the Zettelkasten MCP server."""
-import datetime
-import pytest
-from zettelkasten_mcp.models.schema import LinkType, Note, NoteType, Tag
-from zettelkasten_mcp.services.search_service import SearchResult, SearchService
+from zettelkasten_mcp.models.schema import LinkType, NoteType
+from zettelkasten_mcp.services.search_service import SearchService
 
 
 class TestSearchService:

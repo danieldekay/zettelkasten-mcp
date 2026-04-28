@@ -1,11 +1,9 @@
 """SQLAlchemy database models for the Zettelkasten MCP server."""
 import datetime
-from typing import List, Optional
 
 from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String, Table,
                        Text, UniqueConstraint, create_engine)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Mapped, Session, declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from zettelkasten_mcp.config import config
 from zettelkasten_mcp.models.schema import LinkType, NoteType
@@ -30,7 +28,13 @@ class DBNote(Base):
     note_type = Column(String(50), default=NoteType.PERMANENT.value, nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.now, nullable=False)
-    
+    # LLM-generated English summary fields (nullable — populated lazily)
+    en_summary = Column(Text, nullable=True)
+    en_keywords = Column(Text, nullable=True)
+    content_hash = Column(String(64), nullable=True)
+    summary_generated_at = Column(DateTime, nullable=True)
+    llm_model = Column(String(50), nullable=True)
+
     # Relationships
     tags = relationship(
         "DBTag", secondary=note_tags, back_populates="notes"
@@ -110,3 +114,32 @@ def get_session_factory(engine=None):
     if engine is None:
         engine = create_engine(config.get_db_url())
     return sessionmaker(bind=engine)
+
+
+class DBNoteSummaryCache(Base):
+    """Persistent cache for LLM-generated summaries.
+
+    Keyed by ``note_id`` (same as DBNote PK). Survives ``rebuild_index()``
+    because the notes table is never truncated — only the FTS5 virtual table
+    is dropped/recreated. SQLite FK enforcement is off by default, so rows
+    here survive even a hard DELETE FROM notes during a full rebuild.
+    """
+
+    __tablename__ = "note_summary_cache"
+    note_id = Column(
+        String(255),
+        ForeignKey("notes.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    content_hash = Column(String(64), nullable=False)
+    en_summary = Column(Text, nullable=False)
+    en_keywords = Column(Text, nullable=True)  # JSON-encoded list[str]
+    generated_at = Column(DateTime, nullable=False)
+    llm_model = Column(String(50), nullable=True)
+
+    def __repr__(self) -> str:
+        """Return string representation of cache entry."""
+        return (
+            f"<DBNoteSummaryCache(note_id='{self.note_id}', "
+            f"hash='{self.content_hash[:8]}...')>"
+        )

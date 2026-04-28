@@ -2,17 +2,20 @@
 import datetime
 import logging
 import os
+import re
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, List, Optional, Union
 
 import frontmatter
-from sqlalchemy import and_, create_engine, func, or_, select, text
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy.orm import joinedload
 
 from zettelkasten_mcp.config import config
-from zettelkasten_mcp.models.db_models import (Base, DBLink, DBNote, DBTag,
-                                            get_session_factory, init_db)
+from zettelkasten_mcp.models.db_models import (
+    DBLink, DBNote, DBTag,
+    get_session_factory, init_db,
+)
 from zettelkasten_mcp.models.schema import Link, LinkType, Note, NoteType, Tag
 from zettelkasten_mcp.storage.base import Repository
 
@@ -46,6 +49,71 @@ class NoteRepository(Repository[Note]):
         
         # Initialize by rebuilding index if needed
         self.rebuild_index_if_needed()
+        # Create FTS5 virtual table if it doesn't exist yet
+        if config.use_fts5_search and not self._check_fts5_table_exists():
+            with self.session_factory() as session:
+                self._create_fts5_table(session)
+                session.commit()
+
+    def _check_fts5_table_exists(self) -> bool:
+        """Return True if the fts5_notes virtual table exists."""
+        try:
+            with self.session_factory() as session:
+                result = session.execute(
+                    text(
+                        "SELECT name FROM sqlite_master "
+                        "WHERE type='table' AND name='fts5_notes'",
+                    ),
+                )
+                return result.fetchone() is not None
+        except Exception:
+            logger.exception("Error checking FTS5 table existence")
+            return False
+
+    def _create_fts5_table(self, session: Any) -> None:
+        """Create (or recreate) the fts5_notes virtual table."""
+        try:
+            session.execute(text("DROP TABLE IF EXISTS fts5_notes"))
+            session.execute(
+                text("""
+                    CREATE VIRTUAL TABLE fts5_notes USING fts5(
+                        note_id UNINDEXED,
+                        title,
+                        content,
+                        en_summary,
+                        en_keywords,
+                        tags,
+                        tokenize='porter unicode61'
+                    )
+                """),
+            )
+            logger.info("FTS5 table created successfully")
+        except Exception:
+            logger.exception("Error creating FTS5 table")
+            raise
+
+    def prewarm_fts5(self) -> None:
+        """Warm the FTS5 page cache at startup so the first query is fast."""
+        import time  # noqa: PLC0415
+
+        if not self._check_fts5_table_exists():
+            logger.debug("prewarm_fts5: table does not exist, skipping")
+            return
+
+        t0 = time.perf_counter()
+        try:
+            with self.session_factory() as session:
+                for col in ("title", "content", "en_summary", "en_keywords"):
+                    session.execute(
+                        text(
+                            "SELECT note_id FROM fts5_notes"  # noqa: S608
+                            f" WHERE {col} MATCH 'zzprewarmzz' LIMIT 1"
+                        ),
+                    )
+            elapsed_ms = (time.perf_counter() - t0) * 1000
+            logger.info("FTS5 pre-warming completed in %.0f ms", elapsed_ms)
+        except Exception:  # noqa: BLE001
+            logger.warning("FTS5 pre-warming failed (non-fatal)", exc_info=True)
     
     def rebuild_index_if_needed(self) -> None:
         """Rebuild the database index from files if needed."""
@@ -64,25 +132,23 @@ class NoteRepository(Repository[Note]):
         """Rebuild the database index from all markdown files."""
         # Clear the database first
         with self.session_factory() as session:
-            # Delete all records from link table
             session.execute(text("DELETE FROM links"))
-            # Delete all records from note_tags table
             session.execute(text("DELETE FROM note_tags"))
-            # Delete all records from notes table
             session.execute(text("DELETE FROM notes"))
-            # Commit changes
             session.commit()
-        
+            # Recreate FTS5 table so stale entries are removed
+            if config.use_fts5_search:
+                self._create_fts5_table(session)
+                session.commit()
+
         # Read all markdown files
         note_files = list(self.notes_dir.glob("*.md"))
-        
-        # Process files in batches to avoid memory issues with large Zettelkasten systems
+
+        # Process files in batches
         batch_size = 100
         for i in range(0, len(note_files), batch_size):
             batch = note_files[i:i + batch_size]
             notes = []
-            
-            # Read files
             for file_path in batch:
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:
@@ -91,8 +157,6 @@ class NoteRepository(Repository[Note]):
                     notes.append(note)
                 except Exception as e:
                     logger.error(f"Error processing file {file_path}: {e}")
-            
-            # Index notes
             for note in notes:
                 self._index_note(note)
     
@@ -274,9 +338,156 @@ class NoteRepository(Repository[Note]):
                         created_at=link.created_at
                     )
                     session.add(db_link)
-            
+
+            # FTS5 sync: generate LLM summary then write to index
+            if config.use_fts5_search:
+                self._ensure_summary(session, db_note)
+                self._sync_db_note_to_fts5(session, db_note)
+
             # Commit changes
             session.commit()
+
+    def _ensure_summary(self, session: Any, db_note: DBNote) -> None:
+        """Populate en_summary / en_keywords on db_note if LLM summaries enabled."""
+        if not config.llm_enable_summaries:
+            return
+        try:
+            from zettelkasten_mcp.services.llm_summary_service import (  # noqa: PLC0415
+                LLMSummaryService,
+            )
+            from zettelkasten_mcp.services.summary_cache_service import (  # noqa: PLC0415
+                SummaryCacheService,
+                calculate_content_hash,
+            )
+            llm_service = LLMSummaryService()
+            if not llm_service.is_enabled():
+                return
+            cache_service = SummaryCacheService()
+            tag_names = [t.name for t in db_note.tags]
+            content_hash = calculate_content_hash(
+                str(db_note.title), str(db_note.content), tag_names
+            )
+            if db_note.content_hash == content_hash and db_note.en_summary:
+                return
+            cached = cache_service.get_from_cache(
+                session, str(db_note.id), content_hash
+            )
+            if cached:
+                db_note.en_summary = cached["summary"]  # type: ignore[assignment]
+                keywords = cached.get("keywords") or []
+                db_note.en_keywords = " ".join(keywords)  # type: ignore[assignment]
+                db_note.content_hash = content_hash  # type: ignore[assignment]
+                db_note.summary_generated_at = datetime.datetime.now(  # type: ignore[assignment]
+                    tz=datetime.timezone.utc
+                )
+                db_note.llm_model = config.llm_model  # type: ignore[assignment]
+                return
+            result = llm_service.generate_summary(
+                str(db_note.title), str(db_note.content), tag_names
+            )
+            if result:
+                db_note.en_summary = result["summary"]  # type: ignore[assignment]
+                keywords = result.get("keywords") or []
+                db_note.en_keywords = " ".join(keywords)  # type: ignore[assignment]
+                db_note.content_hash = content_hash  # type: ignore[assignment]
+                db_note.summary_generated_at = datetime.datetime.now(  # type: ignore[assignment]
+                    tz=datetime.timezone.utc
+                )
+                db_note.llm_model = config.llm_model  # type: ignore[assignment]
+                cache_service.save_to_cache(
+                    session, str(db_note.id), content_hash, result, config.llm_model,
+                )
+        except Exception:  # noqa: BLE001
+            logger.warning(
+                "LLM summary generation failed for note %s (non-fatal)", db_note.id,
+                exc_info=True,
+            )
+
+    def _sync_db_note_to_fts5(self, session: Any, db_note: DBNote) -> None:
+        """Synchronise a DB note (with LLM fields) to the fts5_notes table."""
+        try:
+            session.execute(
+                text("DELETE FROM fts5_notes WHERE note_id = :note_id"),
+                {"note_id": db_note.id},
+            )
+            tags_str = " ".join(t.name for t in db_note.tags) if db_note.tags else ""
+            session.execute(
+                text("""
+                    INSERT INTO fts5_notes
+                        (note_id, title, content, en_summary, en_keywords, tags)
+                    VALUES
+                        (:note_id, :title, :content, :en_summary, :en_keywords, :tags)
+                """),
+                {
+                    "note_id": db_note.id,
+                    "title": db_note.title,
+                    "content": db_note.content,
+                    "en_summary": db_note.en_summary or "",
+                    "en_keywords": db_note.en_keywords or "",
+                    "tags": tags_str,
+                },
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Failed to sync DB note %s to FTS5: %s", db_note.id, e)
+
+    @staticmethod
+    def _sanitize_fts5_query(query: str) -> str:
+        """Sanitize a user query for safe use in FTS5 MATCH expressions."""
+        sanitized = re.sub(r'[^\w\s"*()\u00C0-\u024F]', " ", query)
+        return " ".join(sanitized.split())
+
+    def search_by_fts5(
+        self,
+        query: str,
+        limit: int = 100,
+        title_weight: float = 10.0,
+        content_weight: float = 1.0,
+        summary_weight: float = 3.0,
+        keywords_weight: float = 15.0,
+        tags_weight: float = 8.0,
+    ) -> list[tuple[str, float, str]]:
+        """Search notes using the FTS5 BM25 index.
+
+        Returns a list of (note_id, bm25_score, snippet) tuples sorted by
+        relevance (most negative BM25 score = best match).
+        """
+        sanitized_query = self._sanitize_fts5_query(query)
+        if not sanitized_query:
+            logger.debug("FTS5 search skipped: %r reduced to empty string", query)
+            return []
+        try:
+            with self.session_factory() as session:
+                result = session.execute(
+                    text(r"""
+                        SELECT
+                            note_id,
+                            bm25(
+                                fts5_notes, 0,
+                                :title_weight, :content_weight,
+                                :summary_weight, :keywords_weight, :tags_weight
+                            ) as score,
+                            snippet(fts5_notes, 1, '<b>', '</b>', '...', 64) as snippet
+                        FROM fts5_notes
+                        WHERE fts5_notes MATCH :query
+                        ORDER BY score
+                        LIMIT :limit
+                    """),
+                    {
+                        "query": sanitized_query,
+                        "limit": limit,
+                        "title_weight": title_weight,
+                        "content_weight": content_weight,
+                        "summary_weight": summary_weight,
+                        "keywords_weight": keywords_weight,
+                        "tags_weight": tags_weight,
+                    },
+                )
+                results = [(row.note_id, row.score, row.snippet) for row in result]
+                logger.debug("FTS5 search for %r returned %d results", query, len(results))
+                return results
+        except Exception:
+            logger.exception("FTS5 search failed for query %r", query)
+            return []
 
     def _note_to_markdown(self, note: Note) -> str:
         """Convert a note to markdown with frontmatter."""
@@ -476,7 +687,12 @@ class NoteRepository(Repository[Note]):
                             created_at=link.created_at
                         )
                         session.add(db_link)
-                    
+
+                    # FTS5 sync
+                    if config.use_fts5_search:
+                        self._ensure_summary(session, db_note)
+                        self._sync_db_note_to_fts5(session, db_note)
+
                     session.commit()
                 else:
                     # This would be unusual, but handle it by creating a new database record
@@ -504,7 +720,11 @@ class NoteRepository(Repository[Note]):
         
         # Delete from database
         with self.session_factory() as session:
-            # Delete note and its relationships
+            if config.use_fts5_search:
+                session.execute(
+                    text("DELETE FROM fts5_notes WHERE note_id = :note_id"),
+                    {"note_id": id},
+                )
             session.execute(text(f"DELETE FROM links WHERE source_id = '{id}' OR target_id = '{id}'"))
             session.execute(text(f"DELETE FROM note_tags WHERE note_id = '{id}'"))
             session.execute(text(f"DELETE FROM notes WHERE id = '{id}'"))

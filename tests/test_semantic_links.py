@@ -1,10 +1,9 @@
 """Comprehensive test suite for semantic link types in the Zettelkasten MCP implementation."""
 import datetime
 import pytest
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import patch
 
-from zettelkasten_mcp.models.schema import LinkType, Note, NoteType, Tag, Link
-from zettelkasten_mcp.services.zettel_service import ZettelService
+from zettelkasten_mcp.models.schema import LinkType, NoteType
 from zettelkasten_mcp.server.mcp_server import ZettelkastenMcpServer
 
 

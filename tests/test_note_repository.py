@@ -1,5 +1,4 @@
 """Tests for the NoteRepository class."""
-import pytest
 from zettelkasten_mcp.models.schema import LinkType, Note, NoteType, Tag
 
 def test_create_note(note_repository):

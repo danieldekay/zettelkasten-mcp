@@ -1,7 +1,6 @@
 """Configuration module for the Zettelkasten MCP server."""
 import os
 from pathlib import Path
-from typing import Optional
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
@@ -46,7 +45,30 @@ class ZettelkastenConfig(BaseModel):
             "{links}\n"
         )
     )
-    
+    # FTS5 Full-Text Search configuration
+    use_fts5_search: bool = Field(
+        default=os.getenv("USE_FTS5_SEARCH", "true").lower() == "true",
+    )
+    # LLM Summary Generation Configuration
+    llm_enable_summaries: bool = Field(
+        default=os.getenv("LLM_ENABLE_SUMMARIES", "false").lower() == "true",
+    )
+    azure_openai_endpoint: str = Field(
+        default=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
+    )
+    azure_openai_api_version: str = Field(
+        default=os.getenv("AZURE_OPENAI_API_VERSION", "2025-04-01-preview"),
+    )
+    llm_model: str = Field(
+        default=os.getenv("LLM_MODEL", "gpt-4o"),
+    )
+    llm_temperature: float = Field(
+        default=float(os.getenv("LLM_TEMPERATURE", "0.1")),
+    )
+    llm_max_tokens: int = Field(
+        default=int(os.getenv("LLM_MAX_TOKENS", "300")),
+    )
+
     def get_absolute_path(self, path: Path) -> Path:
         """Convert a relative path to an absolute path based on base_dir."""
         if path.is_absolute():

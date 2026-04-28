@@ -1,5 +1,4 @@
 """Tests for the ZettelService class."""
-import pytest
 from zettelkasten_mcp.models.schema import LinkType, NoteType
 
 def test_create_note(zettel_service):

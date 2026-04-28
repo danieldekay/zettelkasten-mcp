@@ -1,15 +1,21 @@
 """Service for searching and discovering notes in the Zettelkasten."""
+
+import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
-from sqlalchemy import func, select, text
+from typing import List, Optional, Set, Tuple, Union
+from sqlalchemy import select, text
 
-from zettelkasten_mcp.models.schema import LinkType, Note, NoteType, Tag
+from zettelkasten_mcp.config import config
+from zettelkasten_mcp.models.schema import Note, NoteType
 from zettelkasten_mcp.services.zettel_service import ZettelService
 
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 from zettelkasten_mcp.models.db_models import DBLink, DBNote
+
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class SearchResult:
@@ -18,6 +24,7 @@ class SearchResult:
     score: float
     matched_terms: Set[str]
     matched_context: str
+    fallback_applied: bool = False
 
 class SearchService:
     """Service for searching notes in the Zettelkasten."""
@@ -128,8 +135,8 @@ class SearchService:
                     DBNote.id == DBLink.target_id
                 ))
                 .where(or_(
-                    DBLink.source_id != None,
-                    DBLink.target_id != None
+                    DBLink.source_id is not None,
+                    DBLink.target_id is not None
                 ))
                 .subquery()
             )
@@ -243,17 +250,93 @@ class SearchService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
     ) -> List[SearchResult]:
-        """Perform a combined search with multiple criteria."""
+        """Perform a combined search with multiple criteria.
+
+        Uses FTS5 full-text search if enabled and text query provided,
+        otherwise falls back to legacy in-memory search.
+        """
+        if config.use_fts5_search and text:
+            return self._search_combined_fts5(text, tags, note_type, start_date, end_date)
+        return self._search_combined_legacy(text, tags, note_type, start_date, end_date)
+
+    def _search_combined_fts5(
+        self,
+        text: str,
+        tags: Optional[List[str]] = None,
+        note_type: Optional[NoteType] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> List[SearchResult]:
+        """FTS5-based combined search (fast, uses full-text index)."""
+        fts_results = self.zettel_service.repository.search_by_fts5(
+            query=text,
+            limit=100,
+        )
+
+        # Auto-OR fallback: if AND query returns nothing and multiple words, retry with OR
+        fallback_applied = False
+        words = text.split()
+        if not fts_results and len(words) > 1:
+            or_query = " OR ".join(words)
+            fts_results = self.zettel_service.repository.search_by_fts5(
+                query=or_query,
+                limit=100,
+            )
+            if fts_results:
+                fallback_applied = True
+                logger.debug(
+                    "FTS5 auto-OR fallback applied for query %r -> %r (%d results)",
+                    text, or_query, len(fts_results),
+                )
+
+        candidate_notes = []
+        for note_id, bm25_score, snippet in fts_results:
+            note = self.zettel_service.get_note(note_id)
+            if note:
+                candidate_notes.append((note, bm25_score, snippet))
+
+        filtered_results = []
+        for note, bm25_score, snippet in candidate_notes:
+            if note_type and note.note_type != note_type:
+                continue
+            if start_date and note.created_at < start_date:
+                continue
+            if end_date and note.created_at > end_date:
+                continue
+            if tags:
+                note_tag_names = {tag.name for tag in note.tags}
+                if not any(tag in note_tag_names for tag in tags):
+                    continue
+            filtered_results.append(
+                SearchResult(
+                    note=note,
+                    score=abs(bm25_score),
+                    matched_terms=set(text.lower().split()),
+                    matched_context=snippet,
+                    fallback_applied=fallback_applied,
+                ),
+            )
+        return filtered_results
+
+    def _search_combined_legacy(
+        self,
+        text: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        note_type: Optional[NoteType] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> List[SearchResult]:
+        """Legacy in-memory search (loads all notes)."""
         # Start with all notes
         all_notes = self.zettel_service.get_all_notes()
-        
+
         # Filter by criteria
         filtered_notes = []
         for note in all_notes:
             # Check note type
             if note_type and note.note_type != note_type:
                 continue
-            
+
             # Check date range
             if start_date and note.created_at < start_date:
                 continue

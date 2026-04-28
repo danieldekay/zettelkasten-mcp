@@ -2,11 +2,11 @@
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Optional
 from sqlalchemy import exc as sqlalchemy_exc
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.fastmcp import FastMCP
 from zettelkasten_mcp.config import config
-from zettelkasten_mcp.models.schema import LinkType, Note, NoteType, Tag
+from zettelkasten_mcp.models.schema import LinkType, NoteType
 from zettelkasten_mcp.services.search_service import SearchService
 from zettelkasten_mcp.services.zettel_service import ZettelService
 
@@ -34,6 +34,8 @@ class ZettelkastenMcpServer:
         """Initialize services."""
         self.zettel_service.initialize()
         self.search_service.initialize()
+        if config.use_fts5_search:
+            self.zettel_service.repository.prewarm_fts5()
         logger.info("Zettelkasten MCP server initialized")
 
     def format_error_response(self, error: Exception) -> str:
@@ -221,8 +223,6 @@ class ZettelkastenMcpServer:
             try:
                 # Convert link_type string to enum
                 try:
-                    source_id_str = str(source_id)
-                    target_id_str = str(target_id)
                     link_type_enum = LinkType(link_type.lower())
                 except ValueError:
                     return f"Invalid link type: {link_type}. Valid types are: {', '.join(t.value for t in LinkType)}"
@@ -241,7 +241,7 @@ class ZettelkastenMcpServer:
                     return f"Link created from {source_id} to {target_id}"
             except (Exception, sqlalchemy_exc.IntegrityError) as e:
                 if "UNIQUE constraint failed" in str(e):
-                    return f"A link of this type already exists between these notes. Try a different link type."
+                    return "A link of this type already exists between these notes. Try a different link type."
                 return self.format_error_response(e)
         self.zk_create_link = zk_create_link
 

@@ -1,7 +1,6 @@
 # tests/test_mcp_server.py
 """Tests for the MCP server implementation."""
-import pytest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 from zettelkasten_mcp.server.mcp_server import ZettelkastenMcpServer
 from zettelkasten_mcp.models.schema import LinkType, NoteType
