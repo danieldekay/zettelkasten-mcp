@@ -143,7 +143,7 @@ class TestCreateNotesBatch:
         monkeypatch.setattr(
             zettel_service.repository,
             "session_factory",
-            lambda: _FailingSession(),  # noqa: PLW0108
+            lambda: _FailingSession(),
         )
 
         notes_data = [

@@ -102,6 +102,25 @@ class ZettelkastenConfig(BaseModel):
     use_fts5_search: bool = Field(
         default=os.getenv("USE_FTS5_SEARCH", "true").lower() == "true",
     )
+    # LLM summary generation (Azure OpenAI) — disabled by default
+    llm_enable_summaries: bool = Field(
+        default=os.getenv("LLM_ENABLE_SUMMARIES", "false").lower() == "true",
+    )
+    azure_openai_endpoint: str = Field(
+        default=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
+    )
+    azure_openai_api_version: str = Field(
+        default=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-01"),
+    )
+    llm_model: str = Field(
+        default=os.getenv("LLM_MODEL", "gpt-4o"),
+    )
+    llm_temperature: float = Field(
+        default=float(os.getenv("LLM_TEMPERATURE", "0.2")),
+    )
+    llm_max_tokens: int = Field(
+        default=int(os.getenv("LLM_MAX_TOKENS", "512")),
+    )
     # Self-healing index: auto-rebuild when drift exceeds this percent (0 = disabled)
     auto_rebuild_threshold: int = Field(
         default=int(os.getenv("ZETTELKASTEN_AUTO_REBUILD_THRESHOLD", "5")),

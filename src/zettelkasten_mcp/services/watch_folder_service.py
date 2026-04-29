@@ -357,7 +357,7 @@ class WatchFolderService:
                     {"id": note_id},
                 )
                 session.execute(
-                    text("DELETE FROM notes_fts WHERE id = :id"),
+                    text("DELETE FROM fts5_notes WHERE note_id = :id"),
                     {"id": note_id},
                 )
                 session.execute(

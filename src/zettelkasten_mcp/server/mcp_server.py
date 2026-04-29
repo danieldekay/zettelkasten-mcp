@@ -68,6 +68,10 @@ class ZettelkastenMcpServer:
         else:
             logger.warning("Notes directory does not exist: %s", notes_dir)
 
+        # Pre-warm FTS5 index so new/updated notes are searchable immediately
+        if config.use_fts5_search:
+            self.zettel_service.repository.prewarm_fts5()
+
         logger.info("Zettelkasten MCP server initialized")
 
     def format_error_response(self, error: Exception) -> dict:
