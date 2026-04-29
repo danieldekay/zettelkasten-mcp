@@ -15,9 +15,11 @@ stories:
 - key: STORY-LINKTYPEREGISTRY-001
   title: As a developer, I can configure Link Type Registry
   acceptance:
-  - register symmetric works correctly (see contract examples)
-  - register asymmetric works correctly (see contract examples)
-  - duplicate rejected works correctly (see contract examples)
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
   tags: []
   story_points: 2
   value_points: 3
@@ -59,9 +61,11 @@ stories:
 - key: STORY-LINKTYPEREGISTRY-002
   title: As a developer, I can validate Link Type Registry data
   acceptance:
-  - register symmetric works correctly (see contract examples)
-  - register asymmetric works correctly (see contract examples)
-  - duplicate rejected works correctly (see contract examples)
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
   - Return True if `name` is a registered link type.
   tags: []
   story_points: 2
@@ -108,9 +112,11 @@ stories:
 - key: STORY-LINKTYPEREGISTRY-003
   title: As a user, I can use Link Type Registry features
   acceptance:
-  - register symmetric works correctly (see contract examples)
-  - register asymmetric works correctly (see contract examples)
-  - duplicate rejected works correctly (see contract examples)
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
   - Register a custom link type.
   - Return all registered type names.
   - Return only the custom (non-built-in) type definitions.
@@ -176,9 +182,11 @@ stories:
 - key: STORY-LINKTYPEREGISTRY-004
   title: As a user, I can view Link Type Registry data
   acceptance:
-  - register symmetric works correctly (see contract examples)
-  - register asymmetric works correctly (see contract examples)
-  - duplicate rejected works correctly (see contract examples)
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
   - Return the inverse type name for `name`.
   tags: []
   story_points: 2
@@ -228,7 +236,7 @@ source_tracking:
   implementation_files: []
   test_files: []
   file_hashes: {}
-  last_synced: '2026-03-27T10:26:23.370800+00:00'
+  last_synced: '2026-04-29T08:01:39.596576+00:00'
   source_functions: []
   test_functions: []
   tool:

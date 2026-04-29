@@ -15,9 +15,11 @@ stories:
 - key: STORY-LINK-001
   title: As a developer, I can validate Link data
   acceptance:
-  - register symmetric works correctly (see contract examples)
-  - register asymmetric works correctly (see contract examples)
-  - duplicate rejected works correctly (see contract examples)
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
   - Validate that link_type is in the registry.
   tags: []
   story_points: 2
@@ -73,7 +75,7 @@ source_tracking:
   implementation_files: []
   test_files: []
   file_hashes: {}
-  last_synced: '2026-03-27T10:26:23.370806+00:00'
+  last_synced: '2026-04-29T08:01:39.596581+00:00'
   source_functions: []
   test_functions: []
   tool:

@@ -1,0 +1,55 @@
+code_quality:
+  src/zettelkasten_mcp/config.py:
+    beartype: false
+    coverage: 0.0
+    crosshair: false
+    icontract: false
+    last_checked: '2026-04-29T08:06:25.740224+00:00'
+  src/zettelkasten_mcp/server/mcp_server.py:
+    beartype: false
+    coverage: 0.0
+    crosshair: false
+    icontract: false
+    last_checked: '2026-04-29T08:06:25.743952+00:00'
+  src/zettelkasten_mcp/services/inference_service.py:
+    beartype: false
+    coverage: 0.0
+    crosshair: false
+    icontract: false
+    last_checked: '2026-04-29T08:06:25.751982+00:00'
+  src/zettelkasten_mcp/services/llm_summary_service.py:
+    beartype: false
+    coverage: 0.0
+    crosshair: false
+    icontract: false
+    last_checked: '2026-04-29T08:06:25.751916+00:00'
+  src/zettelkasten_mcp/services/search_service.py:
+    beartype: false
+    coverage: 0.0
+    crosshair: false
+    icontract: false
+    last_checked: '2026-04-29T08:06:25.751806+00:00'
+  src/zettelkasten_mcp/services/summary_cache_service.py:
+    beartype: false
+    coverage: 0.0
+    crosshair: false
+    icontract: false
+    last_checked: '2026-04-29T08:06:25.750965+00:00'
+  src/zettelkasten_mcp/services/watch_folder_service.py:
+    beartype: false
+    coverage: 0.0
+    crosshair: false
+    icontract: false
+    last_checked: '2026-04-29T08:06:25.751214+00:00'
+  src/zettelkasten_mcp/services/zettel_service.py:
+    beartype: false
+    coverage: 0.0
+    crosshair: false
+    icontract: false
+    last_checked: '2026-04-29T08:06:25.751436+00:00'
+  src/zettelkasten_mcp/storage/note_repository.py:
+    beartype: false
+    coverage: 0.0
+    crosshair: false
+    icontract: false
+    last_checked: '2026-04-29T08:06:25.749151+00:00'

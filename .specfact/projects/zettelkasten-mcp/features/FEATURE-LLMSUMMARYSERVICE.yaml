@@ -1,38 +1,32 @@
-key: FEATURE-SEARCHSERVICE
-title: Search Service
+key: FEATURE-LLMSUMMARYSERVICE
+title: L L M Summary Service
 outcomes:
-- Service for searching notes in the Zettelkasten.
+- Service for generating LLM summaries of notes via Azure OpenAI.
 acceptance:
-- The system search service must provide search service functionality
+- The system llmsummary service must provide llmsummary service functionality
 constraints:
-- The system must meet performance requirements (async operations, caching, 
-  optimization)
 - The system must meet security requirements (authentication, authorization, 
   encryption)
 - The system must meet reliability requirements (error handling, retry logic, 
   resilience)
-- The system must meet maintainability requirements (documentation, type hints, 
-  testing)
 - The system must use type hints for improved code maintainability and IDE 
   support
 stories:
-- key: STORY-SEARCHSERVICE-001
-  title: As a developer, I can configure Search Service
+- key: STORY-LLMSUMMARYSERVICE-001
+  title: As a developer, I can configure L L M Summary Service
   acceptance:
   - update readonly note raises permission error works correctly (see contract 
     examples)
   - update writable note succeeds works correctly (see contract examples)
   - delete readonly note raises permission error works correctly (see contract 
     examples)
-  - Initialize the search service.
-  - Initialize the service and dependencies.
+  - Initialise the service; client is created lazily on first use.
   tags: []
   story_points: 2
   value_points: 3
   tasks:
   - __init__()
-  - initialize()
-  confidence: 0.8
+  confidence: 0.6
   draft: false
   scenarios:
     primary:
@@ -46,10 +40,6 @@ stories:
       type: Any
       required: true
       default:
-    - name: zettel_service
-      type: ZettelService | None
-      required: false
-      default: None
     return_type:
       type: None
       nullable: false
@@ -177,7 +167,6 @@ stories:
   - tests/test_zettel_service.py::test_get_note
   - tests/test_watch_folder_service.py::test_ignores_non_md_files
   - tests/test_zettel_service.py::test_remove_link_source_not_found
-  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
   - tests/test_watch_folder_service.py::test_note_without_frontmatter_gets_ext_id
   - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
   - tests/test_search_service.py::test_search_by_link_delegated
@@ -233,476 +222,25 @@ stories:
   business_value_description:
   business_metrics: []
   definition_of_ready: {}
-- key: STORY-SEARCHSERVICE-002
-  title: As a user, I can use Search Service features
+- key: STORY-LLMSUMMARYSERVICE-002
+  title: As a user, I can use L L M Summary Service features
   acceptance:
   - update readonly note raises permission error works correctly (see contract 
     examples)
   - update writable note succeeds works correctly (see contract examples)
   - delete readonly note raises permission error works correctly (see contract 
     examples)
-  - Search for notes by text content.
-  - Search for notes by tags.
-  - Search for notes linked to/from a note.
-  - Perform a combined search with multiple criteria.
-  - Suggest tags for *content* using TF-IDF cosine similarity.
-  tags: []
-  story_points: 5
-  value_points: 5
-  tasks:
-  - search_by_text()
-  - search_by_tag()
-  - search_by_link()
-  - search_combined()
-  - suggest_tags()
-  confidence: 0.8
-  draft: false
-  scenarios:
-    primary:
-    - 'search_by_text called with condition is met: returns value'
-    alternate: []
-    exception: []
-    recovery: []
-  contracts:
-    parameters:
-    - name: self
-      type: Any
-      required: true
-      default:
-    - name: query
-      type: str
-      required: true
-      default:
-    - name: include_content
-      type: bool
-      required: false
-      default: "True"
-    - name: include_title
-      type: bool
-      required: false
-      default: "True"
-    return_type:
-      type: list[SearchResult]
-      nullable: false
-    preconditions: []
-    postconditions:
-    - 'Ensures: returns list[SearchResult]'
-    - 'Ensures: returns list[SearchResult]'
-    error_contracts: []
-  source_functions:
-  - src/zettelkasten_mcp/services/summary_cache_service.py::get_from_cache
-  - src/zettelkasten_mcp/services/summary_cache_service.py::save_to_cache
-  - src/zettelkasten_mcp/services/zettel_service.py::create_note
-  - src/zettelkasten_mcp/services/zettel_service.py::export_note
-  - src/zettelkasten_mcp/services/inference_service.py::suggest_link_type
-  - src/zettelkasten_mcp/services/search_service.py::_search_combined_fts5
-  - src/zettelkasten_mcp/services/llm_summary_service.py::is_enabled
-  - src/zettelkasten_mcp/services/zettel_service.py::get_notes_by_tag
-  - src/zettelkasten_mcp/services/watch_folder_service.py::__init__
-  - src/zettelkasten_mcp/services/zettel_service.py::get_note_by_title
-  - src/zettelkasten_mcp/services/search_service.py::initialize
-  - src/zettelkasten_mcp/services/search_service.py::search_by_text
-  - src/zettelkasten_mcp/services/search_service.py::_cosine_similarity
-  - src/zettelkasten_mcp/services/llm_summary_service.py::_get_client
-  - src/zettelkasten_mcp/services/zettel_service.py::__init__
-  - src/zettelkasten_mcp/services/watch_folder_service.py::_parse_external_note
-  - src/zettelkasten_mcp/services/search_service.py::_search_combined_legacy
-  - src/zettelkasten_mcp/services/search_service.py::search_by_link
-  - src/zettelkasten_mcp/services/search_service.py::find_notes_by_date_range
-  - src/zettelkasten_mcp/services/search_service.py::_build_tag_cache
-  - src/zettelkasten_mcp/services/zettel_service.py::get_linked_notes
-  - src/zettelkasten_mcp/services/search_service.py::search_by_tag
-  - src/zettelkasten_mcp/services/zettel_service.py::get_index_status
-  - src/zettelkasten_mcp/services/zettel_service.py::remove_link
-  - src/zettelkasten_mcp/services/zettel_service.py::verify_note
-  - src/zettelkasten_mcp/services/llm_summary_service.py::generate_summary
-  - src/zettelkasten_mcp/services/watch_folder_service.py::_generate_external_id
-  - src/zettelkasten_mcp/services/zettel_service.py::delete_note
-  - src/zettelkasten_mcp/services/inference_service.py::_tokenize
-  - src/zettelkasten_mcp/services/llm_summary_service.py::__init__
-  - src/zettelkasten_mcp/services/zettel_service.py::rebuild_index
-  - src/zettelkasten_mcp/services/zettel_service.py::create_link
-  - src/zettelkasten_mcp/services/inference_service.py::_score_text
-  - src/zettelkasten_mcp/services/zettel_service.py::get_all_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags
-  - src/zettelkasten_mcp/services/search_service.py::find_orphaned_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::initialize
-  - src/zettelkasten_mcp/services/search_service.py::find_central_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::find_notes_in_timerange
-  - src/zettelkasten_mcp/services/search_service.py::suggest_tags
-  - src/zettelkasten_mcp/services/zettel_service.py::update_note
-  - src/zettelkasten_mcp/services/search_service.py::search_combined
-  - src/zettelkasten_mcp/services/zettel_service.py::get_note
-  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags_with_counts
-  - src/zettelkasten_mcp/services/search_service.py::_tokenize
-  - src/zettelkasten_mcp/services/search_service.py::__init__
-  - src/zettelkasten_mcp/services/search_service.py::analyze_tag_clusters
-  - src/zettelkasten_mcp/services/zettel_service.py::add_tag_to_note
-  - src/zettelkasten_mcp/services/search_service.py::_union
-  - src/zettelkasten_mcp/services/zettel_service.py::register_link_type
-  - src/zettelkasten_mcp/services/watch_folder_service.py::_get_readonly_ids
-  - src/zettelkasten_mcp/services/search_service.py::invalidate_tag_cache
-  - src/zettelkasten_mcp/services/search_service.py::_find
-  - src/zettelkasten_mcp/services/watch_folder_service.py::_drop_readonly_entries
-  - src/zettelkasten_mcp/services/zettel_service.py::create_notes_batch
-  - src/zettelkasten_mcp/services/summary_cache_service.py::calculate_content_hash
-  - src/zettelkasten_mcp/services/zettel_service.py::create_links_batch
-  - src/zettelkasten_mcp/services/watch_folder_service.py::sync_all
-  - src/zettelkasten_mcp/services/zettel_service.py::find_similar_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::search_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::remove_tag_from_note
-  - src/zettelkasten_mcp/services/search_service.py::find_similar_notes
-  - src/zettelkasten_mcp/services/watch_folder_service.py::scan_directory
-  test_functions:
-  - tests/test_zettel_service.py::test_remove_link_bidirectional
-  - tests/test_summary_cache_service.py::test_hash_is_64_char_hex
-  - tests/test_search_service.py::test_search_combined_note_type_filter
-  - tests/test_search_service.py::test_search_combined_legacy_text_path
-  - tests/test_zettel_service.py::test_find_similar_notes
-  - tests/test_summary_cache_service.py::test_hash_differs_on_content_change
-  - tests/test_watch_folder_service.py::test_returns_ext_prefix
-  - tests/test_watch_folder_service.py::test_sha256_derivation
-  - tests/test_watch_folder_service.py::test_sync_all_returns_summary_dict
-  - tests/test_zettel_service.py::test_search_notes
-  - tests/test_zettel_service.py::test_get_note_by_title
-  - tests/test_search_service.py::test_search_combined_text_query_fts5
-  - tests/test_search_service.py::test_search_combined_fts5_path
-  - tests/test_watch_folder_service.py::test_drop_readonly_entries_removes_external_notes
-  - tests/test_search_service.py::test_find_similar_notes
-  - tests/test_search_service.py::test_find_orphaned_notes
-  - tests/test_zettel_service.py::test_get_all_tags_with_counts
-  - tests/test_llm_summary_service.py::test_generate_summary_returns_dict_on_success
-  - tests/test_zettel_service.py::test_update_note_type_and_metadata
-  - tests/test_zettel_service.py::test_add_tag_to_note_not_found
-  - tests/test_watch_folder_service.py::test_scans_md_files
-  - tests/test_watch_folder_service.py::test_sync_all_index_note_called_for_each_file
-  - tests/test_summary_cache_service.py::test_get_from_cache_returns_none_when_empty
-  - tests/test_watch_folder_service.py::test_is_readonly_always_true
-  - tests/test_search_service.py::test_search_combined_no_criteria
-  - tests/test_llm_summary_service.py::test_generate_summary_returns_none_on_api_exception
-  - tests/test_zettel_service.py::test_create_note_empty_title
-  - tests/test_zettel_service.py::test_create_link_target_not_found
-  - tests/test_summary_cache_service.py::test_cache_survives_across_sessions
-  - tests/test_search_service.py::test_find_notes_by_date_range_no_filters
-  - tests/test_llm_summary_service.py::test_disabled_when_flag_false
-  - tests/test_watch_folder_service.py::test_note_without_frontmatter_uses_stem_as_title
-  - tests/test_summary_cache_service.py::test_cache_miss_on_stale_hash
-  - tests/test_search_service.py::test_search_by_text_skip_title
-  - tests/test_llm_summary_service.py::test_import_error_returns_none_gracefully
-  - tests/test_search_service.py::test_find_notes_by_date_range_use_updated
-  - tests/test_zettel_service.py::test_delete_note
-  - tests/test_search_service.py::test_search_by_text_no_match
-  - tests/test_watch_folder_service.py::test_sync_all_skips_missing_watch_dir
-  - tests/test_watch_folder_service.py::test_note_with_frontmatter_id_preserved
-  - tests/test_llm_summary_service.py::test_generate_summary_returns_none_when_disabled
-  - tests/test_search_service.py::test_search_combined_tag_only
-  - tests/test_zettel_service.py::test_register_link_type_and_duplicate
-  - tests/test_llm_summary_service.py::test_enabled_when_both_set
-  - tests/test_zettel_service.py::test_export_note_and_invalid_format
-  - tests/test_search_service.py::test_find_central_notes
-  - tests/test_summary_cache_service.py::test_hash_is_stable_regardless_of_tag_order
-  - tests/test_zettel_service.py::test_create_note_requires_title_and_content
-  - tests/test_search_service.py::test_search_by_text_empty_query
-  - tests/test_watch_folder_service.py::test_empty_directory_returns_empty_list
-  - tests/test_search_service.py::test_find_similar_notes_via_service
-  - tests/test_summary_cache_service.py::test_save_overwrites_existing_entry
-  - tests/test_watch_folder_service.py::test_source_path_is_absolute
-  - tests/test_zettel_service.py::test_get_note
-  - tests/test_watch_folder_service.py::test_ignores_non_md_files
-  - tests/test_zettel_service.py::test_remove_link_source_not_found
-  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
-  - tests/test_watch_folder_service.py::test_note_without_frontmatter_gets_ext_id
-  - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
-  - tests/test_search_service.py::test_search_by_link_delegated
-  - tests/test_llm_summary_service.py::test_disabled_when_endpoint_empty
-  - tests/test_search_service.py::test_search_by_tag_multiple
-  - tests/test_search_service.py::test_find_notes_by_date_range
-  - tests/test_watch_folder_service.py::test_malformed_frontmatter_is_skipped_with_warning
-  - tests/test_summary_cache_service.py::test_hash_differs_on_title_change
-  - tests/test_search_service.py::test_search_by_text_content_only_match
-  - tests/test_watch_folder_service.py::test_sync_all_reports_scanned_count
-  - tests/test_search_service.py::test_find_central_notes_direct
-  - tests/test_llm_summary_service.py::test_generate_summary_returns_none_on_invalid_json
-  - tests/test_search_service.py::test_search_combined_legacy_no_text
-  - tests/test_zettel_service.py::test_create_link
-  - tests/test_watch_folder_service.py::test_scans_recursively
-  - tests/test_summary_cache_service.py::test_save_then_get_from_cache_returns_data
-  - tests/test_zettel_service.py::test_update_note
-  - tests/test_search_service.py::test_find_orphaned_notes_direct
-  - tests/test_search_service.py::test_search_by_text_skip_content
-  - tests/test_llm_summary_service.py::test_keywords_normalised_to_lowercase
-  - tests/test_summary_cache_service.py::test_none_tags_treated_as_empty
-  - tests/test_search_service.py::test_search_combined
-  - tests/test_zettel_service.py::test_create_note_empty_content
-  - tests/test_zettel_service.py::test_create_link_source_not_found
-  - tests/test_search_service.py::test_search_by_link
-  - tests/test_watch_folder_service.py::test_different_paths_give_different_ids
-  - tests/test_watch_folder_service.py::test_note_with_frontmatter_and_links_metadata
-  - tests/test_summary_cache_service.py::test_hash_is_deterministic
-  - tests/test_watch_folder_service.py::test_sync_all_with_no_watch_dirs
-  - tests/test_watch_folder_service.py::test_id_length_is_16_chars
-  - tests/test_search_service.py::test_find_central_notes_empty_db
-  - tests/test_search_service.py::test_search_by_tag
-  - tests/test_summary_cache_service.py::test_hash_differs_on_tag_change
-  - tests/test_search_service.py::test_search_by_text_single_tag
-  - tests/test_zettel_service.py::test_get_all_tags
-  - tests/test_watch_folder_service.py::test_deterministic
-  - tests/test_watch_folder_service.py::test_note_with_full_frontmatter
-  - tests/test_zettel_service.py::test_update_note_not_found
-  - tests/test_zettel_service.py::test_create_note
-  - tests/test_search_service.py::test_search_combined_legacy_text_scoring
-  - tests/test_zettel_service.py::test_get_linked_notes_not_found
-  - tests/test_search_service.py::test_find_notes_by_date_range_direct
-  - tests/test_search_service.py::test_search_by_text_method
-  - tests/test_search_service.py::test_search_by_text_title_only_match
-  - tests/test_search_service.py::test_search_by_text
-  priority:
-  rank:
-  due_date:
-  target_sprint:
-  target_release:
-  depends_on_stories: []
-  blocks_stories: []
-  business_value_description:
-  business_metrics: []
-  definition_of_ready: {}
-- key: STORY-SEARCHSERVICE-003
-  title: As a user, I can view Search Service data
-  acceptance:
-  - update readonly note raises permission error works correctly (see contract 
-    examples)
-  - update writable note succeeds works correctly (see contract examples)
-  - delete readonly note raises permission error works correctly (see contract 
-    examples)
-  - Find notes with no incoming or outgoing links.
-  - Find notes with the most connections (incoming + outgoing links).
-  - Find notes created or updated within a date range.
-  - Find notes similar to the given note based on shared tags and links.
-  tags: []
-  story_points: 5
-  value_points: 8
-  tasks:
-  - find_orphaned_notes()
-  - find_central_notes()
-  - find_notes_by_date_range()
-  - find_similar_notes()
-  confidence: 0.8
-  draft: false
-  scenarios:
-    primary:
-    - find_orphaned_notes executes successfully
-    alternate: []
-    exception: []
-    recovery: []
-  contracts:
-    parameters:
-    - name: self
-      type: Any
-      required: true
-      default:
-    return_type:
-      type: list[Note]
-      nullable: false
-    preconditions: []
-    postconditions:
-    - 'Ensures: returns list[Note]'
-    error_contracts: []
-  source_functions:
-  - src/zettelkasten_mcp/services/summary_cache_service.py::get_from_cache
-  - src/zettelkasten_mcp/services/summary_cache_service.py::save_to_cache
-  - src/zettelkasten_mcp/services/zettel_service.py::create_note
-  - src/zettelkasten_mcp/services/zettel_service.py::export_note
-  - src/zettelkasten_mcp/services/inference_service.py::suggest_link_type
-  - src/zettelkasten_mcp/services/search_service.py::_search_combined_fts5
-  - src/zettelkasten_mcp/services/llm_summary_service.py::is_enabled
-  - src/zettelkasten_mcp/services/zettel_service.py::get_notes_by_tag
-  - src/zettelkasten_mcp/services/watch_folder_service.py::__init__
-  - src/zettelkasten_mcp/services/zettel_service.py::get_note_by_title
-  - src/zettelkasten_mcp/services/search_service.py::initialize
-  - src/zettelkasten_mcp/services/search_service.py::search_by_text
-  - src/zettelkasten_mcp/services/search_service.py::_cosine_similarity
-  - src/zettelkasten_mcp/services/llm_summary_service.py::_get_client
-  - src/zettelkasten_mcp/services/zettel_service.py::__init__
-  - src/zettelkasten_mcp/services/watch_folder_service.py::_parse_external_note
-  - src/zettelkasten_mcp/services/search_service.py::_search_combined_legacy
-  - src/zettelkasten_mcp/services/search_service.py::search_by_link
-  - src/zettelkasten_mcp/services/search_service.py::find_notes_by_date_range
-  - src/zettelkasten_mcp/services/search_service.py::_build_tag_cache
-  - src/zettelkasten_mcp/services/zettel_service.py::get_linked_notes
-  - src/zettelkasten_mcp/services/search_service.py::search_by_tag
-  - src/zettelkasten_mcp/services/zettel_service.py::get_index_status
-  - src/zettelkasten_mcp/services/zettel_service.py::remove_link
-  - src/zettelkasten_mcp/services/zettel_service.py::verify_note
-  - src/zettelkasten_mcp/services/llm_summary_service.py::generate_summary
-  - src/zettelkasten_mcp/services/watch_folder_service.py::_generate_external_id
-  - src/zettelkasten_mcp/services/zettel_service.py::delete_note
-  - src/zettelkasten_mcp/services/inference_service.py::_tokenize
-  - src/zettelkasten_mcp/services/llm_summary_service.py::__init__
-  - src/zettelkasten_mcp/services/zettel_service.py::rebuild_index
-  - src/zettelkasten_mcp/services/zettel_service.py::create_link
-  - src/zettelkasten_mcp/services/inference_service.py::_score_text
-  - src/zettelkasten_mcp/services/zettel_service.py::get_all_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags
-  - src/zettelkasten_mcp/services/search_service.py::find_orphaned_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::initialize
-  - src/zettelkasten_mcp/services/search_service.py::find_central_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::find_notes_in_timerange
-  - src/zettelkasten_mcp/services/search_service.py::suggest_tags
-  - src/zettelkasten_mcp/services/zettel_service.py::update_note
-  - src/zettelkasten_mcp/services/search_service.py::search_combined
-  - src/zettelkasten_mcp/services/zettel_service.py::get_note
-  - src/zettelkasten_mcp/services/zettel_service.py::get_all_tags_with_counts
-  - src/zettelkasten_mcp/services/search_service.py::_tokenize
-  - src/zettelkasten_mcp/services/search_service.py::__init__
-  - src/zettelkasten_mcp/services/search_service.py::analyze_tag_clusters
-  - src/zettelkasten_mcp/services/zettel_service.py::add_tag_to_note
-  - src/zettelkasten_mcp/services/search_service.py::_union
-  - src/zettelkasten_mcp/services/zettel_service.py::register_link_type
-  - src/zettelkasten_mcp/services/watch_folder_service.py::_get_readonly_ids
-  - src/zettelkasten_mcp/services/search_service.py::invalidate_tag_cache
-  - src/zettelkasten_mcp/services/search_service.py::_find
-  - src/zettelkasten_mcp/services/watch_folder_service.py::_drop_readonly_entries
-  - src/zettelkasten_mcp/services/zettel_service.py::create_notes_batch
-  - src/zettelkasten_mcp/services/summary_cache_service.py::calculate_content_hash
-  - src/zettelkasten_mcp/services/zettel_service.py::create_links_batch
-  - src/zettelkasten_mcp/services/watch_folder_service.py::sync_all
-  - src/zettelkasten_mcp/services/zettel_service.py::find_similar_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::search_notes
-  - src/zettelkasten_mcp/services/zettel_service.py::remove_tag_from_note
-  - src/zettelkasten_mcp/services/search_service.py::find_similar_notes
-  - src/zettelkasten_mcp/services/watch_folder_service.py::scan_directory
-  test_functions:
-  - tests/test_zettel_service.py::test_remove_link_bidirectional
-  - tests/test_summary_cache_service.py::test_hash_is_64_char_hex
-  - tests/test_search_service.py::test_search_combined_note_type_filter
-  - tests/test_search_service.py::test_search_combined_legacy_text_path
-  - tests/test_zettel_service.py::test_find_similar_notes
-  - tests/test_summary_cache_service.py::test_hash_differs_on_content_change
-  - tests/test_watch_folder_service.py::test_returns_ext_prefix
-  - tests/test_watch_folder_service.py::test_sha256_derivation
-  - tests/test_watch_folder_service.py::test_sync_all_returns_summary_dict
-  - tests/test_zettel_service.py::test_search_notes
-  - tests/test_zettel_service.py::test_get_note_by_title
-  - tests/test_search_service.py::test_search_combined_text_query_fts5
-  - tests/test_search_service.py::test_search_combined_fts5_path
-  - tests/test_watch_folder_service.py::test_drop_readonly_entries_removes_external_notes
-  - tests/test_search_service.py::test_find_similar_notes
-  - tests/test_search_service.py::test_find_orphaned_notes
-  - tests/test_zettel_service.py::test_get_all_tags_with_counts
-  - tests/test_llm_summary_service.py::test_generate_summary_returns_dict_on_success
-  - tests/test_zettel_service.py::test_update_note_type_and_metadata
-  - tests/test_zettel_service.py::test_add_tag_to_note_not_found
-  - tests/test_watch_folder_service.py::test_scans_md_files
-  - tests/test_watch_folder_service.py::test_sync_all_index_note_called_for_each_file
-  - tests/test_summary_cache_service.py::test_get_from_cache_returns_none_when_empty
-  - tests/test_watch_folder_service.py::test_is_readonly_always_true
-  - tests/test_search_service.py::test_search_combined_no_criteria
-  - tests/test_llm_summary_service.py::test_generate_summary_returns_none_on_api_exception
-  - tests/test_zettel_service.py::test_create_note_empty_title
-  - tests/test_zettel_service.py::test_create_link_target_not_found
-  - tests/test_summary_cache_service.py::test_cache_survives_across_sessions
-  - tests/test_search_service.py::test_find_notes_by_date_range_no_filters
-  - tests/test_llm_summary_service.py::test_disabled_when_flag_false
-  - tests/test_watch_folder_service.py::test_note_without_frontmatter_uses_stem_as_title
-  - tests/test_summary_cache_service.py::test_cache_miss_on_stale_hash
-  - tests/test_search_service.py::test_search_by_text_skip_title
-  - tests/test_llm_summary_service.py::test_import_error_returns_none_gracefully
-  - tests/test_search_service.py::test_find_notes_by_date_range_use_updated
-  - tests/test_zettel_service.py::test_delete_note
-  - tests/test_search_service.py::test_search_by_text_no_match
-  - tests/test_watch_folder_service.py::test_sync_all_skips_missing_watch_dir
-  - tests/test_watch_folder_service.py::test_note_with_frontmatter_id_preserved
-  - tests/test_llm_summary_service.py::test_generate_summary_returns_none_when_disabled
-  - tests/test_search_service.py::test_search_combined_tag_only
-  - tests/test_zettel_service.py::test_register_link_type_and_duplicate
-  - tests/test_llm_summary_service.py::test_enabled_when_both_set
-  - tests/test_zettel_service.py::test_export_note_and_invalid_format
-  - tests/test_search_service.py::test_find_central_notes
-  - tests/test_summary_cache_service.py::test_hash_is_stable_regardless_of_tag_order
-  - tests/test_zettel_service.py::test_create_note_requires_title_and_content
-  - tests/test_search_service.py::test_search_by_text_empty_query
-  - tests/test_watch_folder_service.py::test_empty_directory_returns_empty_list
-  - tests/test_search_service.py::test_find_similar_notes_via_service
-  - tests/test_summary_cache_service.py::test_save_overwrites_existing_entry
-  - tests/test_watch_folder_service.py::test_source_path_is_absolute
-  - tests/test_zettel_service.py::test_get_note
-  - tests/test_watch_folder_service.py::test_ignores_non_md_files
-  - tests/test_zettel_service.py::test_remove_link_source_not_found
-  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
-  - tests/test_watch_folder_service.py::test_note_without_frontmatter_gets_ext_id
-  - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
-  - tests/test_search_service.py::test_search_by_link_delegated
-  - tests/test_llm_summary_service.py::test_disabled_when_endpoint_empty
-  - tests/test_search_service.py::test_search_by_tag_multiple
-  - tests/test_search_service.py::test_find_notes_by_date_range
-  - tests/test_watch_folder_service.py::test_malformed_frontmatter_is_skipped_with_warning
-  - tests/test_summary_cache_service.py::test_hash_differs_on_title_change
-  - tests/test_search_service.py::test_search_by_text_content_only_match
-  - tests/test_watch_folder_service.py::test_sync_all_reports_scanned_count
-  - tests/test_search_service.py::test_find_central_notes_direct
-  - tests/test_llm_summary_service.py::test_generate_summary_returns_none_on_invalid_json
-  - tests/test_search_service.py::test_search_combined_legacy_no_text
-  - tests/test_zettel_service.py::test_create_link
-  - tests/test_watch_folder_service.py::test_scans_recursively
-  - tests/test_summary_cache_service.py::test_save_then_get_from_cache_returns_data
-  - tests/test_zettel_service.py::test_update_note
-  - tests/test_search_service.py::test_find_orphaned_notes_direct
-  - tests/test_search_service.py::test_search_by_text_skip_content
-  - tests/test_llm_summary_service.py::test_keywords_normalised_to_lowercase
-  - tests/test_summary_cache_service.py::test_none_tags_treated_as_empty
-  - tests/test_search_service.py::test_search_combined
-  - tests/test_zettel_service.py::test_create_note_empty_content
-  - tests/test_zettel_service.py::test_create_link_source_not_found
-  - tests/test_search_service.py::test_search_by_link
-  - tests/test_watch_folder_service.py::test_different_paths_give_different_ids
-  - tests/test_watch_folder_service.py::test_note_with_frontmatter_and_links_metadata
-  - tests/test_summary_cache_service.py::test_hash_is_deterministic
-  - tests/test_watch_folder_service.py::test_sync_all_with_no_watch_dirs
-  - tests/test_watch_folder_service.py::test_id_length_is_16_chars
-  - tests/test_search_service.py::test_find_central_notes_empty_db
-  - tests/test_search_service.py::test_search_by_tag
-  - tests/test_summary_cache_service.py::test_hash_differs_on_tag_change
-  - tests/test_search_service.py::test_search_by_text_single_tag
-  - tests/test_zettel_service.py::test_get_all_tags
-  - tests/test_watch_folder_service.py::test_deterministic
-  - tests/test_watch_folder_service.py::test_note_with_full_frontmatter
-  - tests/test_zettel_service.py::test_update_note_not_found
-  - tests/test_zettel_service.py::test_create_note
-  - tests/test_search_service.py::test_search_combined_legacy_text_scoring
-  - tests/test_zettel_service.py::test_get_linked_notes_not_found
-  - tests/test_search_service.py::test_find_notes_by_date_range_direct
-  - tests/test_search_service.py::test_search_by_text_method
-  - tests/test_search_service.py::test_search_by_text_title_only_match
-  - tests/test_search_service.py::test_search_by_text
-  priority:
-  rank:
-  due_date:
-  target_sprint:
-  target_release:
-  depends_on_stories: []
-  blocks_stories: []
-  business_value_description:
-  business_metrics: []
-  definition_of_ready: {}
-- key: STORY-SEARCHSERVICE-004
-  title: As a developer, I can validate Search Service data
-  acceptance:
-  - update readonly note raises permission error works correctly (see contract 
-    examples)
-  - update writable note succeeds works correctly (see contract examples)
-  - delete readonly note raises permission error works correctly (see contract 
-    examples)
-  - Invalidate the TF-IDF tag cache (call after rebuild_index).
+  - Return True if LLM summaries are configured and enabled.
   tags: []
   story_points: 2
   value_points: 3
   tasks:
-  - invalidate_tag_cache()
+  - is_enabled()
   confidence: 0.6
   draft: false
   scenarios:
     primary:
-    - invalidate_tag_cache executes successfully
+    - is_enabled executes successfully
     alternate: []
     exception: []
     recovery: []
@@ -713,10 +251,11 @@ stories:
       required: true
       default:
     return_type:
-      type: None
+      type: bool
       nullable: false
     preconditions: []
-    postconditions: []
+    postconditions:
+    - 'Ensures: returns bool'
     error_contracts: []
   source_functions:
   - src/zettelkasten_mcp/services/summary_cache_service.py::get_from_cache
@@ -839,7 +378,6 @@ stories:
   - tests/test_zettel_service.py::test_get_note
   - tests/test_watch_folder_service.py::test_ignores_non_md_files
   - tests/test_zettel_service.py::test_remove_link_source_not_found
-  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
   - tests/test_watch_folder_service.py::test_note_without_frontmatter_gets_ext_id
   - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
   - tests/test_search_service.py::test_search_by_link_delegated
@@ -895,48 +433,70 @@ stories:
   business_value_description:
   business_metrics: []
   definition_of_ready: {}
-- key: STORY-SEARCHSERVICE-005
-  title: As a user, I can analyze data with Search Service
+- key: STORY-LLMSUMMARYSERVICE-003
+  title: As a user, I can generate outputs from L L M Summary Service
   acceptance:
   - update readonly note raises permission error works correctly (see contract 
     examples)
   - update writable note succeeds works correctly (see contract examples)
   - delete readonly note raises permission error works correctly (see contract 
     examples)
-  - Identify clusters of tags that frequently appear together.
+  - Generate an English summary and keywords for a note.
   tags: []
   story_points: 8
   value_points: 5
   tasks:
-  - analyze_tag_clusters()
+  - generate_summary()
   confidence: 0.6
   draft: false
   scenarios:
     primary:
-    - 'analyze_tag_clusters called with condition is met: returns value'
-    - 'analyze_tag_clusters called with px does not equal py: sets value to px'
+    - 'generate_summary called with condition is met: returns None'
+    - 'generate_summary called with client matches None: returns None'
+    - 'generate_summary called with len() is greater than max_content_chars: operation
+      completes'
+    - 'generate_summary executes: sets response to client.chat.completions.create()
+      and sets raw to value and sets data to json.loads()'
     alternate: []
-    exception: []
-    recovery: []
+    exception:
+    - 'generate_summary raises Exception: calls logger.warning and returns None'
+    - 'generate_summary raises Exception: calls logger.warning and returns None'
+    recovery:
+    - generate_summary retries and recovers after Exception
   contracts:
     parameters:
     - name: self
       type: Any
       required: true
       default:
-    - name: min_co_occurrence
-      type: int
+    - name: title
+      type: str
+      required: true
+      default:
+    - name: content
+      type: str
+      required: true
+      default:
+    - name: tags
+      type: list[str] | None
       required: false
-      default: '2'
+      default: None
     return_type:
-      type: dict
+      type: dict[str, Any] | None
       nullable: false
     preconditions: []
     postconditions:
-    - 'Ensures: returns dict'
-    - 'Ensures: returns dict'
-    - 'Ensures: returns dict'
-    error_contracts: []
+    - 'Ensures: returns dict[str, Any] | None'
+    - 'Ensures: returns dict[str, Any] | None'
+    - 'Ensures: returns dict[str, Any] | None'
+    - 'Ensures: returns dict[str, Any] | None'
+    - 'Ensures: returns dict[str, Any] | None'
+    - 'Ensures: returns dict[str, Any] | None'
+    error_contracts:
+    - exception_type: json.JSONDecodeError
+      condition: json.JSONDecodeError
+    - exception_type: Exception
+      condition: Exception
   source_functions:
   - src/zettelkasten_mcp/services/summary_cache_service.py::get_from_cache
   - src/zettelkasten_mcp/services/summary_cache_service.py::save_to_cache
@@ -1058,7 +618,6 @@ stories:
   - tests/test_zettel_service.py::test_get_note
   - tests/test_watch_folder_service.py::test_ignores_non_md_files
   - tests/test_zettel_service.py::test_remove_link_source_not_found
-  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py::test_optimize_options
   - tests/test_watch_folder_service.py::test_note_without_frontmatter_gets_ext_id
   - tests/test_zettel_service.py::test_remove_tag_from_note_not_found
   - tests/test_search_service.py::test_search_by_link_delegated
@@ -1127,7 +686,6 @@ source_tracking:
   test_files:
   - tests/test_search_service.py
   - tests/test_zettel_service.py
-  - .venv/lib/python3.10/site-packages/crosshair/path_search_test.py
   - tests/test_watch_folder_service.py
   - tests/test_summary_cache_service.py
   - tests/test_llm_summary_service.py
@@ -1148,15 +706,13 @@ source_tracking:
       6e4be2f06d0feefeaa941ed7bb2ff646912026c1bd019a3d59aa09ed33438a4b
     tests/test_zettel_service.py: 
       a8fb9dadc0a6a02954eecf9937342382f46e53157d7108b357ab79891f9ec0c8
-    .venv/lib/python3.10/site-packages/crosshair/path_search_test.py: 
-      edcab300c5d4600b40d349aaf5747901a64286a790c97c827eebafe77ff9d699
     tests/test_watch_folder_service.py: 
       bacbbd350664b212233a85bc4b220b24cf1777e67f99c752522f73b745bc03d3
     tests/test_summary_cache_service.py: 
       932adca64c423dc2343db325eadecf442b914a2315e0d1748bdff921eb22c02c
     tests/test_llm_summary_service.py: 
       842de0e92498f90615c6f9ee2fe13c00044f91289a24dbf99311b9805ed093aa
-  last_synced: '2026-04-29T08:01:39.596555+00:00'
+  last_synced: '2026-04-29T08:01:39.596564+00:00'
   source_functions: []
   test_functions: []
   tool:

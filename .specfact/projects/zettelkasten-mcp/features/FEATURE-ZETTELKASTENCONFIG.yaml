@@ -5,6 +5,8 @@ outcomes:
 acceptance:
 - The system zettelkasten config must provide zettelkasten config functionality
 constraints:
+- The system must meet security requirements (authentication, authorization, 
+  encryption)
 - The system must meet maintainability requirements (documentation, type hints, 
   testing)
 - The system must use type hints for improved code maintainability and IDE 
@@ -13,9 +15,11 @@ stories:
 - key: STORY-ZETTELKASTENCONFIG-001
   title: As a user, I can view Zettelkasten Config data
   acceptance:
-  - register symmetric works correctly (see contract examples)
-  - register asymmetric works correctly (see contract examples)
-  - duplicate rejected works correctly (see contract examples)
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
   - Convert a relative path to an absolute path based on base_dir.
   - Get the database URL for SQLite.
   tags: []
@@ -51,22 +55,31 @@ stories:
     - 'Ensures: returns Path'
     error_contracts: []
   source_functions:
-  - src/zettelkasten_mcp/config.py::get_db_url
+  - src/zettelkasten_mcp/config.py::_parse_watch_dirs
   - src/zettelkasten_mcp/config.py::get_absolute_path
+  - src/zettelkasten_mcp/config.py::get_db_url
   test_functions:
-  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_constructor_params
-  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_threadpool_limitation_in_child_context_error
-  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_nested
-  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_global_parallel_backend
-  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_external_backends
-  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence
-  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_bad_params
-  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_params_explicit_set
   - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_no_backend
-  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_no_config
-  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence_missing_section
+  - tests/test_watch_folder_config.py::test_empty_env_var_returns_empty_list
+  - tests/test_watch_folder_config.py::test_mix_of_valid_and_invalid_paths
   - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_parent_config_with_and_without_git
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence
+  - tests/test_watch_folder_config.py::test_whitespace_around_paths_is_stripped
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_global_parallel_backend
+  - tests/test_watch_folder_config.py::test_nonexistent_path_is_skipped
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_params_explicit_set
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_threadpool_limitation_in_child_context_error
+  - tests/test_watch_folder_config.py::test_multiple_valid_paths
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_bad_params
   - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_n_jobs_none
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_constructor_params
+  - tests/test_watch_folder_config.py::test_file_path_is_skipped
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_no_config
+  - tests/test_watch_folder_config.py::test_blank_env_var_returns_empty_list
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_nested
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence_missing_section
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_external_backends
+  - tests/test_watch_folder_config.py::test_single_valid_path
   - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_n_jobs_none
   priority:
   rank:
@@ -84,16 +97,19 @@ source_tracking:
   implementation_files:
   - src/zettelkasten_mcp/config.py
   test_files:
-  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py
+  - tests/test_watch_folder_config.py
   - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py
   file_hashes:
     src/zettelkasten_mcp/config.py: 
-      801379b759f16bc0fdec556f1c4aeab1a905da0207444650c066d88c75918fb3
-    .venv/lib/python3.10/site-packages/joblib/test/test_config.py: 
-      d59d74d803bb19bf19f261d86a19d9cb67f1040fbdfef63466d5b234d93571fe
+      26ca479b03d5039a130eaeacad47ebdf252565d82e2b87b1cd643328b2e7b80a
+    tests/test_watch_folder_config.py: 
+      e1cae19a5975cca938c12183b0b075532fb985b5996123df0cb880457f03e197
     .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py: 
       e340ff6aa443e900aa254e01b03066ff8edbe17f839eed399f7e88d8163594e5
-  last_synced: '2026-03-27T10:26:23.370792+00:00'
+    .venv/lib/python3.10/site-packages/joblib/test/test_config.py: 
+      d59d74d803bb19bf19f261d86a19d9cb67f1040fbdfef63466d5b234d93571fe
+  last_synced: '2026-04-29T08:01:39.596511+00:00'
   source_functions: []
   test_functions: []
   tool:
