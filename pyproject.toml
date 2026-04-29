@@ -16,6 +16,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
     "mcp[cli]>=1.2.0",
     "sqlalchemy>=2.0.0",
@@ -24,6 +25,9 @@ dependencies = [
     "markdown>=3.4.0",
     "python-dotenv>=1.0.0",
 ]
+
+[project.scripts]
+zettelkasten-mcp = "zettelkasten_mcp.main:main"
 
 [project.optional-dependencies]
 dev = [
