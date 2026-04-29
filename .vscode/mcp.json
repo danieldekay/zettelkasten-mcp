@@ -1,21 +1,18 @@
 {
     "servers": {
-        "zettelkasten": {
+        "zettelkasten-dev": {
             "command": "uv",
             "args": [
                 "--directory",
                 "${workspaceFolder}",
                 "run",
-                "python",
-                "-m",
-                "zettelkasten_mcp"
+                "zettelkasten-mcp"
             ],
             "cwd": "${workspaceFolder}",
             "env": {
-                "ZETTELKASTEN_NOTES_DIR": "/path/to/zettelkasten/notes",
-                "ZETTELKASTEN_DATABASE_PATH": "/path/to/zettelkasten/db/zettelkasten.db",
-                "ZETTELKASTEN_LOG_LEVEL": "INFO",
-                "ZETTELKASTEN_WATCH_DIRS": "/path/to/watch/folder"
+                "ZETTELKASTEN_NOTES_DIR": "/home/kaesmad/projects/rotf/notes-workspace/data/notes",
+                "ZETTELKASTEN_DATABASE_PATH": "/home/kaesmad/projects/rotf/notes-workspace/db/zettelkasten.db",
+                "ZETTELKASTEN_LOG_LEVEL": "INFO"
             }
         }
     }
