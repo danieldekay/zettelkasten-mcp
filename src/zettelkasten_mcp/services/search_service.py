@@ -23,6 +23,7 @@ class SearchResult:
     score: float
     matched_terms: set[str]
     matched_context: str
+    fallback_applied: bool = False
 
 
 class SearchService:
@@ -292,12 +293,45 @@ class SearchService:
         start_date: datetime | None = None,
         end_date: datetime | None = None,
     ) -> list[SearchResult]:
-        """FTS5-based combined search (fast, uses full-text index)."""
+        """FTS5-based combined search (fast, uses full-text index).
+
+        Automatically retries with OR logic when the strict AND query returns
+        no results, so multi-word queries still surface partial matches.
+        """
+        words = text.strip().split()
+        fallback_applied = False
+
         # Step 1: FTS5 full-text search (fast!)
         fts_results = self.zettel_service.repository.search_by_fts5(
             query=text,
             limit=100,  # Over-fetch for post-filtering
         )
+
+        # Auto-OR fallback: retry with word1 OR word2 … when strict match is empty.
+        # Only applied for plain whitespace-separated terms — skip when the query
+        # contains FTS5 operators (quotes, parens, colons, NEAR) to avoid
+        # generating invalid FTS5 syntax or changing query semantics.
+        _fts5_operator_chars = set('"():/')
+        _has_fts5_ops = (
+            any(c in text for c in _fts5_operator_chars)
+            or "NEAR" in text.upper()
+            or " OR " in text.upper()
+            or " AND " in text.upper()
+            or " NOT " in text.upper()
+        )
+        if not fts_results and len(words) > 1 and not _has_fts5_ops:
+            or_query = " OR ".join(words)
+            fts_results = self.zettel_service.repository.search_by_fts5(
+                query=or_query,
+                limit=100,
+            )
+            if fts_results:
+                fallback_applied = True
+                import logging as _logging  # noqa: PLC0415
+
+                _logging.getLogger(__name__).debug(
+                    "FTS5 OR-fallback applied for query %r", text
+                )
 
         # Step 2: Load only matching notes (not all!)
         candidate_notes = []
@@ -335,6 +369,7 @@ class SearchService:
                     score=normalized_score,
                     matched_terms=set(text.lower().split()),
                     matched_context=snippet,  # Use FTS5 snippet
+                    fallback_applied=fallback_applied,
                 ),
             )
 

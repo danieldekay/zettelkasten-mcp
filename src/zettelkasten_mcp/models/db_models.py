@@ -66,6 +66,13 @@ class DBNote(Base):
     # Watch-folder fields: is_readonly marks external notes; source_path is their path
     is_readonly = Column(Boolean, default=False, nullable=False, index=True)
     source_path = Column(Text, nullable=True)
+    # LLM-generated English summary and search keywords (nullable — generated lazily)
+    en_summary = Column(Text, nullable=True)
+    # Space-joined keyword string stored as text for FTS/search (not JSON)
+    en_keywords = Column(Text, nullable=True)
+    content_hash = Column(String(64), nullable=True, index=True)
+    summary_generated_at = Column(DateTime, nullable=True)
+    llm_model = Column(String(50), nullable=True)
 
     # Relationships
     tags = relationship(
@@ -151,6 +158,28 @@ class DBLink(Base):
         )
 
 
+class DBNoteSummaryCache(Base):
+    """Persistent cache for LLM-generated note summaries.
+
+    Keyed by ``note_id`` with a SHA-256 content hash so stale entries are
+    skipped automatically when a note is edited.  Survives ``rebuild_index()``
+    so expensive LLM calls are only made once per unique note content.
+    """
+
+    __tablename__ = "note_summary_cache"
+
+    note_id = Column(
+        String(255),
+        ForeignKey("notes.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    content_hash = Column(String(64), nullable=False)
+    en_summary = Column(Text, nullable=False)
+    en_keywords = Column(Text, nullable=False)  # JSON list
+    generated_at = Column(DateTime, nullable=False)
+    llm_model = Column(String(50), nullable=False)
+
+
 def _migrate_schema(engine: Any) -> None:
     """Apply additive schema migrations for new columns.
 
@@ -162,6 +191,11 @@ def _migrate_schema(engine: Any) -> None:
     migrations = [
         "ALTER TABLE notes ADD COLUMN is_readonly BOOLEAN NOT NULL DEFAULT 0",
         "ALTER TABLE notes ADD COLUMN source_path TEXT",
+        "ALTER TABLE notes ADD COLUMN en_summary TEXT",
+        "ALTER TABLE notes ADD COLUMN en_keywords TEXT",
+        "ALTER TABLE notes ADD COLUMN content_hash VARCHAR(64)",
+        "ALTER TABLE notes ADD COLUMN summary_generated_at DATETIME",
+        "ALTER TABLE notes ADD COLUMN llm_model VARCHAR(50)",
     ]
     with engine.connect() as conn:
         for stmt in migrations:

@@ -77,14 +77,14 @@ class NoteRepository(Repository[Note]):
         """Check if the FTS5 virtual table exists.
 
         Returns:
-            bool: True if notes_fts table exists, False otherwise
+            bool: True if fts5_notes table exists, False otherwise
         """
         try:
             with self.session_factory() as session:
                 result = session.execute(
                     text(
                         "SELECT name FROM sqlite_master "
-                        "WHERE type='table' AND name='notes_fts'",
+                        "WHERE type='table' AND name='fts5_notes'",
                     ),
                 )
                 return result.fetchone() is not None
@@ -99,32 +99,129 @@ class NoteRepository(Repository[Note]):
             session: Active database session
 
         Note:
-            Creates a virtual table with columns:
-            - id (UNINDEXED): Note ID for retrieval
-            - title: Searchable note title
-            - content: Searchable note content
-            Uses unicode61 tokenizer for multilingual support (German + English)
+            Creates ``fts5_notes`` with columns:
+            - note_id (UNINDEXED): Note ID for retrieval
+            - title, content: Core searchable fields
+            - en_summary, en_keywords: LLM-generated English summary/keywords
+            - tags: Space-joined tag names
+            Uses porter+unicode61 tokenizer for English stemming + multilingual support.
         """
         try:
-            # Drop existing table if it exists (idempotent)
+            # Drop both old and new table names so the create is always fresh
             session.execute(text("DROP TABLE IF EXISTS notes_fts"))
+            session.execute(text("DROP TABLE IF EXISTS fts5_notes"))
 
-            # Create FTS5 virtual table
             session.execute(
                 text("""
-                CREATE VIRTUAL TABLE notes_fts USING fts5(
-                    id UNINDEXED,
+                CREATE VIRTUAL TABLE fts5_notes USING fts5(
+                    note_id UNINDEXED,
                     title,
                     content,
-                    tokenize='unicode61'
+                    en_summary,
+                    en_keywords,
+                    tags,
+                    tokenize='porter unicode61'
                 )
             """),
             )
 
-            logger.info("FTS5 table created successfully")
+            logger.info("FTS5 table fts5_notes created successfully (porter unicode61)")
         except Exception:
             logger.exception("Error creating FTS5 table")
             raise
+
+    def prewarm_fts5(self) -> None:
+        """Populate fts5_notes for any notes not yet indexed.
+
+        Safe to call at startup: skips notes already present in the FTS5 table
+        and is a no-op if FTS5 is disabled or the table does not exist.
+        """
+        if not config.use_fts5_search:
+            return
+        if not self._check_fts5_table_exists():
+            logger.warning("prewarm_fts5 called but fts5_notes table does not exist")
+            return
+
+        try:
+            with self.session_factory() as session:
+                # Single SQL query: only fetch notes not yet in the FTS5 table
+                missing_notes = (
+                    session.execute(
+                        select(DBNote)
+                        .options(joinedload(DBNote.tags))
+                        .where(
+                            DBNote.id.notin_(
+                                select(text("note_id")).select_from(text("fts5_notes"))
+                            )
+                        )
+                    )
+                    .unique()
+                    .scalars()
+                    .all()
+                )
+
+                added = 0
+                for db_note in missing_notes:
+                    self._ensure_summary(session, db_note)
+                    self._sync_db_note_to_fts5(session, db_note)
+                    added += 1
+
+                if added:
+                    session.commit()
+                    logger.info("prewarm_fts5: indexed %d notes", added)
+                else:
+                    logger.debug("prewarm_fts5: all notes already indexed")
+        except Exception:
+            logger.exception("Error during FTS5 prewarm")
+
+    def _ensure_summary(self, session: Any, db_note: DBNote) -> None:
+        """Generate and persist an LLM summary for ``db_note`` if needed.
+
+        Uses the ``note_summary_cache`` table to avoid re-generating summaries
+        for notes whose content has not changed since the last run.
+        """
+        from zettelkasten_mcp.services.llm_summary_service import (  # noqa: PLC0415
+            LLMSummaryService,
+        )
+        from zettelkasten_mcp.services.summary_cache_service import (  # noqa: PLC0415
+            SummaryCacheService,
+            calculate_content_hash,
+        )
+
+        llm_service = LLMSummaryService()
+        if not llm_service.is_enabled():
+            return
+
+        tag_names = [t.name for t in db_note.tags]
+        content_hash = calculate_content_hash(
+            str(db_note.title), str(db_note.content), tag_names
+        )
+
+        cache_service = SummaryCacheService()
+        cached = cache_service.get_from_cache(session, str(db_note.id), content_hash)
+
+        if cached:
+            db_note.en_summary = cached["summary"]  # type: ignore[assignment]
+            db_note.en_keywords = " ".join(cached.get("keywords", []))  # type: ignore[assignment]
+            db_note.content_hash = content_hash  # type: ignore[assignment]
+            return
+
+        result = llm_service.generate_summary(
+            str(db_note.title), str(db_note.content), tag_names
+        )
+        if result is None:
+            return
+
+        db_note.en_summary = result["summary"]  # type: ignore[assignment]
+        db_note.en_keywords = " ".join(result.get("keywords", []))  # type: ignore[assignment]
+        db_note.content_hash = content_hash  # type: ignore[assignment]
+        db_note.summary_generated_at = datetime.datetime.now(  # type: ignore[assignment]
+            tz=datetime.timezone.utc
+        )
+        db_note.llm_model = config.llm_model  # type: ignore[assignment]
+        cache_service.save_to_cache(
+            session, str(db_note.id), content_hash, result, config.llm_model
+        )
 
     def get_note_count(self) -> int:
         """Get the number of notes in the database."""
@@ -397,47 +494,79 @@ class NoteRepository(Repository[Note]):
                     )
                     session.add(db_link)
 
-            # Sync to FTS5 table for full-text search
-            self._sync_note_to_fts5(session, note)
+            # Generate LLM summary if enabled, then sync to FTS5
+            self._ensure_summary(session, db_note)
+            self._sync_db_note_to_fts5(session, db_note)
 
             # Commit changes
             session.commit()
 
     def _sync_note_to_fts5(self, session: Any, note: Note) -> None:
-        """Synchronize a note to the FTS5 full-text search table.
+        """Synchronize a Note schema object to the FTS5 table.
 
-        Args:
-            session: Active database session
-            note: Note object to sync
-
-        Note:
-            Uses DELETE + INSERT strategy (simpler than UPDATE for FTS5)
+        Kept for backward compatibility. Performs its own DELETE + INSERT with
+        empty LLM fields (en_summary, en_keywords) since a plain ``Note`` object
+        carries no LLM metadata.  Callers that have a ``DBNote`` available should
+        prefer :meth:`_sync_db_note_to_fts5` to include LLM summary data.
         """
         try:
-            # Delete existing FTS5 entry if it exists
+            tag_names = " ".join(t.name for t in note.tags)
             session.execute(
-                text("DELETE FROM notes_fts WHERE id = :id"),
+                text("DELETE FROM fts5_notes WHERE note_id = :id"),
                 {"id": note.id},
             )
-
-            # Insert into FTS5 table
             session.execute(
                 text("""
-                    INSERT INTO notes_fts (id, title, content)
-                    VALUES (:id, :title, :content)
+                    INSERT INTO fts5_notes
+                        (note_id, title, content, en_summary, en_keywords, tags)
+                    VALUES (:id, :title, :content, :en_summary, :en_keywords, :tags)
                 """),
                 {
                     "id": note.id,
                     "title": note.title,
                     "content": note.content,
+                    "en_summary": "",
+                    "en_keywords": "",
+                    "tags": tag_names,
                 },
             )
-
             logger.debug("Synced note %s to FTS5 table", note.id)
-
         except Exception as e:  # noqa: BLE001
-            # Don't fail the entire indexing if FTS5 sync fails
             logger.warning("Failed to sync note %s to FTS5: %s", note.id, e)
+
+    def _sync_db_note_to_fts5(self, session: Any, db_note: DBNote) -> None:
+        """Synchronize a DBNote ORM object to the FTS5 table (with LLM fields).
+
+        Uses DELETE + INSERT strategy which is required for FTS5 virtual tables.
+        Called from :meth:`_index_note` and :meth:`update` after
+        :meth:`_ensure_summary` has had a chance to populate LLM columns.
+        """
+        try:
+            tag_names = " ".join(t.name for t in db_note.tags)
+            session.execute(
+                text("DELETE FROM fts5_notes WHERE note_id = :id"),
+                {"id": db_note.id},
+            )
+            session.execute(
+                text("""
+                    INSERT INTO fts5_notes
+                        (note_id, title, content, en_summary, en_keywords, tags)
+                    VALUES (:id, :title, :content, :en_summary, :en_keywords, :tags)
+                """),
+                {
+                    "id": db_note.id,
+                    "title": db_note.title,
+                    "content": db_note.content,
+                    "en_summary": db_note.en_summary or "",
+                    "en_keywords": db_note.en_keywords or "",
+                    "tags": tag_names,
+                },
+            )
+            logger.debug(
+                "Synced db_note %s to FTS5 table (with LLM fields)", db_note.id
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Failed to sync db_note %s to FTS5: %s", db_note.id, e)
 
     def _note_to_markdown(self, note: Note) -> str:
         """Convert a note to markdown with frontmatter."""
@@ -534,7 +663,7 @@ class NoteRepository(Repository[Note]):
 
         if not is_readonly:
             # Primary note — read from file to preserve frontmatter metadata
-            file_note = self._read_from_markdown(db_note.id)
+            file_note = self._read_from_markdown(str(db_note.id))
             if file_note:
                 return file_note
 
@@ -558,22 +687,22 @@ class NoteRepository(Repository[Note]):
         except ValueError:
             note_type = NoteType.PERMANENT
         return Note(
-            id=db_note.id,
-            title=db_note.title,
-            content=db_note.content,
+            id=str(db_note.id),
+            title=str(db_note.title),
+            content=str(db_note.content),
             note_type=note_type,
             tags=tags,
             links=links,
-            created_at=db_note.created_at
+            created_at=db_note.created_at  # type: ignore[arg-type]
             or datetime.datetime.now(
                 tz=datetime.timezone.utc,
             ),
-            updated_at=db_note.updated_at
+            updated_at=db_note.updated_at  # type: ignore[arg-type]
             or datetime.datetime.now(
                 tz=datetime.timezone.utc,
             ),
             is_readonly=is_readonly,
-            source_path=source_path,
+            source_path=source_path,  # type: ignore[arg-type]
         )
 
     def _read_from_markdown(self, note_id: str) -> "Note | None":
@@ -665,7 +794,7 @@ class NoteRepository(Repository[Note]):
                     note_batch = []
                     for note_id in batch_ids:
                         try:
-                            note = self.get(note_id)
+                            note = self.get(note_id)  # type: ignore[assignment]
                             if note:
                                 note_batch.append(note)
                         except Exception:  # noqa: PERF203
@@ -746,8 +875,9 @@ class NoteRepository(Repository[Note]):
                         )
                         session.add(db_link)
 
-                    # Sync to FTS5 table
-                    self._sync_note_to_fts5(session, note)
+                    # Sync to FTS5 table (with LLM summary if enabled)
+                    self._ensure_summary(session, db_note)
+                    self._sync_db_note_to_fts5(session, db_note)
 
                     session.commit()
                 else:
@@ -798,7 +928,7 @@ class NoteRepository(Repository[Note]):
             # Delete from FTS5 table
             try:
                 session.execute(
-                    text("DELETE FROM notes_fts WHERE id = :id"),
+                    text("DELETE FROM fts5_notes WHERE note_id = :id"),
                     {"id": id},
                 )
                 logger.debug("Deleted note %s from FTS5 table", id)
@@ -825,16 +955,18 @@ class NoteRepository(Repository[Note]):
         self,
         query: str,
         limit: int = 100,
-        title_weight: float = 10.0,
-        content_weight: float = 1.0,
+        title_weight: float = 10.0,  # noqa: ARG002
+        content_weight: float = 1.0,  # noqa: ARG002
     ) -> list[tuple[str, float, str]]:
-        """Search notes using FTS5 full-text search.
+        """Search notes using FTS5 full-text search with BM25 ranking.
 
         Args:
             query: Search query (supports FTS5 syntax)
             limit: Maximum number of results (default: 100)
-            title_weight: BM25 weight for title field (default: 10.0)
-            content_weight: BM25 weight for content field (default: 1.0)
+            title_weight: BM25 weight for title field (default: 10.0, kept for
+                backward-compat; actual weights are fixed at the SQL level)
+            content_weight: BM25 weight for content field (default: 1.0, kept
+                for backward-compat)
 
         Returns:
             List of tuples: (note_id, bm25_score, snippet)
@@ -847,8 +979,10 @@ class NoteRepository(Repository[Note]):
             - Column-specific: "title:machine content:learning"
 
         Note:
-            BM25 scores are negative (more negative = better match)
-            Snippet includes highlighted matches with context
+            BM25 scores are negative (more negative = better match).
+            Column order in bm25(): note_id(UNINDEXED)=0, title=10,
+            content=1, en_summary=3, en_keywords=15, tags=8.
+            Snippet is taken from the content column (index 2).
         """
         sanitized_query = self._sanitize_fts5_query(query)
         if not sanitized_query:
@@ -870,25 +1004,23 @@ class NoteRepository(Repository[Note]):
                 result = session.execute(
                     text(r"""
                     SELECT
-                        id,
-                        bm25(notes_fts, :title_weight, :content_weight) as score,
-                        -- snippet: col 1=content, <b></b>=highlight markers;
+                        note_id,
+                        bm25(fts5_notes, 0, 10, 1, 3, 15, 8) as score,
+                        -- snippet: col 2=content, <b></b>=highlight markers;
                         -- length 64 gives concise context (not rendered HTML).
-                        snippet(notes_fts, 1, '<b>', '</b>', '...', 64) as snippet
-                    FROM notes_fts
-                    WHERE notes_fts MATCH :query
+                        snippet(fts5_notes, 2, '<b>', '</b>', '...', 64) as snippet
+                    FROM fts5_notes
+                    WHERE fts5_notes MATCH :query
                     ORDER BY score
                     LIMIT :limit
                 """),
                     {
                         "query": sanitized_query,
                         "limit": limit,
-                        "title_weight": title_weight,
-                        "content_weight": content_weight,
                     },
                 )
 
-                results = [(row.id, row.score, row.snippet) for row in result]
+                results = [(row.note_id, row.score, row.snippet) for row in result]
 
                 logger.debug(
                     "FTS5 search for %r returned %s results",
@@ -1231,7 +1363,8 @@ class NoteRepository(Repository[Note]):
                         )
                         session.add(db_link)
 
-                    self._sync_note_to_fts5(session, note)
+                    self._ensure_summary(session, db_note)
+                    self._sync_db_note_to_fts5(session, db_note)
 
                 session.commit()
         except Exception:
