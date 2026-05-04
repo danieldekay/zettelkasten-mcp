@@ -102,8 +102,19 @@ def main() -> None:
     logger = logging.getLogger(__name__)
 
     # Ensure database directory exists
-    db_dir = config.get_absolute_path(config.database_path).parent
-    db_dir.mkdir(parents=True, exist_ok=True)
+    db_path = config.get_absolute_path(config.database_path)
+    db_dir = db_path.parent
+    try:
+        db_dir.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        print(  # noqa: T201
+            f"ERROR: Cannot create database directory '{db_dir}'.\n"
+            f"The ZETTELKASTEN_DATABASE_PATH '{db_path}' appears to be a placeholder.\n"
+            "Set ZETTELKASTEN_DATABASE_PATH to a real writable path, e.g.:\n"
+            "  /home/<user>/projects/notes-workspace/db/zettelkasten.db",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     # Initialize database schema
     try:

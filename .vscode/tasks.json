@@ -257,6 +257,74 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "ZK: Search Notes",
+            "detail": "Requires ZETTELKASTEN_NOTES_DIR and ZETTELKASTEN_DATABASE_PATH in .env or environment",
+            "type": "shell",
+            "command": "uv run python -c \"\nimport os\nfrom zettelkasten_mcp.storage.note_repository import NoteRepository\nr = NoteRepository()\nq = '${input:zkQuery}'.lower()\nnotes = [n for n in r.search() if q in n.title.lower() or q in n.content.lower() or any(q in t.name for t in n.tags)]\nnotes.sort(key=lambda n: n.updated_at, reverse=True)\n[print(f'{n.id}.md  [{n.note_type.value:12}]  {n.title}') for n in notes]\nprint(f'\\n{len(notes)} result(s) for: ${input:zkQuery}')\n\"",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true,
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ZK: Search by Tag",
+            "detail": "Requires ZETTELKASTEN_NOTES_DIR and ZETTELKASTEN_DATABASE_PATH in .env or environment",
+            "type": "shell",
+            "command": "uv run python -c \"\nfrom zettelkasten_mcp.storage.note_repository import NoteRepository\nr = NoteRepository()\nnotes = r.search(tags=['${input:zkTag}'])\nnotes.sort(key=lambda n: n.updated_at, reverse=True)\n[print(f'{n.id}.md  [{n.note_type.value:12}]  {n.title}') for n in notes]\nprint(f'\\n{len(notes)} result(s) for tag: ${input:zkTag}')\n\"",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true,
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ZK: List All Tags",
+            "detail": "Requires ZETTELKASTEN_NOTES_DIR and ZETTELKASTEN_DATABASE_PATH in .env or environment",
+            "type": "shell",
+            "command": "uv run python -c \"\nfrom zettelkasten_mcp.storage.note_repository import NoteRepository\nfrom collections import Counter\nr = NoteRepository()\nnotes = r.search()\ntag_counts = Counter(t.name for n in notes for t in n.tags)\n[print(f'{count:3}  {tag}') for tag, count in sorted(tag_counts.items())]\nprint(f'\\n{len(tag_counts)} tags across {len(notes)} notes')\n\"",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true,
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ZK: List Recent Notes",
+            "detail": "Requires ZETTELKASTEN_NOTES_DIR and ZETTELKASTEN_DATABASE_PATH in .env or environment",
+            "type": "shell",
+            "command": "uv run python -c \"\nfrom zettelkasten_mcp.storage.note_repository import NoteRepository\nr = NoteRepository()\nnotes = sorted(r.search(), key=lambda n: n.updated_at, reverse=True)[:20]\n[print(f'{str(n.updated_at)[:16]}  {n.id}.md  [{n.note_type.value:12}]  {n.title}') for n in notes]\n\"",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true,
+                "focus": true
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "zkQuery",
+            "type": "promptString",
+            "description": "Search term (searches note titles, content and tags)"
+        },
+        {
+            "id": "zkTag",
+            "type": "promptString",
+            "description": "Tag to filter by (e.g. multi-agent, security, 2026)"
         }
     ]
 }
