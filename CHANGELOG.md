@@ -9,18 +9,58 @@ Versions correspond to phases in the OpenSpec change pipeline.
 
 ## [Unreleased]
 
-### External Folder Indexing (Watch Folders)
+---
+
+## [1.4.0] — 2026-05-06
+
+This release adds **FTS5 full-text search with Porter stemming and LLM-powered summaries**, **external folder (watch folder) indexing**, **tag syntax enforcement and normalisation**, a **CLI entry point**, and **VS Code task integration**.
+
+### New features
+
+#### FTS5 Full-Text Search & LLM Summaries
+
+- Replaced the old `notes_fts` virtual table with `fts5_notes` using the `unicode61` tokenizer and Porter stemming for better search quality across languages.
+- Extended FTS columns: `en_summary`, `en_keywords` alongside `title`, `content`, and `tags` — enabling semantic-style queries.
+- BM25 weights tuned per column (`title=10`, `en_keywords=15`, `tags=8`, `en_summary=3`).
+- **Auto-OR fallback** — when a phrase query returns zero results, the server automatically retries with `OR` between terms, surfacing partial matches instead of empty results.
+- **FTS5 pre-warming** at server startup to eliminate cold-start latency on the first search.
+- **`LLMSummaryService`** — generates English summaries and keywords via Azure OpenAI (`DefaultAzureCredential`). Disabled gracefully when `AZURE_OPENAI_ENDPOINT` is unset or `LLM_ENABLE_SUMMARIES=false`.
+- **`SummaryCacheService`** — SHA-256 content-hash cache that survives `rebuild_index()` calls, avoiding redundant LLM API calls.
+- **Migration script** `migrations/add_llm_summary_fields.py` — idempotent, safe to run on existing installations.
+
+```env
+LLM_ENABLE_SUMMARIES=true
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_API_VERSION=2024-02-01
+LLM_MODEL=gpt-4o
+```
+
+#### External Folder Indexing (Watch Folders)
 
 Index any external Markdown directory as **read-only reference notes** alongside your primary Zettelkasten notes.
-
-#### New features
 
 - **`ZETTELKASTEN_WATCH_DIRS`** — comma-separated list of directories to index at startup. Files with YAML frontmatter are parsed fully; files without frontmatter receive a deterministic `ext-<sha256[:12]>` ID and use the filename stem as title.
 - **`zk_sync_watch_folders`** — MCP tool to re-index all watch directories on demand without restarting the server.
 - **`zk_list_notes`** — new MCP tool to list all notes with optional `note_type`, `tags`, and `include_external` filters.
 - **Read-only guards** — `zk_update_note` and `zk_delete_note` refuse to modify watch-folder notes with a clear `PermissionError`.
-- **Safe linking** — unidirectional links from primary notes to watch-folder notes are fully supported. Bidirectional links silently create only the forward link.
-- **`is_readonly` / `source_path`** fields added to all note responses from `zk_get_note`, `zk_list_notes`, `zk_search_notes`, and related tools.
+- **Safe linking** — unidirectional links from primary notes to watch-folder notes are fully supported.
+- **`is_readonly` / `source_path`** fields added to all note responses.
+
+#### Tag Syntax Enforcement & Normalisation
+
+- Tags are now normalised to `lowercase-kebab-case` before storage (`spaces` and `underscores` → hyphens, leading/trailing hyphens stripped, consecutive hyphens collapsed).
+- New config option `ZETTELKASTEN_STRICT_TAGS` (default `false`): when `true`, non-canonical tags raise a `ValueError` instead of being silently corrected.
+- `zk_create_note` and `zk_update_note` report any normalisation that occurred in the tool response.
+- New tool **`zk_normalize_tags`** — bulk-normalises all tags across every note in the vault.
+
+#### CLI Entry Point
+
+- `zettelkasten-mcp` is now a proper `[project.scripts]` entry point; install with `uv sync` and start the server with `zettelkasten-mcp`.
+
+#### VS Code Integration
+
+- Five new VS Code tasks under `.vscode/tasks.json`: **ZK: Search Notes**, **ZK: Search by Tag**, **ZK: List All Tags**, **ZK: List Recent Notes**, **ZK: Open Note by ID**.
+- Tasks run against your configured vault directly from the VS Code Command Palette.
 
 ---
 

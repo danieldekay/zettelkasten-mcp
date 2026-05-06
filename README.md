@@ -21,12 +21,15 @@ This structure invites serendipitous discoveries as you follow trails of thought
 
 - Create atomic notes with unique timestamp-based IDs
 - Link notes bidirectionally to build a knowledge graph
-- Tag notes for categorical organization
-- Search notes by content, tags, or links
+- Tag notes for categorical organization with automatic normalization to `kebab-case`
+- Search notes by content, tags, or links — powered by FTS5 full-text search with Porter stemming
 - Use markdown format for human readability and editing
 - Integrate with Claude through MCP for AI-assisted knowledge management
 - Dual storage architecture (see below)
 - Synchronous operation model for simplified architecture
+- Index external Markdown directories as read-only reference notes (watch folders)
+- Optional LLM-generated English summaries for richer semantic search (Azure OpenAI)
+- VS Code tasks for searching and browsing your vault from the editor
 
 ## Examples
 
@@ -243,6 +246,7 @@ All tools have been prefixed with `zk_` for better organization:
 | `zk_find_notes_in_timerange` | Find notes by `created_at` or `updated_at` date range (ISO 8601) | `count`, `notes[]`, `date_field`, `summary` |
 | `zk_analyze_tag_clusters` | Identify tag clusters by co-occurrence frequency | `clusters[]` (each with `tags`, `count`, `representative_notes`), `total_tag_pairs_analysed`, `summary` |
 | `zk_sync_watch_folders` | Re-index all configured watch-folder directories | `scanned`, `added`, `removed`, `errors[]`, `summary` |
+| `zk_normalize_tags` | Bulk-normalise all tags across the vault to `kebab-case` | `normalised`, `skipped`, `errors[]`, `summary` |
 
 All tools return `error: true`, `error_type`, `message`, and `summary` on failure.
 

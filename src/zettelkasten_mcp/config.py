@@ -85,7 +85,7 @@ class ZettelkastenConfig(BaseModel):
     log_level: str = Field(
         default=os.getenv("ZETTELKASTEN_LOG_LEVEL", "INFO"),
     )
-    server_version: str = Field(default="1.3.0")
+    server_version: str = Field(default="1.4.0")
     # Date format for ID generation (using ISO format for timestamps)
     id_date_format: str = Field(default="%Y%m%dT%H%M%S")
     # Default note template
