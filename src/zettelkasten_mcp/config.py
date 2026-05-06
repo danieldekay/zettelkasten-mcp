@@ -229,6 +229,7 @@ class ZettelkastenConfig(BaseModel):
             ValueError: If the TOML file cannot be parsed.
         """
         import sys  # noqa: PLC0415
+
         if sys.version_info >= (3, 11):
             import tomllib  # noqa: PLC0415
         else:

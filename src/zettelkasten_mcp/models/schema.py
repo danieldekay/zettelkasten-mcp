@@ -193,6 +193,7 @@ link_type_registry = LinkTypeRegistry()
 # Tag syntax enforcement
 # ---------------------------------------------------------------------------
 
+
 class _TagConfig:
     strict_mode: bool = False
 

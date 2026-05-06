@@ -1027,7 +1027,9 @@ class TestMcpServer:
         self.mock_zettel_service.create_note.return_value = mock_note
 
         create_note_func = self.registered_tools["zk_create_note"]
-        result = create_note_func(title="Clean", content="c", tags="machine-learning,ai")
+        result = create_note_func(
+            title="Clean", content="c", tags="machine-learning,ai"
+        )
 
         assert isinstance(result, dict)
         assert result.get("normalised_tags") == []
@@ -1109,4 +1111,3 @@ class TestMcpServer:
         assert result["tags_changed"] == 0
         assert result["diff"] == []
         self.mock_zettel_service.update_note.assert_not_called()
-

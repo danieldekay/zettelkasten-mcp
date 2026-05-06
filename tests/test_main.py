@@ -58,7 +58,12 @@ class TestUpdateConfig:
 
         from zettelkasten_mcp.main import update_config  # noqa: PLC0415
 
-        args = Namespace(notes_dir=str(tmp_path / "notes"), database_path=None, log_level=None, config=None)
+        args = Namespace(
+            notes_dir=str(tmp_path / "notes"),
+            database_path=None,
+            log_level=None,
+            config=None,
+        )
         update_config(args)
 
     def test_no_update_when_none(self):
@@ -66,7 +71,9 @@ class TestUpdateConfig:
 
         from zettelkasten_mcp.main import update_config  # noqa: PLC0415
 
-        args = Namespace(notes_dir=None, database_path=None, log_level=None, config=None)
+        args = Namespace(
+            notes_dir=None, database_path=None, log_level=None, config=None
+        )
         update_config(args)
 
     def test_load_toml(self, tmp_path):
@@ -85,7 +92,9 @@ class TestUpdateConfig:
             '[server]\nlog_level = "DEBUG"\n'
         )
 
-        args = Namespace(notes_dir=None, database_path=None, log_level=None, config=str(cfg_file))
+        args = Namespace(
+            notes_dir=None, database_path=None, log_level=None, config=str(cfg_file)
+        )
         update_config(args)
 
         assert config.notes_dir == notes_dir

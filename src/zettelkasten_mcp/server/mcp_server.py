@@ -168,9 +168,7 @@ class ZettelkastenMcpServer:
             "source_path": note.source_path,
         }
 
-    def _normalise_single_note(
-        self, note: Any
-    ) -> tuple[dict | None, dict | None]:
+    def _normalise_single_note(self, note: Any) -> tuple[dict | None, dict | None]:
         """Return (change_record, error_record) for one note."""
         try:
             current_names = [t.name for t in note.tags]
@@ -216,15 +214,21 @@ class ZettelkastenMcpServer:
             try:
                 note_type_enum = NoteType(note_type.lower())
             except ValueError:
-                return (None, None, None, [], {
-                    "error": True,
-                    "error_type": "validation_error",
-                    "message": (
-                        f"Invalid note type: {note_type}. Valid types are: "
-                        f"{', '.join(t.value for t in NoteType)}"
-                    ),
-                    "summary": f"Invalid note type: {note_type}",
-                })
+                return (
+                    None,
+                    None,
+                    None,
+                    [],
+                    {
+                        "error": True,
+                        "error_type": "validation_error",
+                        "message": (
+                            f"Invalid note type: {note_type}. Valid types are: "
+                            f"{', '.join(t.value for t in NoteType)}"
+                        ),
+                        "summary": f"Invalid note type: {note_type}",
+                    },
+                )
 
         tag_list = None
         if tags is not None:
@@ -246,19 +250,31 @@ class ZettelkastenMcpServer:
                 try:
                     metadata_dict = json.loads(metadata)
                     if not isinstance(metadata_dict, dict):
-                        return (None, None, None, [], {
+                        return (
+                            None,
+                            None,
+                            None,
+                            [],
+                            {
+                                "error": True,
+                                "error_type": "invalid_metadata",
+                                "message": "metadata must be a JSON object",
+                                "summary": "Error: metadata must be a JSON object",
+                            },
+                        )
+                except json.JSONDecodeError as exc:
+                    return (
+                        None,
+                        None,
+                        None,
+                        [],
+                        {
                             "error": True,
                             "error_type": "invalid_metadata",
-                            "message": "metadata must be a JSON object",
-                            "summary": "Error: metadata must be a JSON object",
-                        })
-                except json.JSONDecodeError as exc:
-                    return (None, None, None, [], {
-                        "error": True,
-                        "error_type": "invalid_metadata",
-                        "message": f"Invalid metadata JSON: {exc}",
-                        "summary": f"Error: Invalid metadata JSON: {exc}",
-                    })
+                            "message": f"Invalid metadata JSON: {exc}",
+                            "summary": f"Error: Invalid metadata JSON: {exc}",
+                        },
+                    )
 
         return (note_type_enum, tag_list, metadata_dict, normalised_changes, None)
 
@@ -280,6 +296,7 @@ class ZettelkastenMcpServer:
 
     def _register_create_note_tool(self) -> None:
         """Register the zk_create_note MCP tool."""
+
         # Create a new note
         @self.mcp.tool(name="zk_create_note")
         def zk_create_note(
@@ -376,9 +393,9 @@ class ZettelkastenMcpServer:
                     result["warning"] = "Note saved to filesystem; DB index unavailable"
                 return result
 
-
     def _register_get_delete_note_tools(self) -> None:
         """Register the zk_get_note and zk_delete_note MCP tools."""
+
         # Get a note by ID or title
         @self.mcp.tool(name="zk_get_note")
         def zk_get_note(identifier: str) -> dict:
@@ -512,9 +529,9 @@ class ZettelkastenMcpServer:
                     ),
                 }
 
-
     def _register_link_tools(self) -> None:
         """Register the zk_create_link and zk_remove_link MCP tools."""
+
         # Add a link between notes
         @self.mcp.tool(name="zk_create_link")
         def zk_create_link(
@@ -618,6 +635,7 @@ class ZettelkastenMcpServer:
 
     def _register_search_notes_tool(self) -> None:
         """Register the zk_search_notes MCP tool."""
+
         # Search for notes
         @self.mcp.tool(name="zk_search_notes")
         def zk_search_notes(
@@ -686,9 +704,9 @@ class ZettelkastenMcpServer:
                     ),
                 }
 
-
     def _register_linked_notes_tool(self) -> None:
         """Register the zk_get_linked_notes MCP tool."""
+
         # Get linked notes
         @self.mcp.tool(name="zk_get_linked_notes")
         def zk_get_linked_notes(
@@ -765,6 +783,7 @@ class ZettelkastenMcpServer:
 
     def _register_tag_tools(self) -> None:
         """Register the zk_get_all_tags and zk_find_similar_notes MCP tools."""
+
         # Get all tags
         @self.mcp.tool(name="zk_get_all_tags")
         def zk_get_all_tags() -> dict:
@@ -784,7 +803,6 @@ class ZettelkastenMcpServer:
                         f"Found {len(tag_list)} tags" if tag_list else "No tags found"
                     ),
                 }
-
 
         # Find similar notes
         @self.mcp.tool(name="zk_find_similar_notes")
@@ -831,9 +849,9 @@ class ZettelkastenMcpServer:
                     ),
                 }
 
-
     def _register_finder_tools(self) -> None:
         """Register the zk_find_central_notes and zk_find_orphaned_notes MCP tools."""
+
         # Find central notes
         @self.mcp.tool(name="zk_find_central_notes")
         def zk_find_central_notes(limit: int = 10) -> dict:
@@ -899,6 +917,7 @@ class ZettelkastenMcpServer:
 
     def _register_date_tools(self) -> None:
         """Register the zk_list_notes_by_date MCP tool."""
+
         # List notes by date range
         @self.mcp.tool(name="zk_list_notes_by_date")
         def zk_list_notes_by_date(
@@ -971,6 +990,7 @@ class ZettelkastenMcpServer:
 
     def _register_maintenance_tools(self) -> None:
         """Register zk_rebuild_index, zk_normalize_tags, zk_register_link_type."""
+
         # Rebuild the index
         @self.mcp.tool(name="zk_rebuild_index")
         def zk_rebuild_index() -> dict:
@@ -1046,8 +1066,6 @@ class ZettelkastenMcpServer:
                     ),
                 }
 
-
-
         @self.mcp.tool(name="zk_register_link_type")
         def zk_register_link_type(
             name: str,
@@ -1086,6 +1104,7 @@ class ZettelkastenMcpServer:
 
     def _register_suggest_tools(self) -> None:
         """Register zk_suggest_tags, zk_suggest_link_type, zk_analyze_tag_clusters."""
+
         # Tag suggestions
         @self.mcp.tool(name="zk_suggest_tags")
         def zk_suggest_tags(content: str, limit: int = 10) -> dict:
@@ -1178,6 +1197,7 @@ class ZettelkastenMcpServer:
 
     def _register_timerange_watch_tools(self) -> None:
         """Register zk_find_notes_in_timerange and zk_sync_watch_folders MCP tools."""
+
         # Temporal range query
         @self.mcp.tool(name="zk_find_notes_in_timerange")
         def zk_find_notes_in_timerange(
@@ -1275,6 +1295,7 @@ class ZettelkastenMcpServer:
 
     def _register_list_notes_tool(self) -> None:
         """Register the zk_list_notes MCP tool."""
+
         # List all notes with optional external filter
         @self.mcp.tool(name="zk_list_notes")
         def zk_list_notes(
@@ -1335,7 +1356,6 @@ class ZettelkastenMcpServer:
                         f"Found {total} note(s)" if total else "No notes found"
                     ),
                 }
-
 
     def _register_resources(self) -> None:
         """Register MCP resources."""
