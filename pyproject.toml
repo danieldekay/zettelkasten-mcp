@@ -24,6 +24,7 @@ dependencies = [
     "python-frontmatter>=1.0.0",
     "markdown>=3.4.0",
     "python-dotenv>=1.0.0",
+    "tomli>=2.0.0; python_version < '3.11'",
 ]
 
 [project.scripts]
@@ -174,6 +175,7 @@ line-ending = "auto"
 [tool.mypy]
 python_version = "3.10"
 mypy_path = "src"
+explicit_package_bases = true
 ignore_missing_imports = true
 warn_return_any = true
 warn_unused_configs = true
@@ -183,6 +185,17 @@ disallow_incomplete_defs = true
 [[tool.mypy.overrides]]
 module = "zettelkasten_mcp.models.db_models"
 ignore_errors = true
+
+[tool.pylint.main]
+# Allow pylint to resolve packages installed in the venv
+init-hook = "import sys; sys.path.insert(0, 'src')"
+
+[tool.pylint."messages control"]
+# E0401: Unable to import – false positives when running pylint outside the venv
+# C0415: Import not at top – intentional lazy/conditional imports throughout codebase
+# R0903: Too few public methods – common for Pydantic models / data classes
+# E1101: Instance has no member – false positive on Pydantic Field() descriptors (e.g. created_at.isoformat())
+disable = ["E0401", "C0415", "E1101"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

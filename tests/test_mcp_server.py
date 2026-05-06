@@ -994,3 +994,120 @@ class TestMcpServer:
         assert isinstance(result, dict)
         assert result["error"] is True
         assert result["error_type"] == "file_system_error"
+
+    # ------------------------------------------------------------------
+    # Tag normalisation transparency (tasks 3.1-3.3)
+    # ------------------------------------------------------------------
+
+    def test_create_note_normalised_tags_returned(self):
+        """zk_create_note reports normalised_tags when tags are changed."""
+        mock_note = MagicMock()
+        mock_note.id = "norm1"
+        mock_note.title = "Norm Test"
+        self.mock_zettel_service.create_note.return_value = mock_note
+
+        create_note_func = self.registered_tools["zk_create_note"]
+        result = create_note_func(
+            title="Norm Test",
+            content="c",
+            tags="IO-psychology,MCP",
+        )
+
+        assert isinstance(result, dict)
+        assert "normalised_tags" in result
+        changes = {d["from"]: d["to"] for d in result["normalised_tags"]}
+        assert changes.get("IO-psychology") == "io-psychology"
+        assert changes.get("MCP") == "mcp"
+
+    def test_create_note_compliant_tags_no_diff(self):
+        """zk_create_note returns empty normalised_tags for already-compliant tags."""
+        mock_note = MagicMock()
+        mock_note.id = "norm2"
+        mock_note.title = "Clean"
+        self.mock_zettel_service.create_note.return_value = mock_note
+
+        create_note_func = self.registered_tools["zk_create_note"]
+        result = create_note_func(
+            title="Clean", content="c", tags="machine-learning,ai"
+        )
+
+        assert isinstance(result, dict)
+        assert result.get("normalised_tags") == []
+
+    def test_update_note_normalised_tags_returned(self):
+        """zk_update_note reports normalised_tags when tags are changed."""
+        mock_note = MagicMock()
+        mock_note.id = "upd-norm"
+        mock_note.title = "Upd"
+        self.mock_zettel_service.get_note.return_value = mock_note
+        self.mock_zettel_service.update_note.return_value = mock_note
+
+        update_func = self.registered_tools["zk_update_note"]
+        result = update_func(note_id="upd-norm", tags="FTS5,Zettel")
+
+        assert isinstance(result, dict)
+        assert "normalised_tags" in result
+        changes = {d["from"]: d["to"] for d in result["normalised_tags"]}
+        assert changes.get("FTS5") == "fts5"
+        assert changes.get("Zettel") == "zettel"
+
+    def test_update_note_no_tags_arg_no_normalised_diff(self):
+        """zk_update_note with no tags arg returns empty normalised_tags."""
+        mock_note = MagicMock()
+        mock_note.id = "upd-no-tags"
+        mock_note.title = "NoTags"
+        self.mock_zettel_service.get_note.return_value = mock_note
+        self.mock_zettel_service.update_note.return_value = mock_note
+
+        update_func = self.registered_tools["zk_update_note"]
+        result = update_func(note_id="upd-no-tags", title="New title")
+
+        assert isinstance(result, dict)
+        assert result.get("normalised_tags") == []
+
+    # ------------------------------------------------------------------
+    # zk_normalize_tags (task 4)
+    # ------------------------------------------------------------------
+
+    def test_normalize_tags_updates_non_compliant(self):
+        """zk_normalize_tags returns diff for notes with non-compliant tags."""
+        from unittest.mock import MagicMock  # noqa: PLC0415
+
+        from zettelkasten_mcp.models.schema import Tag  # noqa: PLC0415
+
+        note = self._make_mock_note("n1", "Note 1")
+        note.tags = [MagicMock(name=None)]
+        note.tags[0].name = "IO-psychology"
+        self.mock_zettel_service.get_all_notes.return_value = [note]
+        updated = self._make_mock_note("n1", "Note 1")
+        updated.tags = [Tag(name="io-psychology")]
+        self.mock_zettel_service.update_note.return_value = updated
+
+        normalize_func = self.registered_tools["zk_normalize_tags"]
+        result = normalize_func()
+
+        assert isinstance(result, dict)
+        assert result["total_notes_scanned"] == 1
+        assert result["notes_updated"] == 1
+        assert result["tags_changed"] == 1
+        assert result["diff"][0]["note_id"] == "n1"
+        assert result["diff"][0]["changes"] == [
+            {"from": "IO-psychology", "to": "io-psychology"}
+        ]
+
+    def test_normalize_tags_idempotent(self):
+        """zk_normalize_tags reports 0 updates when all tags are compliant."""
+        from zettelkasten_mcp.models.schema import Tag  # noqa: PLC0415
+
+        note = self._make_mock_note("n2", "Note 2")
+        note.tags = [Tag(name="io-psychology")]
+        self.mock_zettel_service.get_all_notes.return_value = [note]
+
+        normalize_func = self.registered_tools["zk_normalize_tags"]
+        result = normalize_func()
+
+        assert isinstance(result, dict)
+        assert result["notes_updated"] == 0
+        assert result["tags_changed"] == 0
+        assert result["diff"] == []
+        self.mock_zettel_service.update_note.assert_not_called()

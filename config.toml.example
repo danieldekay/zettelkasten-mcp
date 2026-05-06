@@ -1,0 +1,73 @@
+# zettelkasten-mcp configuration example
+#
+# Copy this file to config.toml and edit as needed.
+# Pass it to the server with: zettelkasten-mcp --config /path/to/config.toml
+#
+# Priority (highest wins): CLI flags > config.toml > environment variables > built-in defaults
+
+[storage]
+# Absolute path to the directory containing Markdown note files.
+# Env-var equivalent: ZETTELKASTEN_NOTES_DIR
+notes_dir = "/home/user/notes/zettelkasten"
+
+# Absolute path to the SQLite database file (created automatically).
+# Env-var equivalent: ZETTELKASTEN_DATABASE_PATH
+database_path = "/home/user/notes/db/zettelkasten.db"
+
+[server]
+# Log verbosity: DEBUG, INFO, WARNING, ERROR, CRITICAL
+# Env-var equivalent: ZETTELKASTEN_LOG_LEVEL
+log_level = "INFO"
+
+# MCP server display name.
+# Env-var equivalent: ZETTELKASTEN_SERVER_NAME
+name = "zettelkasten-mcp"
+
+[watch]
+# Extra directories scanned as read-only reference notes.
+# Env-var equivalent: ZETTELKASTEN_WATCH_DIRS (comma-separated)
+# dirs = ["/home/user/vault/references", "/home/user/shared-notes"]
+
+[search]
+# Enable FTS5 full-text search (recommended — requires SQLite with FTS5 support).
+# Env-var equivalent: USE_FTS5_SEARCH
+use_fts5 = true
+
+[index]
+# Percentage of drift between filesystem and DB that triggers an automatic
+# re-index on startup. Set to 0 to disable auto-rebuild.
+# Env-var equivalent: ZETTELKASTEN_AUTO_REBUILD_THRESHOLD
+auto_rebuild_threshold = 5
+
+[tags]
+# When false (default): tags are silently normalised to lowercase kebab-case
+# on write (e.g. "IO Psychology" → "io-psychology", "FTS5" → "fts5").
+# When true: tags that are not already in canonical form are rejected with an
+# error, so the caller must fix them before saving.
+# Env-var equivalent: ZETTELKASTEN_STRICT_TAGS
+strict = false
+
+[llm]
+# Enable AI-generated note summaries via Azure OpenAI (disabled by default).
+# Env-var equivalent: LLM_ENABLE_SUMMARIES
+enable_summaries = false
+
+# Azure OpenAI endpoint (required when enable_summaries = true).
+# Env-var equivalent: AZURE_OPENAI_ENDPOINT
+# azure_endpoint = "https://my-resource.openai.azure.com/"
+
+# Azure OpenAI API version.
+# Env-var equivalent: AZURE_OPENAI_API_VERSION
+# azure_api_version = "2024-02-01"
+
+# Deployment / model name.
+# Env-var equivalent: LLM_MODEL
+# model = "gpt-4o"
+
+# Sampling temperature (0.0–1.0).
+# Env-var equivalent: LLM_TEMPERATURE
+# temperature = 0.2
+
+# Maximum tokens for generated summaries.
+# Env-var equivalent: LLM_MAX_TOKENS
+# max_tokens = 512

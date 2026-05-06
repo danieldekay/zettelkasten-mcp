@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: Zettelkasten Config
+  version: 1.0.0
+  description: API contract extracted from code for Zettelkasten Config
+paths:
+  /zettelkasten-config/load-toml:
+    get:
+      operationId: load_toml
+      summary: Load Toml
+      description: "Apply settings from a TOML config file, overriding current values.\n\
+        \nOnly keys present in the file are applied; absent keys keep their\ncurrent\
+        \ values (env-var defaults or previous settings).\n\nPriority after this call:\
+        \ env-var defaults < TOML file < CLI flags.\n\nArgs:\n    path: Path to the\
+        \ TOML configuration file.\n\nRaises:\n    FileNotFoundError: If the config\
+        \ file does not exist.\n    ValueError: If the TOML file cannot be parsed."
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - ZettelkastenConfig
+components:
+  schemas:
+    ZettelkastenConfig:
+      type: object
+      properties:
+        base_dir:
+          $ref: '#/components/schemas/Path'
+        notes_dir:
+          $ref: '#/components/schemas/Path'
+        database_path:
+          $ref: '#/components/schemas/Path'
+        server_name:
+          type: string
+        log_level:
+          type: string
+        server_version:
+          type: string
+        id_date_format:
+          type: string
+        default_note_template:
+          type: string
+        use_fts5_search:
+          type: boolean
+        llm_enable_summaries:
+          type: boolean
+        azure_openai_endpoint:
+          type: string
+        azure_openai_api_version:
+          type: string
+        llm_model:
+          type: string
+        llm_temperature:
+          type: number
+        llm_max_tokens:
+          type: integer
+        auto_rebuild_threshold:
+          type: integer
+        strict_tag_syntax:
+          type: boolean
+        custom_link_types_path:
+          $ref: '#/components/schemas/Path'
+        watch_dirs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Path'
+      required: []
+      description: Configuration for the Zettelkasten server.

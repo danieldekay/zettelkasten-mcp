@@ -1,0 +1,9 @@
+title: ./Src/Zettelkasten Mcp
+narrative: Auto-derived plan from brownfield analysis of ./Src/Zettelkasten Mcp
+target_users: []
+value_hypothesis: ''
+constraints:
+- Python >=3.10
+- SQLAlchemy ORM
+- Pydantic for data validation
+metrics:

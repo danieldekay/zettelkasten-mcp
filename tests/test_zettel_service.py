@@ -236,10 +236,10 @@ def test_search_notes(zettel_service):
     first_note = python_notes[0]
     zettel_service.add_tag_to_note(first_note.id, "newTag")
     updated_note = zettel_service.get_note(first_note.id)
-    assert "newTag" in {tag.name for tag in updated_note.tags}
+    assert "newtag" in {tag.name for tag in updated_note.tags}  # normalised
     zettel_service.remove_tag_from_note(first_note.id, "newTag")
     updated_note = zettel_service.get_note(first_note.id)
-    assert "newTag" not in {tag.name for tag in updated_note.tags}
+    assert "newtag" not in {tag.name for tag in updated_note.tags}  # normalised
 
 
 def test_register_link_type_and_duplicate(zettel_service, tmp_path):

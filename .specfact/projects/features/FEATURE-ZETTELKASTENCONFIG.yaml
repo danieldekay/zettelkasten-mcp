@@ -1,0 +1,236 @@
+key: FEATURE-ZETTELKASTENCONFIG
+title: Zettelkasten Config
+outcomes:
+- Configuration for the Zettelkasten server.
+acceptance:
+- The system zettelkasten config must provide zettelkasten config functionality
+constraints:
+- The system must meet security requirements (authentication, authorization, 
+  encryption)
+- The system must meet reliability requirements (error handling, retry logic, 
+  resilience)
+- The system must meet maintainability requirements (documentation, type hints, 
+  testing)
+- The system must use type hints for improved code maintainability and IDE 
+  support
+stories:
+- key: STORY-ZETTELKASTENCONFIG-001
+  title: As a user, I can view Zettelkasten Config data
+  acceptance:
+  - uppercase becomes lowercase works correctly (see contract examples)
+  - space becomes hyphen works correctly (see contract examples)
+  - dot is removed works correctly (see contract examples)
+  - Convert a relative path to an absolute path based on base_dir.
+  - Get the database URL for SQLite.
+  tags: []
+  story_points: 2
+  value_points: 8
+  tasks:
+  - get_absolute_path()
+  - get_db_url()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - 'get_absolute_path called with path.is_absolute is called: returns path'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: path
+      type: Path
+      required: true
+      default:
+    return_type:
+      type: Path
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns Path'
+    - 'Ensures: returns Path'
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/config.py::_apply_server_section
+  - src/zettelkasten_mcp/config.py::_apply_tags_section
+  - src/zettelkasten_mcp/config.py::_apply_watch_section
+  - src/zettelkasten_mcp/config.py::get_absolute_path
+  - src/zettelkasten_mcp/config.py::_apply_llm_section
+  - src/zettelkasten_mcp/config.py::_parse_watch_dirs
+  - src/zettelkasten_mcp/config.py::_apply_search_section
+  - src/zettelkasten_mcp/config.py::load_toml
+  - src/zettelkasten_mcp/config.py::_apply_storage_section
+  - src/zettelkasten_mcp/config.py::get_db_url
+  - src/zettelkasten_mcp/config.py::_apply_index_section
+  test_functions:
+  - tests/test_watch_folder_config.py::test_multiple_valid_paths
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_no_config
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_n_jobs_none
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_no_backend
+  - tests/test_watch_folder_config.py::test_mix_of_valid_and_invalid_paths
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_threadpool_limitation_in_child_context_error
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_constructor_params
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_params_explicit_set
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_nested
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_n_jobs_none
+  - tests/test_watch_folder_config.py::test_whitespace_around_paths_is_stripped
+  - tests/test_watch_folder_config.py::test_empty_env_var_returns_empty_list
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_parent_config_with_and_without_git
+  - tests/test_watch_folder_config.py::test_single_valid_path
+  - tests/test_watch_folder_config.py::test_nonexistent_path_is_skipped
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_bad_params
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_external_backends
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_global_parallel_backend
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence_missing_section
+  - tests/test_watch_folder_config.py::test_file_path_is_skipped
+  - tests/test_watch_folder_config.py::test_blank_env_var_returns_empty_list
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-ZETTELKASTENCONFIG-002
+  title: As a user, I can use Zettelkasten Config features
+  acceptance:
+  - uppercase becomes lowercase works correctly (see contract examples)
+  - space becomes hyphen works correctly (see contract examples)
+  - dot is removed works correctly (see contract examples)
+  - Apply settings from a TOML config file, overriding current values.
+  tags: []
+  story_points: 5
+  value_points: 3
+  tasks:
+  - load_toml()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - 'load_toml called with sys.version_info is greater than or equal to value: operation
+      completes'
+    - 'load_toml executes: operation completes'
+    alternate:
+    - 'load_toml called with sys.version_info is less than or equal to or equal to
+      value: operation completes'
+    exception:
+    - 'load_toml raises FileNotFoundError: operation completes'
+    - 'load_toml raises Exception: sets msg to value'
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: path
+      type: Path
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts:
+    - exception_type: FileNotFoundError
+      condition: FileNotFoundError
+    - exception_type: Exception
+      condition: Exception
+    - exception_type: ValueError
+      condition: Error condition
+  source_functions:
+  - src/zettelkasten_mcp/config.py::_apply_server_section
+  - src/zettelkasten_mcp/config.py::_apply_tags_section
+  - src/zettelkasten_mcp/config.py::_apply_watch_section
+  - src/zettelkasten_mcp/config.py::get_absolute_path
+  - src/zettelkasten_mcp/config.py::_apply_llm_section
+  - src/zettelkasten_mcp/config.py::_parse_watch_dirs
+  - src/zettelkasten_mcp/config.py::_apply_search_section
+  - src/zettelkasten_mcp/config.py::load_toml
+  - src/zettelkasten_mcp/config.py::_apply_storage_section
+  - src/zettelkasten_mcp/config.py::get_db_url
+  - src/zettelkasten_mcp/config.py::_apply_index_section
+  test_functions:
+  - tests/test_watch_folder_config.py::test_multiple_valid_paths
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_no_config
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_n_jobs_none
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_no_backend
+  - tests/test_watch_folder_config.py::test_mix_of_valid_and_invalid_paths
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_threadpool_limitation_in_child_context_error
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_constructor_params
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_params_explicit_set
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_nested
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_n_jobs_none
+  - tests/test_watch_folder_config.py::test_whitespace_around_paths_is_stripped
+  - tests/test_watch_folder_config.py::test_empty_env_var_returns_empty_list
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_parent_config_with_and_without_git
+  - tests/test_watch_folder_config.py::test_single_valid_path
+  - tests/test_watch_folder_config.py::test_nonexistent_path_is_skipped
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_parallel_config_bad_params
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_external_backends
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py::test_global_parallel_backend
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence_missing_section
+  - tests/test_watch_folder_config.py::test_file_path_is_skipped
+  - tests/test_watch_folder_config.py::test_blank_env_var_returns_empty_list
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py::test_precedence
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+confidence: 0.8
+draft: false
+source_tracking:
+  implementation_files:
+  - src/zettelkasten_mcp/config.py
+  test_files:
+  - tests/test_watch_folder_config.py
+  - .venv/lib/python3.10/site-packages/joblib/test/test_config.py
+  - .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py
+  file_hashes:
+    src/zettelkasten_mcp/config.py: 
+      099621d639710c68558222e2e28d3253b8da0635e7486a942e125b6c4adc7974
+    tests/test_watch_folder_config.py: 
+      e1cae19a5975cca938c12183b0b075532fb985b5996123df0cb880457f03e197
+    .venv/lib/python3.10/site-packages/joblib/test/test_config.py: 
+      d59d74d803bb19bf19f261d86a19d9cb67f1040fbdfef63466d5b234d93571fe
+    .venv/lib/python3.10/site-packages/mypy/test/test_config_parser.py: 
+      e340ff6aa443e900aa254e01b03066ff8edbe17f839eed399f7e88d8163594e5
+  last_synced: '2026-05-05T15:14:38.078280+00:00'
+  source_functions: []
+  test_functions: []
+  tool:
+  source_metadata: {}
+  refined_from_backlog_item_id:
+  refined_from_provider:
+  template_id:
+  refinement_confidence:
+  refinement_timestamp:
+  refinement_ai_model:
+contract: contracts/FEATURE-ZETTELKASTENCONFIG.openapi.yaml
+protocol:
+priority:
+rank:
+business_value_score:
+depends_on_features: []
+blocks_features: []
+business_value_description:
+target_users: []
+success_metrics: []
+target_release:
+estimated_story_points:
+extensions: {}

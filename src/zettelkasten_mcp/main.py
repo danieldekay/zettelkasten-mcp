@@ -3,7 +3,6 @@
 
 import argparse
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -18,32 +17,45 @@ def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Zettelkasten MCP Server")
     parser.add_argument(
+        "--config",
+        help="Path to a config.toml file (overrides env vars; CLI flags override TOML)",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
         "--notes-dir",
         help="Directory for storing note files",
         type=str,
-        default=os.environ.get("ZETTELKASTEN_NOTES_DIR"),
+        default=None,
     )
     parser.add_argument(
         "--database-path",
         help="SQLite database file path",
         type=str,
-        default=os.environ.get("ZETTELKASTEN_DATABASE_PATH"),
+        default=None,
     )
     parser.add_argument(
         "--log-level",
         help="Logging level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        default=os.environ.get("ZETTELKASTEN_LOG_LEVEL", "INFO"),
+        default=None,
     )
     return parser.parse_args()
 
 
 def update_config(args: argparse.Namespace) -> None:
-    """Update the global config with command line arguments."""
+    """Update the global config from TOML file then CLI arguments.
+
+    Priority: env-var defaults < config.toml < CLI flags.
+    """
+    if args.config:
+        config.load_toml(Path(args.config))
     if args.notes_dir:
         config.notes_dir = Path(args.notes_dir)
     if args.database_path:
         config.database_path = Path(args.database_path)
+    if args.log_level:
+        config.log_level = args.log_level
 
 
 def _run_drift_check(logger: logging.Logger) -> None:
@@ -98,7 +110,7 @@ def main() -> None:
     update_config(args)
 
     # Set up logging
-    setup_logging(args.log_level)
+    setup_logging(config.log_level)
     logger = logging.getLogger(__name__)
 
     # Ensure database directory exists
@@ -107,12 +119,11 @@ def main() -> None:
     try:
         db_dir.mkdir(parents=True, exist_ok=True)
     except PermissionError:
-        print(  # noqa: T201
+        sys.stderr.write(
             f"ERROR: Cannot create database directory '{db_dir}'.\n"
             f"The ZETTELKASTEN_DATABASE_PATH '{db_path}' appears to be a placeholder.\n"
             "Set ZETTELKASTEN_DATABASE_PATH to a real writable path, e.g.:\n"
-            "  /home/<user>/projects/notes-workspace/db/zettelkasten.db",
-            file=sys.stderr,
+            "  /home/<user>/projects/notes-workspace/db/zettelkasten.db\n"
         )
         sys.exit(1)
 

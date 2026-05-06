@@ -1,0 +1,871 @@
+key: FEATURE-NOTEREPOSITORY
+title: Note Repository
+outcomes:
+- "Repository for note storage and retrieval.\nThis implements a dual storage approach:\n\
+  1. Notes are stored as Markdown files on disk for human readability and editing\n\
+  2. MySQL database is used for indexing and efficient querying\nThe file system is
+  the source of truth - database is rebuilt from files if needed."
+acceptance:
+- The system note repository must provide note repository functionality
+constraints:
+- The system must meet performance requirements (async operations, caching, 
+  optimization)
+- The system must meet security requirements (authentication, authorization, 
+  encryption)
+- The system must meet reliability requirements (error handling, retry logic, 
+  resilience)
+- The system must meet maintainability requirements (documentation, type hints, 
+  testing)
+- The system must use type hints for improved code maintainability and IDE 
+  support
+stories:
+- key: STORY-NOTEREPOSITORY-001
+  title: As a developer, I can configure Note Repository
+  acceptance:
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
+  - Initialize the repository.
+  tags: []
+  story_points: 2
+  value_points: 3
+  tasks:
+  - __init__()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - '__init__ called with condition is met: calls logger.info and calls self.notes_dir.mkdir'
+    - '__init__ called with condition is met: sets msg to value'
+    - '__init__ called with condition is met: calls logger.warning'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: notes_dir
+      type: Path | None
+      required: false
+      default: None
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts:
+    - exception_type: NotADirectoryError
+      condition: Error condition
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::create_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_links_from_content
+  - src/zettelkasten_mcp/storage/note_repository.py::find_in_timerange
+  - src/zettelkasten_mcp/storage/note_repository.py::_naive
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::_load_note_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_db_note_to_note
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_db_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_read_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_title_from_post
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::_sanitize_fts5_query
+  - src/zettelkasten_mcp/storage/note_repository.py::create_links_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_tags_from_metadata
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  - src/zettelkasten_mcp/storage/note_repository.py::prewarm_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::_ensure_summary
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::get_note_count
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::get_tags_with_counts
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  test_functions:
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_metadata_round_trip
+  - tests/test_note_repository.py::test_get_note_by_title_missing_returns_none
+  - tests/test_note_repository.py::test_fts5_query_with_dot_sanitized_still_matches
+  - tests/test_note_repository.py::test_fts5_empty_query_after_sanitize_returns_empty_list
+  - tests/test_note_repository.py::test_sanitize_fts5_query_empty_after_strip
+  - tests/test_note_repository.py::test_find_linked_notes_invalid_direction
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_search_notes
+  - tests/test_note_repository.py::test_fts5_synced_on_delete
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_dot
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_get_all_tags_and_counts
+  - tests/test_note_repository.py::test_get_all_falls_back_to_filesystem
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_fts5_query_with_dot_does_not_raise
+  - tests/test_note_repository.py::test_metadata_empty_on_plain_note
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_hyphen
+  - tests/test_note_repository.py::test_get_note_by_title
+  - tests/test_note_repository.py::test_fts5_synced_on_create
+  - tests/test_note_repository.py::test_fts5_synced_on_update
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTEREPOSITORY-002
+  title: As a user, I can use Note Repository features
+  acceptance:
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
+  - Populate fts5_notes for any notes not yet indexed.
+  - Search notes using FTS5 full-text search with BM25 ranking.
+  - Search for notes based on criteria.
+  tags: []
+  story_points: 5
+  value_points: 5
+  tasks:
+  - prewarm_fts5()
+  - search_by_fts5()
+  - search()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - 'prewarm_fts5 called with condition is met: returns None'
+    - 'prewarm_fts5 called with condition is met: calls logger.warning and returns
+      None'
+    - 'prewarm_fts5 executes: operation completes'
+    alternate: []
+    exception:
+    - 'prewarm_fts5 raises Exception: calls logger.exception'
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts:
+    - exception_type: Exception
+      condition: Exception
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::create_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_links_from_content
+  - src/zettelkasten_mcp/storage/note_repository.py::find_in_timerange
+  - src/zettelkasten_mcp/storage/note_repository.py::_naive
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::_load_note_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_db_note_to_note
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_db_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_read_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_title_from_post
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::_sanitize_fts5_query
+  - src/zettelkasten_mcp/storage/note_repository.py::create_links_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_tags_from_metadata
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  - src/zettelkasten_mcp/storage/note_repository.py::prewarm_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::_ensure_summary
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::get_note_count
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::get_tags_with_counts
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  test_functions:
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_metadata_round_trip
+  - tests/test_note_repository.py::test_get_note_by_title_missing_returns_none
+  - tests/test_note_repository.py::test_fts5_query_with_dot_sanitized_still_matches
+  - tests/test_note_repository.py::test_fts5_empty_query_after_sanitize_returns_empty_list
+  - tests/test_note_repository.py::test_sanitize_fts5_query_empty_after_strip
+  - tests/test_note_repository.py::test_find_linked_notes_invalid_direction
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_search_notes
+  - tests/test_note_repository.py::test_fts5_synced_on_delete
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_dot
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_get_all_tags_and_counts
+  - tests/test_note_repository.py::test_get_all_falls_back_to_filesystem
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_fts5_query_with_dot_does_not_raise
+  - tests/test_note_repository.py::test_metadata_empty_on_plain_note
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_hyphen
+  - tests/test_note_repository.py::test_get_note_by_title
+  - tests/test_note_repository.py::test_fts5_synced_on_create
+  - tests/test_note_repository.py::test_fts5_synced_on_update
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTEREPOSITORY-003
+  title: As a user, I can view Note Repository data
+  acceptance:
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
+  - Get the number of notes in the database.
+  - Get a note by ID.
+  - Get a note by title.
+  - Get all notes.
+  - Find notes by tag.
+  - Find notes linked to/from this note.
+  - Get all tags in the system.
+  - Get all tags with their note counts, sorted alphabetically.
+  - Find notes within a date range using a DB index query.
+  tags: []
+  story_points: 13
+  value_points: 8
+  tasks:
+  - get_note_count()
+  - get()
+  - get_by_title()
+  - get_all()
+  - find_by_tag()
+  - find_linked_notes()
+  - get_all_tags()
+  - get_tags_with_counts()
+  - find_in_timerange()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - get_note_count executes successfully
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    return_type:
+      type: int
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns int'
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::create_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_links_from_content
+  - src/zettelkasten_mcp/storage/note_repository.py::find_in_timerange
+  - src/zettelkasten_mcp/storage/note_repository.py::_naive
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::_load_note_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_db_note_to_note
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_db_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_read_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_title_from_post
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::_sanitize_fts5_query
+  - src/zettelkasten_mcp/storage/note_repository.py::create_links_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_tags_from_metadata
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  - src/zettelkasten_mcp/storage/note_repository.py::prewarm_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::_ensure_summary
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::get_note_count
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::get_tags_with_counts
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  test_functions:
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_metadata_round_trip
+  - tests/test_note_repository.py::test_get_note_by_title_missing_returns_none
+  - tests/test_note_repository.py::test_fts5_query_with_dot_sanitized_still_matches
+  - tests/test_note_repository.py::test_fts5_empty_query_after_sanitize_returns_empty_list
+  - tests/test_note_repository.py::test_sanitize_fts5_query_empty_after_strip
+  - tests/test_note_repository.py::test_find_linked_notes_invalid_direction
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_search_notes
+  - tests/test_note_repository.py::test_fts5_synced_on_delete
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_dot
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_get_all_tags_and_counts
+  - tests/test_note_repository.py::test_get_all_falls_back_to_filesystem
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_fts5_query_with_dot_does_not_raise
+  - tests/test_note_repository.py::test_metadata_empty_on_plain_note
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_hyphen
+  - tests/test_note_repository.py::test_get_note_by_title
+  - tests/test_note_repository.py::test_fts5_synced_on_create
+  - tests/test_note_repository.py::test_fts5_synced_on_update
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTEREPOSITORY-004
+  title: As a user, I can generate outputs from Note Repository
+  acceptance:
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
+  - Rebuild the database index from files if needed.
+  - Rebuild the database index from all markdown files.
+  tags: []
+  story_points: 5
+  value_points: 5
+  tasks:
+  - rebuild_index_if_needed()
+  - rebuild_index()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - 'rebuild_index_if_needed called with db_count does not equal file_count: calls
+      self.rebuild_index'
+    alternate: []
+    exception: []
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts: []
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::create_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_links_from_content
+  - src/zettelkasten_mcp/storage/note_repository.py::find_in_timerange
+  - src/zettelkasten_mcp/storage/note_repository.py::_naive
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::_load_note_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_db_note_to_note
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_db_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_read_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_title_from_post
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::_sanitize_fts5_query
+  - src/zettelkasten_mcp/storage/note_repository.py::create_links_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_tags_from_metadata
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  - src/zettelkasten_mcp/storage/note_repository.py::prewarm_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::_ensure_summary
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::get_note_count
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::get_tags_with_counts
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  test_functions:
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_metadata_round_trip
+  - tests/test_note_repository.py::test_get_note_by_title_missing_returns_none
+  - tests/test_note_repository.py::test_fts5_query_with_dot_sanitized_still_matches
+  - tests/test_note_repository.py::test_fts5_empty_query_after_sanitize_returns_empty_list
+  - tests/test_note_repository.py::test_sanitize_fts5_query_empty_after_strip
+  - tests/test_note_repository.py::test_find_linked_notes_invalid_direction
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_search_notes
+  - tests/test_note_repository.py::test_fts5_synced_on_delete
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_dot
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_get_all_tags_and_counts
+  - tests/test_note_repository.py::test_get_all_falls_back_to_filesystem
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_fts5_query_with_dot_does_not_raise
+  - tests/test_note_repository.py::test_metadata_empty_on_plain_note
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_hyphen
+  - tests/test_note_repository.py::test_get_note_by_title
+  - tests/test_note_repository.py::test_fts5_synced_on_create
+  - tests/test_note_repository.py::test_fts5_synced_on_update
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTEREPOSITORY-005
+  title: As a user, I can create new Note Repository records
+  acceptance:
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
+  - Create a new note.
+  - Create multiple notes atomically in one transaction.
+  - Create multiple links from source_id in one transaction.
+  tags: []
+  story_points: 5
+  value_points: 8
+  tasks:
+  - create()
+  - create_batch()
+  - create_links_batch()
+  confidence: 0.8
+  draft: false
+  scenarios:
+    primary:
+    - 'create called with condition is met: sets note.id to generate_id()'
+    - 'create executes: operation completes'
+    - 'create executes: calls self._index_note'
+    alternate: []
+    exception:
+    - 'create raises OSError: sets msg to value'
+    - 'create raises Exception: sets self._db_available to False and calls logger.warning'
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: note
+      type: Note
+      required: true
+      default:
+    return_type:
+      type: Note
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns Note'
+    error_contracts:
+    - exception_type: OSError
+      condition: OSError
+    - exception_type: OSError
+      condition: Error condition
+    - exception_type: Exception
+      condition: Exception
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::create_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_links_from_content
+  - src/zettelkasten_mcp/storage/note_repository.py::find_in_timerange
+  - src/zettelkasten_mcp/storage/note_repository.py::_naive
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::_load_note_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_db_note_to_note
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_db_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_read_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_title_from_post
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::_sanitize_fts5_query
+  - src/zettelkasten_mcp/storage/note_repository.py::create_links_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_tags_from_metadata
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  - src/zettelkasten_mcp/storage/note_repository.py::prewarm_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::_ensure_summary
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::get_note_count
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::get_tags_with_counts
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  test_functions:
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_metadata_round_trip
+  - tests/test_note_repository.py::test_get_note_by_title_missing_returns_none
+  - tests/test_note_repository.py::test_fts5_query_with_dot_sanitized_still_matches
+  - tests/test_note_repository.py::test_fts5_empty_query_after_sanitize_returns_empty_list
+  - tests/test_note_repository.py::test_sanitize_fts5_query_empty_after_strip
+  - tests/test_note_repository.py::test_find_linked_notes_invalid_direction
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_search_notes
+  - tests/test_note_repository.py::test_fts5_synced_on_delete
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_dot
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_get_all_tags_and_counts
+  - tests/test_note_repository.py::test_get_all_falls_back_to_filesystem
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_fts5_query_with_dot_does_not_raise
+  - tests/test_note_repository.py::test_metadata_empty_on_plain_note
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_hyphen
+  - tests/test_note_repository.py::test_get_note_by_title
+  - tests/test_note_repository.py::test_fts5_synced_on_create
+  - tests/test_note_repository.py::test_fts5_synced_on_update
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTEREPOSITORY-006
+  title: As a user, I can update Note Repository records
+  acceptance:
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
+  - Update a note.
+  tags: []
+  story_points: 8
+  value_points: 8
+  tasks:
+  - update()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - 'update called with condition is met: sets msg to value'
+    - 'update executes: operation completes'
+    - 'update executes: operation completes'
+    alternate: []
+    exception:
+    - 'update raises OSError: sets msg to value'
+    - 'update raises Exception: sets self._db_available to False and calls logger.warning'
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: note
+      type: Note
+      required: true
+      default:
+    return_type:
+      type: Note
+      nullable: false
+    preconditions: []
+    postconditions:
+    - 'Ensures: returns Note'
+    error_contracts:
+    - exception_type: ValueError
+      condition: Error condition
+    - exception_type: OSError
+      condition: OSError
+    - exception_type: OSError
+      condition: Error condition
+    - exception_type: Exception
+      condition: Exception
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::create_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_links_from_content
+  - src/zettelkasten_mcp/storage/note_repository.py::find_in_timerange
+  - src/zettelkasten_mcp/storage/note_repository.py::_naive
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::_load_note_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_db_note_to_note
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_db_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_read_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_title_from_post
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::_sanitize_fts5_query
+  - src/zettelkasten_mcp/storage/note_repository.py::create_links_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_tags_from_metadata
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  - src/zettelkasten_mcp/storage/note_repository.py::prewarm_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::_ensure_summary
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::get_note_count
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::get_tags_with_counts
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  test_functions:
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_metadata_round_trip
+  - tests/test_note_repository.py::test_get_note_by_title_missing_returns_none
+  - tests/test_note_repository.py::test_fts5_query_with_dot_sanitized_still_matches
+  - tests/test_note_repository.py::test_fts5_empty_query_after_sanitize_returns_empty_list
+  - tests/test_note_repository.py::test_sanitize_fts5_query_empty_after_strip
+  - tests/test_note_repository.py::test_find_linked_notes_invalid_direction
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_search_notes
+  - tests/test_note_repository.py::test_fts5_synced_on_delete
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_dot
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_get_all_tags_and_counts
+  - tests/test_note_repository.py::test_get_all_falls_back_to_filesystem
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_fts5_query_with_dot_does_not_raise
+  - tests/test_note_repository.py::test_metadata_empty_on_plain_note
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_hyphen
+  - tests/test_note_repository.py::test_get_note_by_title
+  - tests/test_note_repository.py::test_fts5_synced_on_create
+  - tests/test_note_repository.py::test_fts5_synced_on_update
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+- key: STORY-NOTEREPOSITORY-007
+  title: As a user, I can delete Note Repository records
+  acceptance:
+  - update readonly note raises permission error works correctly (see contract 
+    examples)
+  - update writable note succeeds works correctly (see contract examples)
+  - delete readonly note raises permission error works correctly (see contract 
+    examples)
+  - Delete a note by ID.
+  tags: []
+  story_points: 5
+  value_points: 8
+  tasks:
+  - delete()
+  confidence: 0.6
+  draft: false
+  scenarios:
+    primary:
+    - 'delete called with condition is met: sets msg to value'
+    - 'delete executes: operation completes'
+    alternate: []
+    exception:
+    - 'delete raises OSError: sets msg to value'
+    recovery: []
+  contracts:
+    parameters:
+    - name: self
+      type: Any
+      required: true
+      default:
+    - name: id
+      type: str
+      required: true
+      default:
+    return_type:
+      type: None
+      nullable: false
+    preconditions: []
+    postconditions: []
+    error_contracts:
+    - exception_type: ValueError
+      condition: Error condition
+    - exception_type: OSError
+      condition: OSError
+    - exception_type: OSError
+      condition: Error condition
+  source_functions:
+  - src/zettelkasten_mcp/storage/note_repository.py::create_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_links_from_content
+  - src/zettelkasten_mcp/storage/note_repository.py::find_in_timerange
+  - src/zettelkasten_mcp/storage/note_repository.py::_naive
+  - src/zettelkasten_mcp/storage/note_repository.py::create
+  - src/zettelkasten_mcp/storage/note_repository.py::_load_note_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::_db_note_to_note
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index_if_needed
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_db_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::_read_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_title_from_post
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all
+  - src/zettelkasten_mcp/storage/note_repository.py::_sanitize_fts5_query
+  - src/zettelkasten_mcp/storage/note_repository.py::create_links_batch
+  - src/zettelkasten_mcp/storage/note_repository.py::get_by_title
+  - src/zettelkasten_mcp/storage/note_repository.py::get
+  - src/zettelkasten_mcp/storage/note_repository.py::search
+  - src/zettelkasten_mcp/storage/note_repository.py::_extract_tags_from_metadata
+  - src/zettelkasten_mcp/storage/note_repository.py::get_all_tags
+  - src/zettelkasten_mcp/storage/note_repository.py::prewarm_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::rebuild_index
+  - src/zettelkasten_mcp/storage/note_repository.py::_check_fts5_table_exists
+  - src/zettelkasten_mcp/storage/note_repository.py::find_linked_notes
+  - src/zettelkasten_mcp/storage/note_repository.py::_ensure_summary
+  - src/zettelkasten_mcp/storage/note_repository.py::_index_note
+  - src/zettelkasten_mcp/storage/note_repository.py::update
+  - src/zettelkasten_mcp/storage/note_repository.py::get_note_count
+  - src/zettelkasten_mcp/storage/note_repository.py::search_by_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::get_tags_with_counts
+  - src/zettelkasten_mcp/storage/note_repository.py::__init__
+  - src/zettelkasten_mcp/storage/note_repository.py::delete
+  - src/zettelkasten_mcp/storage/note_repository.py::_sync_note_to_fts5
+  - src/zettelkasten_mcp/storage/note_repository.py::find_by_tag
+  - src/zettelkasten_mcp/storage/note_repository.py::_create_fts5_table
+  - src/zettelkasten_mcp/storage/note_repository.py::_parse_note_from_markdown
+  - src/zettelkasten_mcp/storage/note_repository.py::_note_to_markdown
+  test_functions:
+  - tests/test_note_repository.py::test_note_linking
+  - tests/test_note_repository.py::test_create_note
+  - tests/test_note_repository.py::test_metadata_round_trip
+  - tests/test_note_repository.py::test_get_note_by_title_missing_returns_none
+  - tests/test_note_repository.py::test_fts5_query_with_dot_sanitized_still_matches
+  - tests/test_note_repository.py::test_fts5_empty_query_after_sanitize_returns_empty_list
+  - tests/test_note_repository.py::test_sanitize_fts5_query_empty_after_strip
+  - tests/test_note_repository.py::test_find_linked_notes_invalid_direction
+  - tests/test_note_repository.py::test_delete_note
+  - tests/test_note_repository.py::test_search_notes
+  - tests/test_note_repository.py::test_fts5_synced_on_delete
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_dot
+  - tests/test_note_repository.py::test_get_note
+  - tests/test_note_repository.py::test_get_all_tags_and_counts
+  - tests/test_note_repository.py::test_get_all_falls_back_to_filesystem
+  - tests/test_note_repository.py::test_update_note
+  - tests/test_note_repository.py::test_fts5_query_with_dot_does_not_raise
+  - tests/test_note_repository.py::test_metadata_empty_on_plain_note
+  - tests/test_note_repository.py::test_sanitize_fts5_query_removes_hyphen
+  - tests/test_note_repository.py::test_get_note_by_title
+  - tests/test_note_repository.py::test_fts5_synced_on_create
+  - tests/test_note_repository.py::test_fts5_synced_on_update
+  priority:
+  rank:
+  due_date:
+  target_sprint:
+  target_release:
+  depends_on_stories: []
+  blocks_stories: []
+  business_value_description:
+  business_metrics: []
+  definition_of_ready: {}
+confidence: 1.0
+draft: false
+source_tracking:
+  implementation_files:
+  - src/zettelkasten_mcp/storage/note_repository.py
+  test_files:
+  - tests/test_note_repository.py
+  file_hashes:
+    src/zettelkasten_mcp/storage/note_repository.py: 
+      b64ecb9f0560f15962867ba0bbc3c49ad3ddb97a340718ba7ccfd4a8eb856090
+    tests/test_note_repository.py: 
+      778e668acf64689813169c86ff2a56c996550c454bbf992ed5e96be9cdbcc975
+  last_synced: '2026-05-05T15:21:36.882768+00:00'
+  source_functions: []
+  test_functions: []
+  tool:
+  source_metadata: {}
+  refined_from_backlog_item_id:
+  refined_from_provider:
+  template_id:
+  refinement_confidence:
+  refinement_timestamp:
+  refinement_ai_model:
+contract: contracts/FEATURE-NOTEREPOSITORY.openapi.yaml
+protocol:
+priority:
+rank:
+business_value_score:
+depends_on_features: []
+blocks_features: []
+business_value_description:
+target_users: []
+success_metrics: []
+target_release:
+estimated_story_points:
+extensions: {}

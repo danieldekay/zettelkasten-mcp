@@ -29,7 +29,20 @@ OpenSpec provides a structured approach to feature development with these phases
 
 ## Skills
 
+### OpenSpec Skills
+
 The OpenSpec skills are in `.claude/skills/openspec-*/SKILL.md`. Load them with the `skill` tool when working on OpenSpec tasks.
+
+### Agent Skills (for users of the MCP server)
+
+Two skills are available for AI agents working with the knowledge base. Install via `npx skills`:
+
+| Skill | Install | Purpose |
+|-------|---------|---------|
+| [zettelkasten-mcp](.github/skills/zettelkasten-mcp/SKILL.md) | `npx skills add entanglr/zettelkasten-mcp --skill zettelkasten-mcp` | Server setup, configuration, all `zk_*` tool patterns, troubleshooting, and how to file GitHub issues for recurring errors |
+| [zettelkasten-philosophy](.github/skills/zettelkasten-philosophy/SKILL.md) | `npx skills add entanglr/zettelkasten-mcp --skill zettelkasten-philosophy` | Atomicity, typed linking, note type selection, anti-patterns, Luhmann principles, and AI agent integration patterns |
+
+Load either skill with the `skill` tool (or `read_file` on the path above) before working with the ZK knowledge base in a new session.
 
 ## Project Context
 
