@@ -1,0 +1,260 @@
+openapi: 3.0.3
+info:
+  title: Note Repository
+  version: 1.0.0
+  description: API contract extracted from code for Note Repository
+paths:
+  /note-repository/prewarm-fts5:
+    get:
+      operationId: prewarm_fts5
+      summary: Prewarm Fts5
+      description: 'Populate fts5_notes for any notes not yet indexed.
+
+
+        Safe to call at startup: skips notes already present in the FTS5 table
+
+        and is a no-op if FTS5 is disabled or the table does not exist.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - NoteRepository
+  /note-repository/rebuild-index:
+    get:
+      operationId: rebuild_index
+      summary: Rebuild Index
+      description: 'Rebuild the database index from all markdown files.
+
+
+        This includes:
+
+        - Clearing all tables (notes, links, note_tags)
+
+        - Recreating FTS5 full-text search table
+
+        - Re-indexing all markdown files from disk'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - NoteRepository
+  /note-repository:
+    post:
+      operationId: create
+      summary: Create
+      description: Create a new note.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      tags:
+      - NoteRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Note'
+    put:
+      operationId: update
+      summary: Update
+      description: Update a note.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      tags:
+      - NoteRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Note'
+  /note-repository/{id}:
+    get:
+      operationId: get
+      summary: Get
+      description: "Get a note by ID.\n\nArgs:\n    id: The ISO 8601 formatted identifier\
+        \ of the note\n\nReturns:\n    Note object if found, None otherwise"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      tags:
+      - NoteRepository
+    delete:
+      operationId: delete
+      summary: Delete
+      description: Delete a note by ID.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      tags:
+      - NoteRepository
+  /note-repository/search:
+    get:
+      operationId: search
+      summary: Search
+      description: Search for notes based on criteria.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+        '404':
+          description: Not Found
+      tags:
+      - NoteRepository
+  /note-repository/create-batch:
+    post:
+      operationId: create_batch
+      summary: Create Batch
+      description: "Create multiple notes atomically in one transaction.\n\nWrites\
+        \ all Markdown files first, then commits all DB records in one\nsession.commit().\
+        \ On any failure, already-written files are deleted\nand the exception is\
+        \ re-raised so the caller can handle rollback.\n\nArgs:\n    notes: List of\
+        \ Note objects to create. IDs are generated if absent.\n\nReturns:\n    List\
+        \ of created Note objects with IDs populated.\n\nRaises:\n    ValueError:\
+        \ If any note fails validation before any writes occur.\n    OSError: If a\
+        \ file cannot be written.\n    Exception: On DB error; written files are cleaned\
+        \ up before re-raise."
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      tags:
+      - NoteRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Note'
+  /note-repository/create-links-batch:
+    post:
+      operationId: create_links_batch
+      summary: Create Links Batch
+      description: "Create multiple links from source_id in one transaction.\n\nArgs:\n\
+        \    source_id: ID of the source note for all links.\n    links: List of dicts\
+        \ with keys ``target_id``, ``link_type``,\n        and optional ``description``.\n\
+        \nReturns:\n    Number of links created.\n\nRaises:\n    ValueError: If any\
+        \ link_type is invalid.\n    Exception: On DB error (full rollback via session\
+        \ context manager)."
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: integer
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      tags:
+      - NoteRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+components:
+  schemas: {}

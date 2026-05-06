@@ -94,6 +94,17 @@ For developers and contributors:
 
 NB: Optionally include the source code with a tool like [repomix](https://github.com/yamadashy/repomix).
 
+## Agent Skills
+
+Install these skills to give AI agents (Claude, GitHub Copilot, or any MCP-compatible client) procedural knowledge for working with this server:
+
+| Skill | Install | Description |
+|-------|---------|-------------|
+| [zettelkasten-mcp](.github/skills/zettelkasten-mcp/SKILL.md) | `npx skills add entanglr/zettelkasten-mcp --skill zettelkasten-mcp` | Setup, configuration, all `zk_*` tool patterns, troubleshooting, and issue reporting |
+| [zettelkasten-philosophy](.github/skills/zettelkasten-philosophy/SKILL.md) | `npx skills add entanglr/zettelkasten-mcp --skill zettelkasten-philosophy` | ZK methodology, atomicity, typed linking, note type selection, anti-patterns |
+
+Skills are installed into `.agents/skills/` (or `.github/skills/` for VS Code) and read by the agent at the start of a session. They encode tested workflows so the agent behaves correctly without requiring a long system prompt.
+
 ## Storage Architecture
 
 This system uses a dual storage approach:

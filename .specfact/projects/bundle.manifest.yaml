@@ -1,0 +1,176 @@
+versions:
+  schema_version: '1.1'
+  project: 0.1.0
+bundle:
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  last_modified: '2026-05-05T15:18:58.745745+00:00'
+  format: directory-based
+schema_metadata:
+project_metadata:
+checksums:
+  algorithm: sha256
+  files:
+    product.yaml: 
+      e38b12cae77a6bbe2372101c2bfbe7e2ad816be35ad41a5222ce0ed4a46109f7
+    idea.yaml: d842d315064bdcf366555c0aa3b237d5d3e3e8da95b1187e3f630272dc492cb8
+    features/FEATURE-ZETTELKASTENCONFIG.yaml: 
+      1579a98ebfd2d75d8af8383c266818b4fd985a36b443b5ffd8628166cfae3f90
+    features/FEATURE-SUMMARYCACHESERVICE.yaml: 
+      2440ec29d9440ea3da30a503b4c4fa7a36b0d8749e75462cddc222b8be525523
+    features/FEATURE-INFERENCESERVICE.yaml: 
+      db663fe4e1010c9a4b82f86195a646fc267489940fcd38d399f78d40e39e8024
+    features/FEATURE-SEARCHSERVICE.yaml: 
+      997290afadc5061fb4b05bf5da587de00a25f668268ab394d7c6840001522c38
+    features/FEATURE-WATCHFOLDERSERVICE.yaml: 
+      dae4aacecc07bb3fcccaa464f401fc869c1595997a3243bb96943d0c6497ee59
+    features/FEATURE-LLMSUMMARYSERVICE.yaml: 
+      8442f541a8ad529e0c1b6522a5e2b74e037a57f902c3c949bb4dfa5eea7a1ec0
+    features/FEATURE-ZETTELKASTENMCPSERVER.yaml: 
+      895ab5283e82decb8edd9c363b5b62f121b4a0b8137bb6040f00ae914ea7dbcf
+    features/FEATURE-LINK.yaml: 
+      da5a7993f146569ea170387379424f3e35748cffacca23aa719dcea7649c2b8a
+    features/FEATURE-TAG.yaml: 
+      9a5e2fcc1383c19f4ae844e3a2ea94a0c8ce1eaf4313e8a8fb019a883cd5d96d
+    features/FEATURE-LINKTYPEREGISTRY.yaml: 
+      3c37fc8d8fb61885b1a729d69e5b9d0ca267b69e69b3717fbc2b7c60f0a79f00
+    features/FEATURE-REPOSITORY.yaml: 
+      8f6da551c95537373d7a8ef634632b1fc84eb4df629e7b8f3710f2b901b6836e
+    features/FEATURE-NOTEREPOSITORY.yaml: 
+      06651179e16e746718ae186e919fae67b65e8e5ed96eec068e597c4dea2566b4
+    features/FEATURE-NOTE.yaml: 
+      62e2e1e9b007f9407dd445d1bf2e81c3c38f3c750a0c2aeae4ad4cc20ace38e1
+    features/FEATURE-ZETTELSERVICE.yaml: 
+      d546b1dcf4add26b48d5838e0073552179f7915f285495540ccf6f706c3ee6b9
+locks: []
+personas: {}
+features:
+- key: FEATURE-ZETTELKASTENCONFIG
+  title: Zettelkasten Config
+  file: FEATURE-ZETTELKASTENCONFIG.yaml
+  status: active
+  stories_count: 2
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-ZETTELKASTENCONFIG.openapi.yaml
+  checksum: 1579a98ebfd2d75d8af8383c266818b4fd985a36b443b5ffd8628166cfae3f90
+- key: FEATURE-SUMMARYCACHESERVICE
+  title: Summary Cache Service
+  file: FEATURE-SUMMARYCACHESERVICE.yaml
+  status: active
+  stories_count: 2
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-SUMMARYCACHESERVICE.openapi.yaml
+  checksum: 2440ec29d9440ea3da30a503b4c4fa7a36b0d8749e75462cddc222b8be525523
+- key: FEATURE-ZETTELKASTENMCPSERVER
+  title: Zettelkasten Mcp Server
+  file: FEATURE-ZETTELKASTENMCPSERVER.yaml
+  status: active
+  stories_count: 2
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-ZETTELKASTENMCPSERVER.openapi.yaml
+  checksum: 895ab5283e82decb8edd9c363b5b62f121b4a0b8137bb6040f00ae914ea7dbcf
+- key: FEATURE-INFERENCESERVICE
+  title: Inference Service
+  file: FEATURE-INFERENCESERVICE.yaml
+  status: active
+  stories_count: 1
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-INFERENCESERVICE.openapi.yaml
+  checksum: db663fe4e1010c9a4b82f86195a646fc267489940fcd38d399f78d40e39e8024
+- key: FEATURE-WATCHFOLDERSERVICE
+  title: Watch Folder Service
+  file: FEATURE-WATCHFOLDERSERVICE.yaml
+  status: active
+  stories_count: 2
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-WATCHFOLDERSERVICE.openapi.yaml
+  checksum: dae4aacecc07bb3fcccaa464f401fc869c1595997a3243bb96943d0c6497ee59
+- key: FEATURE-SEARCHSERVICE
+  title: Search Service
+  file: FEATURE-SEARCHSERVICE.yaml
+  status: active
+  stories_count: 5
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-SEARCHSERVICE.openapi.yaml
+  checksum: 997290afadc5061fb4b05bf5da587de00a25f668268ab394d7c6840001522c38
+- key: FEATURE-REPOSITORY
+  title: Repository
+  file: FEATURE-REPOSITORY.yaml
+  status: active
+  stories_count: 5
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-REPOSITORY.openapi.yaml
+  checksum: 8f6da551c95537373d7a8ef634632b1fc84eb4df629e7b8f3710f2b901b6836e
+- key: FEATURE-LLMSUMMARYSERVICE
+  title: L L M Summary Service
+  file: FEATURE-LLMSUMMARYSERVICE.yaml
+  status: active
+  stories_count: 3
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-LLMSUMMARYSERVICE.openapi.yaml
+  checksum: 8442f541a8ad529e0c1b6522a5e2b74e037a57f902c3c949bb4dfa5eea7a1ec0
+- key: FEATURE-NOTEREPOSITORY
+  title: Note Repository
+  file: FEATURE-NOTEREPOSITORY.yaml
+  status: active
+  stories_count: 7
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-NOTEREPOSITORY.openapi.yaml
+  checksum: 06651179e16e746718ae186e919fae67b65e8e5ed96eec068e597c4dea2566b4
+- key: FEATURE-ZETTELSERVICE
+  title: Zettel Service
+  file: FEATURE-ZETTELSERVICE.yaml
+  status: active
+  stories_count: 8
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-ZETTELSERVICE.openapi.yaml
+  checksum: d546b1dcf4add26b48d5838e0073552179f7915f285495540ccf6f706c3ee6b9
+- key: FEATURE-LINKTYPEREGISTRY
+  title: Link Type Registry
+  file: FEATURE-LINKTYPEREGISTRY.yaml
+  status: active
+  stories_count: 4
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract:
+  checksum: 3c37fc8d8fb61885b1a729d69e5b9d0ca267b69e69b3717fbc2b7c60f0a79f00
+- key: FEATURE-LINK
+  title: Link
+  file: FEATURE-LINK.yaml
+  status: active
+  stories_count: 1
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract:
+  checksum: da5a7993f146569ea170387379424f3e35748cffacca23aa719dcea7649c2b8a
+- key: FEATURE-TAG
+  title: Tag
+  file: FEATURE-TAG.yaml
+  status: active
+  stories_count: 1
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract:
+  checksum: 9a5e2fcc1383c19f4ae844e3a2ea94a0c8ce1eaf4313e8a8fb019a883cd5d96d
+- key: FEATURE-NOTE
+  title: Note
+  file: FEATURE-NOTE.yaml
+  status: active
+  stories_count: 5
+  created_at: '2026-05-05T15:18:58.745745+00:00'
+  updated_at: '2026-05-05T15:18:58.745745+00:00'
+  contract: contracts/FEATURE-NOTE.openapi.yaml
+  checksum: 62e2e1e9b007f9407dd445d1bf2e81c3c38f3c750a0c2aeae4ad4cc20ace38e1
+protocols: []
+contracts: []
+change_tracking:
+change_archive: []

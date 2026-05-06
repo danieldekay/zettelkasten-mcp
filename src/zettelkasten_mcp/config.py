@@ -82,6 +82,9 @@ class ZettelkastenConfig(BaseModel):
     server_name: str = Field(
         default=os.getenv("ZETTELKASTEN_SERVER_NAME", "zettelkasten-mcp"),
     )
+    log_level: str = Field(
+        default=os.getenv("ZETTELKASTEN_LOG_LEVEL", "INFO"),
+    )
     server_version: str = Field(default="1.3.0")
     # Date format for ID generation (using ISO format for timestamps)
     id_date_format: str = Field(default="%Y%m%dT%H%M%S")
@@ -125,6 +128,11 @@ class ZettelkastenConfig(BaseModel):
     auto_rebuild_threshold: int = Field(
         default=int(os.getenv("ZETTELKASTEN_AUTO_REBUILD_THRESHOLD", "5")),
     )
+    # Tag syntax enforcement: when True, reject non-canonical tags instead of
+    # normalising them silently.
+    strict_tag_syntax: bool = Field(
+        default=os.getenv("ZETTELKASTEN_STRICT_TAGS", "false").lower() == "true",
+    )
     # Project-scoped custom link types config
     custom_link_types_path: Path = Field(
         default_factory=lambda: Path(
@@ -148,6 +156,100 @@ class ZettelkastenConfig(BaseModel):
         if path.is_absolute():
             return path
         return self.base_dir / path
+
+    def _apply_storage_section(self, s: dict) -> None:
+        if "notes_dir" in s:
+            self.notes_dir = Path(s["notes_dir"])
+        if "database_path" in s:
+            self.database_path = Path(s["database_path"])
+
+    def _apply_server_section(self, s: dict) -> None:
+        if "name" in s:
+            self.server_name = str(s["name"])
+        if "log_level" in s:
+            self.log_level = str(s["log_level"])
+
+    def _apply_watch_section(self, s: dict) -> None:
+        if "dirs" not in s:
+            return
+        valid: list[Path] = []
+        for entry in s["dirs"]:
+            p = Path(str(entry)).resolve()
+            if not p.exists():
+                logger.warning(
+                    "config.toml watch.dirs: path not found, skipping: %s", p
+                )
+            elif not p.is_dir():
+                logger.warning(
+                    "config.toml watch.dirs: not a directory, skipping: %s", p
+                )
+            else:
+                valid.append(p)
+        self.watch_dirs = valid
+
+    def _apply_search_section(self, s: dict) -> None:
+        if "use_fts5" in s:
+            self.use_fts5_search = bool(s["use_fts5"])
+
+    def _apply_index_section(self, s: dict) -> None:
+        if "auto_rebuild_threshold" in s:
+            self.auto_rebuild_threshold = int(s["auto_rebuild_threshold"])
+
+    def _apply_tags_section(self, s: dict) -> None:
+        if "strict" in s:
+            self.strict_tag_syntax = bool(s["strict"])
+
+    def _apply_llm_section(self, s: dict) -> None:
+        if "enable_summaries" in s:
+            self.llm_enable_summaries = bool(s["enable_summaries"])
+        if "azure_endpoint" in s:
+            self.azure_openai_endpoint = str(s["azure_endpoint"])
+        if "azure_api_version" in s:
+            self.azure_openai_api_version = str(s["azure_api_version"])
+        if "model" in s:
+            self.llm_model = str(s["model"])
+        if "temperature" in s:
+            self.llm_temperature = float(s["temperature"])
+        if "max_tokens" in s:
+            self.llm_max_tokens = int(s["max_tokens"])
+
+    def load_toml(self, path: Path) -> None:
+        """Apply settings from a TOML config file, overriding current values.
+
+        Only keys present in the file are applied; absent keys keep their
+        current values (env-var defaults or previous settings).
+
+        Priority after this call: env-var defaults < TOML file < CLI flags.
+
+        Args:
+            path: Path to the TOML configuration file.
+
+        Raises:
+            FileNotFoundError: If the config file does not exist.
+            ValueError: If the TOML file cannot be parsed.
+        """
+        import sys  # noqa: PLC0415
+        if sys.version_info >= (3, 11):
+            import tomllib  # noqa: PLC0415
+        else:
+            import tomli as tomllib  # type: ignore[no-redef]  # noqa: PLC0415
+
+        try:
+            with path.open("rb") as fh:
+                data = tomllib.load(fh)
+        except FileNotFoundError:
+            raise
+        except Exception as exc:
+            msg = f"Failed to parse TOML config at {path}: {exc}"
+            raise ValueError(msg) from exc
+
+        self._apply_storage_section(data.get("storage", {}))
+        self._apply_server_section(data.get("server", {}))
+        self._apply_watch_section(data.get("watch", {}))
+        self._apply_search_section(data.get("search", {}))
+        self._apply_index_section(data.get("index", {}))
+        self._apply_tags_section(data.get("tags", {}))
+        self._apply_llm_section(data.get("llm", {}))
 
     def get_db_url(self) -> str:
         """Get the database URL for SQLite."""

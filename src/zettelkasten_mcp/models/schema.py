@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+import re
 import threading
 from dataclasses import dataclass
 from enum import Enum
@@ -188,6 +189,45 @@ class LinkTypeRegistry:
 # Module-level registry singleton
 link_type_registry = LinkTypeRegistry()
 
+# ---------------------------------------------------------------------------
+# Tag syntax enforcement
+# ---------------------------------------------------------------------------
+
+class _TagConfig:
+    strict_mode: bool = False
+
+
+_tag_config = _TagConfig()
+
+
+def set_strict_tag_mode(enabled: bool) -> None:
+    """Set whether Tag construction rejects non-canonical names (strict=True)
+    or silently normalises them (strict=False, default).
+
+    Called once at server startup from mcp_server.py after config is loaded.
+    """
+    _tag_config.strict_mode = enabled
+
+
+def _normalise_tag_name(raw: str) -> str:
+    """Normalise a raw tag name to lowercase kebab-case.
+
+    Algorithm:
+    1. Strip leading/trailing whitespace.
+    2. Lowercase.
+    3. Replace any sequence of non-alphanumeric characters with a single hyphen
+       (covers spaces, underscores, dots, colons, and other punctuation).
+    4. Strip leading and trailing hyphens.
+    5. Raise ValueError if the result is empty.
+    """
+    value = raw.strip().lower()
+    value = re.sub(r"[^a-z0-9]+", "-", value)
+    value = value.strip("-")
+    if not value:
+        msg = "Tag name cannot be empty after normalisation"
+        raise ValueError(msg)
+    return value
+
 
 class Link(BaseModel):
     """A link between two notes."""
@@ -245,6 +285,20 @@ class Tag(BaseModel):
         "validate_assignment": True,
         "frozen": True,
     }
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def normalise_name(cls, v: object) -> str:
+        """Normalise tag to lowercase kebab-case; reject if strict mode is on."""
+        raw = str(v)
+        normalised = _normalise_tag_name(raw)
+        if _tag_config.strict_mode and normalised != raw.strip():
+            msg = (
+                f"Tag '{raw}' is not valid lowercase kebab-case. "
+                f"Normalised form: '{normalised}'"
+            )
+            raise ValueError(msg)
+        return normalised
 
     def __str__(self) -> str:
         """Return string representation of tag."""
@@ -307,7 +361,8 @@ class Note(BaseModel):
 
     def remove_tag(self, tag: str | Tag) -> None:
         """Remove a tag from the note."""
-        tag_name = tag.name if isinstance(tag, Tag) else tag
+        # Normalise the input so "newTag" removes the stored "newtag" entry.
+        tag_name = tag.name if isinstance(tag, Tag) else Tag(name=tag).name
         self.tags = [t for t in self.tags if t.name != tag_name]
         self.updated_at = datetime.datetime.now(tz=datetime.timezone.utc)
 

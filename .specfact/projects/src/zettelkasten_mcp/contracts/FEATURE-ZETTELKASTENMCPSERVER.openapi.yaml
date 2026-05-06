@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: Zettelkasten Mcp Server
+  version: 1.0.0
+  description: API contract extracted from code for Zettelkasten Mcp Server
+paths:
+  /zettelkasten-mcp-server/initialize:
+    get:
+      operationId: initialize
+      summary: Initialize
+      description: Initialize services.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - ZettelkastenMcpServer
+  /zettelkasten-mcp-server/run:
+    get:
+      operationId: run
+      summary: Run
+      description: Run the MCP server.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      tags:
+      - ZettelkastenMcpServer
+components:
+  schemas: {}

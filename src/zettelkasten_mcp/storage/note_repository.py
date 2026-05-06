@@ -300,87 +300,61 @@ class NoteRepository(Repository[Note]):
             indexed_count,
         )
 
-    def _parse_note_from_markdown(self, content: str) -> Note:  # noqa: PLR0912
-        """Parse a note from markdown content."""
-        # Parse frontmatter
-        post = frontmatter.loads(content)
-        metadata = post.metadata
-
-        # Extract ID from metadata or filename
-        note_id = metadata.get("id")
-        if not note_id:
-            msg = "Note ID missing from frontmatter"
-            raise ValueError(msg)
-
-        # Extract title from metadata or first heading
+    def _extract_title_from_post(self, post: Any, metadata: dict[str, Any]) -> str:
+        """Extract note title from metadata frontmatter or first H1 heading."""
         title = metadata.get("title")
         if not title:
-            # Try to extract from content
-            lines = post.content.strip().split("\n")
-            for line in lines:
+            for line in post.content.strip().split("\n"):
                 if line.startswith("# "):
                     title = line[2:].strip()
                     break
         if not title:
             msg = "Note title missing from frontmatter or content"
             raise ValueError(msg)
+        return str(title)
 
-        # Extract note type
-        note_type_str = metadata.get("type", NoteType.PERMANENT.value)
-        try:
-            note_type = NoteType(note_type_str)
-        except ValueError:
-            note_type = NoteType.PERMANENT
-
-        # Extract tags
-        tags_str = metadata.get("tags", "")
-        if isinstance(tags_str, str):
-            tag_names = [t.strip() for t in tags_str.split(",") if t.strip()]
-        elif isinstance(tags_str, list):
-            tag_names = [str(t).strip() for t in tags_str if str(t).strip()]
+    def _extract_tags_from_metadata(self, tags_raw: Any) -> list[Tag]:
+        """Parse tags from a metadata value that may be a CSV string or a list."""
+        if isinstance(tags_raw, str):
+            tag_names = [t.strip() for t in tags_raw.split(",") if t.strip()]
+        elif isinstance(tags_raw, list):
+            tag_names = [str(t).strip() for t in tags_raw if str(t).strip()]
         else:
             tag_names = []
-        tags = [Tag(name=name) for name in tag_names]
+        return [Tag(name=name) for name in tag_names]
 
-        # Extract links
-        links = []
+    def _parse_links_from_content(self, content: str, note_id: str) -> list[Link]:
+        """Parse wiki-style link entries from the '## Links' section of note content."""
+        links: list[Link] = []
         links_section = False
-        for raw_line in post.content.split("\n"):
+        for raw_line in content.split("\n"):
             line = raw_line.strip()
-            # Check if we're in the links section
             if line.startswith("## Links"):
                 links_section = True
                 continue
             if links_section and line.startswith("## "):
-                # We've reached the next section
                 links_section = False
                 continue
             if links_section and line.startswith("- "):
-                # Parse link line
                 try:
-                    # Example format: - reference [[202101010000]] Optional description
                     line_content = line.strip()
                     if "[[" in line_content and "]]" in line_content:
-                        # Split the line at the [[ delimiter
                         parts = line_content.split("[[", 1)
-                        # Extract the link type from before [[
                         link_type_str = parts[0].strip()
-                        # Remove the leading "- " from the link type string
                         if link_type_str.startswith("- "):
                             link_type_str = link_type_str[2:].strip()
-                        # Extract target ID and description
                         id_and_description = parts[1].split("]]", 1)
                         target_id = id_and_description[0].strip()
-                        description = None
-                        if len(id_and_description) > 1:
-                            description = id_and_description[1].strip()
-                        # Validate link type using registry (supports custom types)
+                        description = (
+                            id_and_description[1].strip()
+                            if len(id_and_description) > 1
+                            else None
+                        )
                         if not link_type_registry.is_valid(link_type_str):
-                            # Unknown type — treat as reference
                             link_type_str = LinkType.REFERENCE.value
                         links.append(
                             Link(
-                                source_id=str(note_id),
+                                source_id=note_id,
                                 target_id=target_id,
                                 link_type=link_type_str,
                                 description=description,
@@ -391,8 +365,29 @@ class NoteRepository(Repository[Note]):
                         )
                 except Exception:
                     logger.exception("Error parsing link: %s", line)
+        return links
 
-        # Extract timestamps
+    def _parse_note_from_markdown(self, content: str) -> Note:
+        """Parse a note from markdown content."""
+        post = frontmatter.loads(content)
+        metadata = post.metadata
+
+        note_id = metadata.get("id")
+        if not note_id:
+            msg = "Note ID missing from frontmatter"
+            raise ValueError(msg)
+
+        title = self._extract_title_from_post(post, metadata)
+
+        note_type_str = metadata.get("type", NoteType.PERMANENT.value)
+        try:
+            note_type = NoteType(note_type_str)
+        except ValueError:
+            note_type = NoteType.PERMANENT
+
+        tags = self._extract_tags_from_metadata(metadata.get("tags", ""))
+        links = self._parse_links_from_content(post.content, str(note_id))
+
         created_str = metadata.get("created")
         created_at = (
             datetime.datetime.fromisoformat(str(created_str))
@@ -406,10 +401,9 @@ class NoteRepository(Repository[Note]):
             else created_at
         )
 
-        # Create note object
         return Note(
             id=str(note_id),
-            title=str(title),
+            title=title,
             content=post.content,
             note_type=note_type,
             tags=tags,
@@ -753,6 +747,18 @@ class NoteRepository(Repository[Note]):
                 return None
             return self.get(db_note.id)
 
+    def _load_note_batch(self, batch_ids: list[str]) -> list[Note]:
+        """Load a batch of notes by ID, skipping any that fail to load."""
+        notes: list[Note] = []
+        for note_id in batch_ids:
+            try:
+                note = self.get(note_id)  # type: ignore[assignment]
+                if note:
+                    notes.append(note)
+            except Exception:  # noqa: PERF203
+                logger.exception("Error loading note %s", note_id)
+        return notes
+
     def get_all(self) -> list[Note]:
         """Get all notes.
 
@@ -791,15 +797,7 @@ class NoteRepository(Repository[Note]):
                 note_ids = [note.id for note in db_notes]
                 for i in range(0, len(note_ids), batch_size):
                     batch_ids = note_ids[i : i + batch_size]
-                    note_batch = []
-                    for note_id in batch_ids:
-                        try:
-                            note = self.get(note_id)  # type: ignore[assignment]
-                            if note:
-                                note_batch.append(note)
-                        except Exception:  # noqa: PERF203
-                            logger.exception("Error loading note %s", note_id)
-                    all_notes.extend(note_batch)
+                    all_notes.extend(self._load_note_batch(batch_ids))
                 return all_notes
         except Exception:  # noqa: BLE001
             self._db_available = False
@@ -1059,11 +1057,8 @@ class NoteRepository(Repository[Note]):
                     func.lower(DBNote.title).like(f"%{search_title.lower()}%"),
                 )
             if "note_type" in kwargs:
-                note_type = (
-                    kwargs["note_type"].value
-                    if isinstance(kwargs["note_type"], NoteType)
-                    else kwargs["note_type"]
-                )
+                # getattr handles both NoteType enum (.value) and plain string
+                note_type = getattr(kwargs["note_type"], "value", kwargs["note_type"])
                 query = query.where(DBNote.note_type == note_type)
             if "tag" in kwargs:
                 tag_name = kwargs["tag"]
@@ -1103,7 +1098,9 @@ class NoteRepository(Repository[Note]):
 
     def find_by_tag(self, tag: str | Tag) -> list[Note]:
         """Find notes by tag."""
-        tag_name = tag.name if isinstance(tag, Tag) else tag
+        # Normalise the tag name so queries against stored (normalised) tags work
+        # regardless of the case/formatting of the input.
+        tag_name = tag.name if isinstance(tag, Tag) else Tag(name=tag).name
         return self.search(tag=tag_name)
 
     def find_linked_notes(
